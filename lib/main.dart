@@ -89,10 +89,10 @@ class _LoginPageState extends State<LoginPage> {
                     padding: const EdgeInsets.only(top: 32.0, bottom: 32.0),
                     child: SizedBox(
                       height: 80,
-                      child: Image.network(
-                        'icons/aclcLOGO.png',
-                        fit: BoxFit.contain,
-                      ),
+                        child: Image.asset(
+                          'assets/icons/aclcLOGO.png',
+                          fit: BoxFit.contain,
+                        ),
                     ),
                   ),
                   // Title

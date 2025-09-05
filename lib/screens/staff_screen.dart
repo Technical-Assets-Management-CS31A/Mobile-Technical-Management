@@ -20,40 +20,84 @@ class _StaffScreenState extends State<StaffScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isMobile = widget.isMobile;
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 16 : 24),
+    final size = MediaQuery.of(context).size;
+    return Container(
+      height: MediaQuery.of(context).size.height,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Center(
-            child: Text(
-              'Staff',
-              style: TextStyle(
-                fontSize: isMobile ? 24 : 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: _onAddStaff,
-              child: const Text('[New Staff]'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(isMobile ? 16 : 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: isMobile ? 16 : 24),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(isMobile ? 16 : 12),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.1),
                   spreadRadius: 1,
-                  blurRadius: isMobile ? 8 : 4,
+                  blurRadius: 4,
                   offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Staff Management',
+                      style: TextStyle(
+                        fontSize: isMobile ? 24 : 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Manage your staff members and their roles',
+                      style: TextStyle(
+                        fontSize: isMobile ? 14 : 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: _onAddStaff,
+                  icon: const Icon(Icons.person_add),
+                  label: const Text('Add New Staff'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          const SizedBox(height: 24),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.08),
+                  spreadRadius: 2,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -61,38 +105,62 @@ class _StaffScreenState extends State<StaffScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 20,
+                    vertical: 16,
                   ),
-                  color: Colors.grey.shade50,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.grey.shade200,
+                        width: 2,
+                      ),
+                    ),
+                  ),
                   child: Row(
                     children: const [
                       Expanded(
                         flex: 1,
                         child: Text(
                           'ID',
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                       Expanded(
                         flex: 4,
                         child: Text(
                           'Name',
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                       Expanded(
                         flex: 3,
                         child: Text(
                           'Role',
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                       SizedBox(
                         width: 160,
                         child: Text(
-                          'Action',
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                          'Actions',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ],
@@ -102,14 +170,28 @@ class _StaffScreenState extends State<StaffScreen> {
                   final idx = entry.key;
                   final staff = entry.value;
                   return Container(
-                    color: idx.isEven ? Colors.white : Colors.grey.shade50,
+                    decoration: BoxDecoration(
+                      color: idx.isEven ? Colors.white : Colors.grey.shade50,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.grey.shade100,
+                          width: 1,
+                        ),
+                      ),
+                    ),
                     child: Row(
                       children: [
                         Expanded(
                           flex: 1,
                           child: Padding(
                             padding: const EdgeInsets.all(16),
-                            child: Text('${staff['id']}'),
+                            child: Text(
+                              '${staff['id']}',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ),
                         Expanded(
@@ -120,6 +202,7 @@ class _StaffScreenState extends State<StaffScreen> {
                               '${staff['name']}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w500,
+                                fontSize: 14,
                               ),
                             ),
                           ),
@@ -128,10 +211,19 @@ class _StaffScreenState extends State<StaffScreen> {
                           flex: 3,
                           child: Padding(
                             padding: const EdgeInsets.all(16),
-                            child: Text(
-                              '${staff['role']}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${staff['role']}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                  color: Theme.of(context).primaryColor,
+                                ),
                               ),
                             ),
                           ),
@@ -143,17 +235,21 @@ class _StaffScreenState extends State<StaffScreen> {
                             alignment: Alignment.centerLeft,
                             child: Row(
                               children: [
-                                TextButton(
+                                IconButton(
                                   onPressed: () => _onViewStaff(staff),
-                                  child: const Text('[View]'),
+                                  icon: const Icon(Icons.visibility),
+                                  tooltip: 'View',
                                 ),
-                                TextButton(
+                                IconButton(
                                   onPressed: () => _onEditStaff(staff),
-                                  child: const Text('[Edit]'),
+                                  icon: const Icon(Icons.edit),
+                                  tooltip: 'Edit',
                                 ),
-                                TextButton(
+                                IconButton(
                                   onPressed: () => _onRemoveStaff(staff),
-                                  child: const Text('[Remove]'),
+                                  icon: const Icon(Icons.delete),
+                                  color: Colors.red,
+                                  tooltip: 'Remove',
                                 ),
                               ],
                             ),
@@ -167,6 +263,10 @@ class _StaffScreenState extends State<StaffScreen> {
             ),
           ),
           if (isMobile) const SizedBox(height: 80),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'staff_screen.dart';
+import 'sidebar.dart';
+import 'inventory_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -86,7 +88,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               // Sidebar inline only on desktop/tablet
-              if (!isMobile) _buildSidebar(isMobile),
+              if (!isMobile) Sidebar(
+                isMobile: isMobile,
+                selectedIndex: _selectedIndex,
+                onItemSelected: (index) {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                },
+              ),
               // Main Content Area
               Expanded(child: _buildMainContent(isMobile)),
             ],
@@ -112,7 +122,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               width: 200,
               child: SizedBox(
                 height: double.infinity,
-                child: Material(elevation: 8, child: _buildSidebar(true)),
+                child: Material(
+                  elevation: 8,
+                  child: Sidebar(
+                    isMobile: true,
+                    selectedIndex: _selectedIndex,
+                    onItemSelected: (index) {
+                      setState(() {
+                        _selectedIndex = index;
+                        _isSidebarOpen = false;
+                      });
+                    },
+                  ),
+                ),
               ),
             ),
         ],
@@ -120,96 +142,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSidebar(bool isMobile) {
-    return SizedBox(
-      height: double.infinity,
-      child: Container(
-        width: isMobile ? 200 : 250,
-        color: const Color(0xFF338AFF),
-        child: Column(
-          children: [
-            // Logo and Title
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // Logo placeholder (red and white abstract logo)
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_upward,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (!isMobile)
-                    const Text(
-                      'Web-Dashboard-Page',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const Divider(color: Colors.white24, height: 1),
-            // Navigation Items
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  _buildNavItem(0, Icons.dashboard, 'Dashboard'),
-                  _buildNavItem(1, Icons.inventory, 'Inventory List'),
-                  _buildNavItem(2, Icons.list, 'Item List'),
-                  _buildNavItem(3, Icons.people, 'Staff'),
-                  _buildNavItem(4, Icons.history, 'History'),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData icon, String title) {
-    final isSelected = _selectedIndex == index;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: Colors.white, size: 20),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        onTap: () {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-      ),
-    );
-  }
-
   Widget _buildMainContent(bool isMobile) {
-    // Render Staff page when the sidebar selection is "Staff"
-    if (_selectedIndex == 3) {
+    // Handle different screens based on sidebar selection
+    if (_selectedIndex == 1) {
+      return InventoryListScreen(isMobile: isMobile);
+    } else if (_selectedIndex == 3) {
       return StaffScreen(isMobile: isMobile);
     }
     return RefreshIndicator(
