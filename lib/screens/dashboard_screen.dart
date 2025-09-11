@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'staff_screen.dart';
 import 'sidebar.dart';
 import 'inventory_list_screen.dart';
+import 'item_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -146,6 +147,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Handle different screens based on sidebar selection
     if (_selectedIndex == 1) {
       return InventoryListScreen(isMobile: isMobile);
+    } else if (_selectedIndex == 2) {
+      return const ItemListScreen();
     } else if (_selectedIndex == 3) {
       return StaffScreen(isMobile: isMobile);
     }
@@ -174,11 +177,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             SizedBox(height: isMobile ? 24 : 32),
 
-            // Top Row - Summary Cards
             if (isMobile)
               Column(
                 children: [
-                  // First row: 2 cards
                   Row(
                     children: [
                       Expanded(
@@ -202,7 +203,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Second row: 2 cards
                   Row(
                     children: [
                       Expanded(
@@ -262,7 +262,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             SizedBox(height: isMobile ? 20 : 24),
 
-            // Middle Row - Charts and Staff Status
             if (isMobile)
               Column(
                 children: [
@@ -282,10 +281,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             SizedBox(height: isMobile ? 20 : 24),
 
-            // Bottom - Recently Borrowed Items Table
             _buildRecentBorrowedTable(isMobile: isMobile),
 
-            // Add extra space at bottom for better pull-to-refresh experience
             if (isMobile) const SizedBox(height: 100),
           ],
         ),
