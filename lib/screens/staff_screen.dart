@@ -21,7 +21,7 @@ class _StaffScreenState extends State<StaffScreen> {
   Widget build(BuildContext context) {
     final bool isMobile = widget.isMobile;
     final size = MediaQuery.of(context).size;
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height,
       child: Column(
         children: [
