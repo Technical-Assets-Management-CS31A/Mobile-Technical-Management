@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/item.dart';
+import '../../models/entities/item.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final Item item;
@@ -345,4 +345,3 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
-
