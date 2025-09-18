@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens.dart';
+import '../../services/inventory_service.dart';
+import 'add_item_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
   final bool isMobile;
@@ -14,11 +16,64 @@ class _InventoryScreenState extends State<InventoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _statusFilter = 'All'; // All, Available, Borrowed
+  final InventoryService _inventoryService = InventoryService();
+  bool _isLoading = true;
+  Map<String, Map<String, int>> _categoryCounts = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Load data from service and update category stats
+      await _inventoryService.getAllItems();
+      // Get updated category counts
+      _categoryCounts = await _inventoryService.getCategoryStats();
+      // Trigger rebuild to update category counts
+      setState(() {});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshData() async {
+    await _loadData();
+  }
+
+  void _navigateToAddItem() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddItemScreen(isMobile: widget.isMobile),
+      ),
+    );
+
+    if (result == true) {
+      // Item was added successfully, refresh the data
+      _refreshData();
+    }
   }
 
   void _onSearchChanged(String query) {
@@ -34,145 +89,30 @@ class _InventoryScreenState extends State<InventoryScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            // Add refresh logic here
-            await Future.delayed(const Duration(seconds: 1));
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.all(widget.isMobile ? 16 : 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Center(
-                  child: Text(
-                    'INVENTORY',
-                    style: TextStyle(
-                      fontSize: widget.isMobile ? 24 : 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-                SizedBox(height: widget.isMobile ? 24 : 32),
-                // Top Summary Cards
-                if (widget.isMobile)
-                  Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildSummaryCard(
-                              'Total Items',
-                              '100',
-                              Icons.inventory,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildSummaryCard(
-                              'Categories',
-                              '10',
-                              Icons.category,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildSummaryCard(
-                              'Available',
-                              '85',
-                              Icons.check_circle,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildSummaryCard(
-                              'In Use',
-                              '15',
-                              Icons.access_time,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                else
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildSummaryCard(
-                          'Total Items',
-                          '100',
-                          Icons.inventory,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildSummaryCard(
-                          'Categories',
-                          '10',
-                          Icons.category,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildSummaryCard(
-                          'Available',
-                          '85',
-                          Icons.check_circle,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildSummaryCard(
-                          'In Use',
-                          '15',
-                          Icons.access_time,
-                        ),
-                      ),
-                    ],
-                  ),
-                // Search and Filter section (All, Available, Borrowed)
-                _buildSearchAndFilterSection(),
-                SizedBox(height: widget.isMobile ? 24 : 32),
-                // Categories Grid
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: widget.isMobile ? 2 : 4,
-                    childAspectRatio: widget.isMobile ? 1.2 : 1.5,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: _filteredCategories.length,
-                  itemBuilder: (context, index) {
-                    final category = _filteredCategories[index];
-                    return _buildCategoryCard(
-                      context,
-                      category['name'] as String,
-                      (category['displayCount']).toString(),
-                      category['color'] as Color,
-                      category['icon'] as IconData,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+  // Calculate dynamic counts from category data
+  int get _totalItems {
+    return _allCategories.fold(
+      0,
+      (sum, category) => sum + (category['total'] as int),
+    );
+  }
+
+  int get _totalCategories {
+    return _allCategories.length;
+  }
+
+  int get _availableItems {
+    return _allCategories.fold(0, (sum, category) {
+      final total = category['total'] as int;
+      final borrowed = category['borrowed'] as int;
+      return sum + (total - borrowed);
+    });
+  }
+
+  int get _inUseItems {
+    return _allCategories.fold(
+      0,
+      (sum, category) => sum + (category['borrowed'] as int),
     );
   }
 
@@ -234,13 +174,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
     IconData icon,
   ) {
     return InkWell(
-      onTap: () {
-        Navigator.of(context).push(
+      onTap: () async {
+        final result = await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) =>
                 CategoryItemsScreen(category: title, isMobile: widget.isMobile),
           ),
         );
+
+        if (result == true) {
+          // Items were modified, refresh the data
+          _refreshData();
+        }
       },
       child: Container(
         padding: EdgeInsets.all(widget.isMobile ? 16 : 20),
@@ -296,64 +241,67 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   // Data and filtering for categories
-  List<Map<String, Object>> get _allCategories => [
-    {
-      'name': 'Cables',
-      'total': 100,
-      'borrowed': 15,
-      'color': Colors.blue,
-      'icon': Icons.cable,
-    },
-    {
-      'name': 'Adapters',
-      'total': 22,
-      'borrowed': 5,
-      'color': Colors.green,
-      'icon': Icons.power,
-    },
-    {
-      'name': 'Peripherals',
-      'total': 45,
-      'borrowed': 10,
-      'color': Colors.red,
-      'icon': Icons.keyboard,
-    },
-    {
-      'name': 'Networking',
-      'total': 12,
-      'borrowed': 2,
-      'color': Colors.orange,
-      'icon': Icons.router,
-    },
-    {
-      'name': 'Storage',
-      'total': 33,
-      'borrowed': 3,
-      'color': Colors.purple,
-      'icon': Icons.storage,
-    },
-    {
-      'name': 'Audio',
-      'total': 18,
-      'borrowed': 7,
-      'color': Colors.teal,
-      'icon': Icons.headphones,
-    },
-    {
-      'name': 'Display',
-      'total': 25,
-      'borrowed': 4,
-      'color': Colors.indigo,
-      'icon': Icons.monitor,
-    },
-    {
-      'name': 'Other',
-      'total': 8,
-      'borrowed': 1,
-      'color': Colors.grey,
-      'icon': Icons.devices_other,
-    },
-  ];
+  List<Map<String, Object>> get _allCategories {
+    final realCounts = _categoryCounts;
+    return [
+      {
+        'name': 'Cables',
+        'total': realCounts['Cables']?['total'] ?? 0,
+        'borrowed': realCounts['Cables']?['borrowed'] ?? 0,
+        'color': Colors.blue,
+        'icon': Icons.cable,
+      },
+      {
+        'name': 'Adapters',
+        'total': realCounts['Adapters']?['total'] ?? 0,
+        'borrowed': realCounts['Adapters']?['borrowed'] ?? 0,
+        'color': Colors.green,
+        'icon': Icons.power,
+      },
+      {
+        'name': 'Peripherals',
+        'total': realCounts['Peripherals']?['total'] ?? 0,
+        'borrowed': realCounts['Peripherals']?['borrowed'] ?? 0,
+        'color': Colors.red,
+        'icon': Icons.keyboard,
+      },
+      {
+        'name': 'Networking',
+        'total': realCounts['Networking']?['total'] ?? 0,
+        'borrowed': realCounts['Networking']?['borrowed'] ?? 0,
+        'color': Colors.orange,
+        'icon': Icons.router,
+      },
+      {
+        'name': 'Storage',
+        'total': realCounts['Storage']?['total'] ?? 0,
+        'borrowed': realCounts['Storage']?['borrowed'] ?? 0,
+        'color': Colors.purple,
+        'icon': Icons.storage,
+      },
+      {
+        'name': 'Audio',
+        'total': realCounts['Audio']?['total'] ?? 0,
+        'borrowed': realCounts['Audio']?['borrowed'] ?? 0,
+        'color': Colors.teal,
+        'icon': Icons.headphones,
+      },
+      {
+        'name': 'Display',
+        'total': realCounts['Display']?['total'] ?? 0,
+        'borrowed': realCounts['Display']?['borrowed'] ?? 0,
+        'color': Colors.indigo,
+        'icon': Icons.monitor,
+      },
+      {
+        'name': 'Other',
+        'total': realCounts['Other']?['total'] ?? 0,
+        'borrowed': realCounts['Other']?['borrowed'] ?? 0,
+        'color': Colors.grey,
+        'icon': Icons.devices_other,
+      },
+    ];
+  }
 
   List<Map<String, Object>> get _filteredCategories {
     final lower = _searchQuery.toLowerCase();
@@ -510,6 +458,152 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refreshData,
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.all(widget.isMobile ? 16 : 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Center(
+                        child: Text(
+                          'INVENTORY',
+                          style: TextStyle(
+                            fontSize: widget.isMobile ? 24 : 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: widget.isMobile ? 24 : 32),
+                      // Top Summary Cards
+                      if (widget.isMobile)
+                        Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildSummaryCard(
+                                    'Total Items',
+                                    _totalItems.toString(),
+                                    Icons.inventory,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildSummaryCard(
+                                    'Categories',
+                                    _totalCategories.toString(),
+                                    Icons.category,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildSummaryCard(
+                                    'Available',
+                                    _availableItems.toString(),
+                                    Icons.check_circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildSummaryCard(
+                                    'In Use',
+                                    _inUseItems.toString(),
+                                    Icons.access_time,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      else
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildSummaryCard(
+                                'Total Items',
+                                _totalItems.toString(),
+                                Icons.inventory,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildSummaryCard(
+                                'Categories',
+                                _totalCategories.toString(),
+                                Icons.category,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildSummaryCard(
+                                'Available',
+                                _availableItems.toString(),
+                                Icons.check_circle,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildSummaryCard(
+                                'In Use',
+                                _inUseItems.toString(),
+                                Icons.access_time,
+                              ),
+                            ),
+                          ],
+                        ),
+                      // Search and Filter section
+                      _buildSearchAndFilterSection(),
+                      SizedBox(height: widget.isMobile ? 24 : 32),
+                      // Categories Grid
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: widget.isMobile ? 2 : 4,
+                          childAspectRatio: widget.isMobile ? 1.2 : 1.5,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                        itemCount: _filteredCategories.length,
+                        itemBuilder: (context, index) {
+                          final category = _filteredCategories[index];
+                          return _buildCategoryCard(
+                            context,
+                            category['name'] as String,
+                            (category['displayCount']).toString(),
+                            category['color'] as Color,
+                            category['icon'] as IconData,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToAddItem,
+        backgroundColor: const Color(0xFF338AFF),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 }
