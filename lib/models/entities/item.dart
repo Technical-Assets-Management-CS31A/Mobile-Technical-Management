@@ -5,6 +5,10 @@ class Item {
   final String itemImage;
   final String itemCategory;
   final String condition;
+  final String itemType;
+  final String itemModel;
+  final String itemMake;
+  final String description;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -15,6 +19,10 @@ class Item {
     required this.itemImage,
     required this.itemCategory,
     required this.condition,
+    this.itemType = '',
+    this.itemModel = '',
+    this.itemMake = '',
+    this.description = '',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -27,6 +35,10 @@ class Item {
       itemImage: json['item_image'],
       itemCategory: json['item_category'],
       condition: json['condition'],
+      itemType: json['item_type'] ?? '',
+      itemModel: json['item_model'] ?? '',
+      itemMake: json['item_make'] ?? '',
+      description: json['description'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
     );
@@ -40,9 +52,12 @@ class Item {
       'item_image': itemImage,
       'item_category': itemCategory,
       'condition': condition,
+      'item_type': itemType,
+      'item_model': itemModel,
+      'item_make': itemMake,
+      'description': description,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
   }
 }
-

@@ -155,10 +155,10 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF5F5F5),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           title: Text(widget.category),
-          backgroundColor: const Color(0xFF338AFF),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
           elevation: 0,
         ),
@@ -184,16 +184,16 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
         return false; // Prevent default back behavior
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F5F5),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           title: Text(widget.category),
-          backgroundColor: const Color(0xFF338AFF),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
           elevation: 0,
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: _addNewItem,
-          backgroundColor: const Color(0xFF338AFF),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           child: const Icon(Icons.add, color: Colors.white),
         ),
         body: SafeArea(
@@ -223,7 +223,7 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: Theme.of(context).colorScheme.surfaceBright,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
@@ -263,14 +263,20 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
                         Icon(
                           Icons.inventory_2_outlined,
                           size: 64,
-                          color: Colors.grey[400],
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.4),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           _searchQuery.isNotEmpty || _selectedCondition != 'All'
                               ? 'No items match your filters'
                               : 'No items in this category',
-                          style: TextStyle(color: Colors.grey[700]),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
+                          ),
                         ),
                         if (_searchQuery.isNotEmpty ||
                             _selectedCondition != 'All')
@@ -293,7 +299,7 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
                   Row(
                     children: [
                       Text(
-                        'Showing ${startIndex + 1}-${endIndex} of $totalItems',
+                        'Showing ${startIndex + 1}-$endIndex of $totalItems',
                         style: TextStyle(color: Colors.grey[700]),
                       ),
                       const Spacer(),
@@ -374,11 +380,11 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
   Widget _buildItemTile(BuildContext context, Item item) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -387,8 +393,13 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: const Color(0xFF338AFF).withOpacity(0.1),
-          child: const Icon(Icons.inventory_2, color: Color(0xFF338AFF)),
+          backgroundColor: Theme.of(
+            context,
+          ).colorScheme.primary.withOpacity(0.1),
+          child: Icon(
+            Icons.inventory_2,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         title: Text(
           item.itemName,

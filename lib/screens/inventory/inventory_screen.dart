@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens.dart';
 import '../../services/inventory_service.dart';
 import 'add_item_screen.dart';
+import '../../widgets/skeleton.dart';
 
 class InventoryScreen extends StatefulWidget {
   final bool isMobile;
@@ -120,11 +121,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
     return Container(
       padding: EdgeInsets.all(widget.isMobile ? 16 : 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -139,7 +140,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             children: [
               Icon(
                 icon,
-                color: const Color(0xFF338AFF),
+                color: Theme.of(context).colorScheme.primary,
                 size: widget.isMobile ? 28 : 24,
               ),
             ],
@@ -150,14 +151,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
             style: TextStyle(
               fontSize: widget.isMobile ? 32 : 28,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           Text(
             title,
             style: TextStyle(
               fontSize: widget.isMobile ? 16 : 14,
-              color: Colors.grey,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -190,11 +191,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
       child: Container(
         padding: EdgeInsets.all(widget.isMobile ? 16 : 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surfaceBright,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
               spreadRadius: 1,
               blurRadius: 4,
               offset: const Offset(0, 2),
@@ -221,14 +222,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   style: TextStyle(
                     fontSize: widget.isMobile ? 24 : 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   title,
                   style: TextStyle(
                     fontSize: widget.isMobile ? 14 : 12,
-                    color: Colors.grey.shade600,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -248,56 +251,56 @@ class _InventoryScreenState extends State<InventoryScreen> {
         'name': 'Cables',
         'total': realCounts['Cables']?['total'] ?? 0,
         'borrowed': realCounts['Cables']?['borrowed'] ?? 0,
-        'color': Colors.blue,
+        'color': Theme.of(context).colorScheme.primary,
         'icon': Icons.cable,
       },
       {
         'name': 'Adapters',
         'total': realCounts['Adapters']?['total'] ?? 0,
         'borrowed': realCounts['Adapters']?['borrowed'] ?? 0,
-        'color': Colors.green,
+        'color': const Color(0xFF10B981),
         'icon': Icons.power,
       },
       {
         'name': 'Peripherals',
         'total': realCounts['Peripherals']?['total'] ?? 0,
         'borrowed': realCounts['Peripherals']?['borrowed'] ?? 0,
-        'color': Colors.red,
+        'color': const Color(0xFFEF4444),
         'icon': Icons.keyboard,
       },
       {
         'name': 'Networking',
         'total': realCounts['Networking']?['total'] ?? 0,
         'borrowed': realCounts['Networking']?['borrowed'] ?? 0,
-        'color': Colors.orange,
+        'color': const Color(0xFFF59E0B),
         'icon': Icons.router,
       },
       {
         'name': 'Storage',
         'total': realCounts['Storage']?['total'] ?? 0,
         'borrowed': realCounts['Storage']?['borrowed'] ?? 0,
-        'color': Colors.purple,
+        'color': const Color(0xFF8B5CF6),
         'icon': Icons.storage,
       },
       {
         'name': 'Audio',
         'total': realCounts['Audio']?['total'] ?? 0,
         'borrowed': realCounts['Audio']?['borrowed'] ?? 0,
-        'color': Colors.teal,
+        'color': const Color(0xFF14B8A6),
         'icon': Icons.headphones,
       },
       {
         'name': 'Display',
         'total': realCounts['Display']?['total'] ?? 0,
         'borrowed': realCounts['Display']?['borrowed'] ?? 0,
-        'color': Colors.indigo,
+        'color': const Color(0xFF6366F1),
         'icon': Icons.monitor,
       },
       {
         'name': 'Other',
         'total': realCounts['Other']?['total'] ?? 0,
         'borrowed': realCounts['Other']?['borrowed'] ?? 0,
-        'color': Colors.grey,
+        'color': Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
         'icon': Icons.devices_other,
       },
     ];
@@ -361,7 +364,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: Theme.of(context).colorScheme.surfaceBright,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
@@ -420,7 +423,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Theme.of(context).colorScheme.surfaceBright,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
@@ -464,12 +467,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refreshData,
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? InventorySkeleton(isMobile: widget.isMobile)
               : SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.all(widget.isMobile ? 16 : 24),
@@ -483,7 +486,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           style: TextStyle(
                             fontSize: widget.isMobile ? 24 : 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -601,7 +604,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddItem,
-        backgroundColor: const Color(0xFF338AFF),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

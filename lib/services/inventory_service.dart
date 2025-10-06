@@ -7,7 +7,7 @@ class InventoryService {
 
   // In-memory storage for demo purposes
   // In a real app, this would connect to a database or API
-  List<Item> _items = [
+  final List<Item> _items = [
     Item(
       id: 1,
       serialNumber: 'CBL-001',
@@ -64,6 +64,10 @@ class InventoryService {
       itemImage: item.itemImage,
       itemCategory: item.itemCategory,
       condition: item.condition,
+      itemType: item.itemType,
+      itemModel: item.itemModel,
+      itemMake: item.itemMake,
+      description: item.description,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -115,6 +119,10 @@ class InventoryService {
         itemImage: updatedItem.itemImage,
         itemCategory: updatedItem.itemCategory,
         condition: updatedItem.condition,
+        itemType: updatedItem.itemType,
+        itemModel: updatedItem.itemModel,
+        itemMake: updatedItem.itemMake,
+        description: updatedItem.description,
         createdAt: _items[index].createdAt,
         updatedAt: DateTime.now(),
       );
@@ -144,6 +152,7 @@ class InventoryService {
 
     final Map<String, Map<String, int>> stats = {};
     final categories = [
+      'Electronics',
       'Cables',
       'Adapters',
       'Peripherals',
@@ -193,7 +202,11 @@ class InventoryService {
           (item) =>
               item.itemName.toLowerCase().contains(lowerQuery) ||
               item.serialNumber.toLowerCase().contains(lowerQuery) ||
-              item.itemCategory.toLowerCase().contains(lowerQuery),
+              item.itemCategory.toLowerCase().contains(lowerQuery) ||
+              item.itemType.toLowerCase().contains(lowerQuery) ||
+              item.itemModel.toLowerCase().contains(lowerQuery) ||
+              item.itemMake.toLowerCase().contains(lowerQuery) ||
+              item.description.toLowerCase().contains(lowerQuery),
         )
         .toList();
   }

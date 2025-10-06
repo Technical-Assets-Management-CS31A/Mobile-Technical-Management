@@ -1,11 +1,32 @@
 // App constants
+import 'package:flutter/material.dart';
+
 class AppConstants {
-  // Colors
-  static const primaryColor = 0xFF338AFF;
-  static const secondaryColor = 0xFF1E6BFF;
-  static const successColor = 0xFF10B981;
-  static const warningColor = 0xFFF59E0B;
-  static const errorColor = 0xFFEF4444;
+  // Colors - ACLC Theme
+  // Core brand blues
+  static const int primaryColor = 0xFF003A8C; // Deep ACLC blue
+  static const int primaryColorLight = 0xFF145FC7;
+  static const int primaryColorDark = 0xFF00245A;
+
+  static const int secondaryColor = 0xFF00A3FF; // Accent sky blue
+  static const int accentColor = 0xFFFFC107; // Gold accent for highlights
+
+  // Semantic
+  static const int successColor = 0xFF10B981;
+  static const int warningColor = 0xFFF59E0B;
+  static const int errorColor = 0xFFEF4444;
+
+  // Neutrals
+  static const int neutral900 = 0xFF0F172A;
+  static const int neutral800 = 0xFF1F2937;
+  static const int neutral700 = 0xFF374151;
+  static const int neutral600 = 0xFF4B5563;
+  static const int neutral500 = 0xFF6B7280;
+  static const int neutral400 = 0xFF9CA3AF;
+  static const int neutral300 = 0xFFD1D5DB;
+  static const int neutral200 = 0xFFE5E7EB;
+  static const int neutral100 = 0xFFF3F4F6;
+  static const int neutral50 = 0xFFF8FAFC;
 
   // Dimensions
   static const double defaultPadding = 16.0;
@@ -27,4 +48,20 @@ class AppConstants {
   static const Duration shortAnimation = Duration(milliseconds: 200);
   static const Duration mediumAnimation = Duration(milliseconds: 500);
   static const Duration longAnimation = Duration(milliseconds: 1000);
+
+  // Helpers
+  static MaterialColor primarySwatch() {
+    return const MaterialColor(primaryColor, <int, Color>{
+      50: Color(0xFFE6EDF7),
+      100: Color(0xFFC3D5EE),
+      200: Color(0xFF9EBAE2),
+      300: Color(0xFF799ED6),
+      400: Color(0xFF5D8ACA),
+      500: Color(primaryColor),
+      600: Color(0xFF0D4D9F),
+      700: Color(0xFF0A3E80),
+      800: Color(0xFF072E60),
+      900: Color(0xFF041F41),
+    });
+  }
 }

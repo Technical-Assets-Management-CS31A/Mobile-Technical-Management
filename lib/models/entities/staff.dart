@@ -1,6 +1,8 @@
 class Staff {
   final String id;
-  final String name;
+  final String firstName;
+  final String lastName;
+  final String? middleName;
   final String position;
   final String email;
   final String phoneNumber;
@@ -10,9 +12,19 @@ class Staff {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  // Computed property for full name
+  String get name {
+    if (middleName != null && middleName!.isNotEmpty) {
+      return '$firstName $middleName $lastName';
+    }
+    return '$firstName $lastName';
+  }
+
   Staff({
     required this.id,
-    required this.name,
+    required this.firstName,
+    required this.lastName,
+    this.middleName,
     required this.position,
     required this.email,
     required this.phoneNumber,
@@ -25,7 +37,9 @@ class Staff {
 
   Staff copyWith({
     String? id,
-    String? name,
+    String? firstName,
+    String? lastName,
+    String? middleName,
     String? position,
     String? email,
     String? phoneNumber,
@@ -37,7 +51,9 @@ class Staff {
   }) {
     return Staff(
       id: id ?? this.id,
-      name: name ?? this.name,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      middleName: middleName ?? this.middleName,
       position: position ?? this.position,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -52,7 +68,9 @@ class Staff {
   factory Staff.fromJson(Map<String, dynamic> json) {
     return Staff(
       id: json['id'],
-      name: json['name'],
+      firstName: json['first_name'] ?? json['name']?.split(' ')[0] ?? '',
+      lastName: json['last_name'] ?? json['name']?.split(' ').last ?? '',
+      middleName: json['middle_name'],
       position: json['position'],
       email: json['email'],
       phoneNumber: json['phone_number'] ?? '',
@@ -71,7 +89,9 @@ class Staff {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
+      'first_name': firstName,
+      'last_name': lastName,
+      'middle_name': middleName,
       'position': position,
       'email': email,
       'phone_number': phoneNumber,

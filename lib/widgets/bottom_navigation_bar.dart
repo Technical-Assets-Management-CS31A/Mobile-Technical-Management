@@ -15,10 +15,10 @@ class BottomBar extends StatelessWidget {
     return Container(
       height: 90,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceBright,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -32,33 +32,47 @@ class BottomBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(
+            context,
             0,
             Icons.dashboard_outlined,
             Icons.dashboard,
             'Dashboard',
           ),
           _buildNavItem(
+            context,
             1,
             Icons.inventory_2_outlined,
             Icons.inventory_2,
             'Inventory',
           ),
           _buildNavItem(
+            context,
             2,
             Icons.people_outline,
             Icons.people,
-            'Staff'),
+            'Users',
+          ),
           _buildNavItem(
-          3,
-          Icons.history_outlined,
-          Icons.history,
-          'History'),
+            context,
+            3,
+            Icons.history_outlined,
+            Icons.history,
+            'History',
+          ),
+          _buildNavItem(
+            context,
+            4,
+            Icons.settings_outlined,
+            Icons.settings,
+            'Settings',
+          ),
         ],
       ),
     );
   }
 
   Widget _buildNavItem(
+    BuildContext context,
     int index,
     IconData iconOutlined,
     IconData iconFilled,
@@ -72,7 +86,9 @@ class BottomBar extends StatelessWidget {
           height: double.infinity,
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFF338AFF).withOpacity(0.1)
+                ? Colors.blue.withOpacity(
+                    0.0,
+                  ) // will be overridden by inner chip
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
           ),
@@ -84,13 +100,17 @@ class BottomBar extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFF338AFF)
+                      ? Theme.of(context).colorScheme.primary
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   isSelected ? iconFilled : iconOutlined,
-                  color: isSelected ? Colors.white : Colors.grey.shade600,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
                   size: 24,
                 ),
               ),
@@ -101,8 +121,10 @@ class BottomBar extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected
-                      ? const Color(0xFF338AFF)
-                      : Colors.grey.shade600,
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ],

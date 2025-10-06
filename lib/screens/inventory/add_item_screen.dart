@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/entities/item.dart';
 import '../../services/inventory_service.dart';
 
@@ -15,9 +18,15 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _serialController = TextEditingController();
-  String _selectedCategory = 'Cables';
-  String _selectedCondition = 'Good';
+  final _typeController = TextEditingController();
+  final _modelController = TextEditingController();
+  final _makeController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  String? _selectedCategory;
+  String? _selectedCondition;
   bool _isLoading = false;
+  XFile? _selectedImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   final InventoryService _inventoryService = InventoryService();
 
@@ -25,7 +34,33 @@ class _AddItemScreenState extends State<AddItemScreen> {
   void dispose() {
     _nameController.dispose();
     _serialController.dispose();
+    _typeController.dispose();
+    _modelController.dispose();
+    _makeController.dispose();
+    _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
+      }
+    }
   }
 
   Future<void> _saveItem() async {
@@ -37,12 +72,16 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
     try {
       final newItem = Item(
-        id: 0, // Will be assigned by the service
+        id: 0,
         serialNumber: _serialController.text.trim(),
         itemName: _nameController.text.trim(),
-        itemImage: '', // For now, no image support
-        itemCategory: _selectedCategory,
-        condition: _selectedCondition,
+        itemImage: _selectedImage?.path ?? '',
+        itemCategory: _selectedCategory!,
+        condition: _selectedCondition!,
+        itemType: _typeController.text.trim(),
+        itemModel: _modelController.text.trim(),
+        itemMake: _makeController.text.trim(),
+        description: _descriptionController.text.trim(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -53,7 +92,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Item added successfully!')),
         );
-        Navigator.of(context).pop(true); // Return true to indicate success
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
@@ -68,6 +107,98 @@ class _AddItemScreenState extends State<AddItemScreen> {
         });
       }
     }
+  }
+
+  Widget _buildFormField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required IconData icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: Icon(icon, color: const Color(0xFF338AFF)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+        ),
+        validator: validator,
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required IconData icon,
+    required List<String> items,
+    String? value,
+    required void Function(String?) onChanged,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        items: items
+            .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
+            .toList(),
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: const Color(0xFF338AFF)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+        ),
+        validator: validator,
+      ),
+    );
   }
 
   @override
@@ -93,15 +224,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
               ),
             )
           else
-            TextButton(
+            IconButton(
+              icon: const Icon(Icons.save),
               onPressed: _saveItem,
-              child: const Text(
-                'Save',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              tooltip: 'Save',
             ),
         ],
       ),
@@ -112,33 +238,52 @@ class _AddItemScreenState extends State<AddItemScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Header Section
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF338AFF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(15),
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF338AFF).withOpacity(0.1),
+                      const Color(0xFF338AFF).withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF338AFF).withOpacity(0.2),
+                    width: 1,
+                  ),
                 ),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.add_circle_outline,
-                      size: 64,
-                      color: const Color(0xFF338AFF),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF338AFF).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.add_circle_outline,
+                        color: Color(0xFF338AFF),
+                        size: 48,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     const Text(
                       'Add New Item',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xFF338AFF),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Fill in the details below to add a new item to your inventory',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      'Fill in the details below to add a new item',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -147,222 +292,238 @@ class _AddItemScreenState extends State<AddItemScreen> {
               const SizedBox(height: 24),
 
               // Item Name
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Item Name',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          hintText: 'Enter item name',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          prefixIcon: const Icon(Icons.inventory_2),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter an item name';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+              _buildFormField(
+                label: 'Item Name *',
+                hint: 'Enter item name',
+                controller: _nameController,
+                icon: Icons.inventory_2,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter an item name';
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Serial Number
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+              _buildFormField(
+                label: 'Serial Number *',
+                hint: 'Enter serial number',
+                controller: _serialController,
+                icon: Icons.qr_code,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a serial number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Category
+              _buildDropdownField(
+                label: 'Category *',
+                icon: Icons.category,
+                items: const [
+                  'Electronics',
+                  'Cables',
+                  'Adapters',
+                  'Peripherals',
+                  'Networking',
+                  'Storage',
+                  'Audio',
+                  'Display',
+                  'Other',
+                ],
+                value: _selectedCategory,
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedCategory = val);
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a category';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Condition
+              _buildDropdownField(
+                label: 'Condition *',
+                icon: Icons.info,
+                items: const ['New', 'Good', 'Fair', 'In Use'],
+                value: _selectedCondition,
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedCondition = val);
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a condition';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Item Type
+              _buildFormField(
+                label: 'Item Type *',
+                hint: 'Enter item type',
+                controller: _typeController,
+                icon: Icons.label,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter an item type';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Item Model
+              _buildFormField(
+                label: 'Item Model *',
+                hint: 'Enter item model',
+                controller: _modelController,
+                icon: Icons.model_training,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter an item model';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Item Make
+              _buildFormField(
+                label: 'Item Make *',
+                hint: 'Enter item make',
+                controller: _makeController,
+                icon: Icons.business,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter an item make';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Description
+              _buildFormField(
+                label: 'Description *',
+                hint: 'Enter description',
+                controller: _descriptionController,
+                icon: Icons.description,
+                maxLines: 4,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a description';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Item Image
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Serial Number',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.image, color: Color(0xFF338AFF), size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Item Image',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (_selectedImage != null) ...[
+                      Container(
+                        width: double.infinity,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.grey.shade300,
+                            width: 2,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: FutureBuilder<Uint8List>(
+                            future: _selectedImage!.readAsBytes(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return Image.memory(
+                                  snapshot.data!,
+                                  fit: BoxFit.cover,
+                                );
+                              }
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _serialController,
-                        decoration: InputDecoration(
-                          hintText: 'Enter serial number',
-                          border: OutlineInputBorder(
+                      const SizedBox(height: 12),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _pickImage,
+                        icon: Icon(
+                          _selectedImage == null
+                              ? Icons.add_photo_alternate
+                              : Icons.edit,
+                          color: const Color(0xFF338AFF),
+                        ),
+                        label: Text(
+                          _selectedImage == null
+                              ? 'Select Image'
+                              : 'Change Image',
+                          style: const TextStyle(
+                            color: Color(0xFF338AFF),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                            color: Color(0xFF338AFF),
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          prefixIcon: const Icon(Icons.qr_code),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a serial number';
-                          }
-                          return null;
-                        },
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // Category and Condition Row
-              Row(
-                children: [
-                  // Category
-                  Expanded(
-                    child: Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Category',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              value: _selectedCategory,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                prefixIcon: const Icon(Icons.category),
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'Cables',
-                                  child: Text('Cables'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Adapters',
-                                  child: Text('Adapters'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Peripherals',
-                                  child: Text('Peripherals'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Networking',
-                                  child: Text('Networking'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Storage',
-                                  child: Text('Storage'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Audio',
-                                  child: Text('Audio'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Display',
-                                  child: Text('Display'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Other',
-                                  child: Text('Other'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() {
-                                    _selectedCategory = value;
-                                  });
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Condition
-                  Expanded(
-                    child: Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Condition',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              value: _selectedCondition,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                prefixIcon: const Icon(Icons.info),
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'Good',
-                                  child: Text('Good'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Fair',
-                                  child: Text('Fair'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'In Use',
-                                  child: Text('In Use'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() {
-                                    _selectedCondition = value;
-                                  });
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
               const SizedBox(height: 32),
 
@@ -382,8 +543,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                          width: 20,
                           height: 20,
+                          width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
@@ -392,7 +553,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           ),
                         )
                       : const Text(
-                          'Add Item',
+                          'Save Item',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
