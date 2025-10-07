@@ -290,9 +290,13 @@ class DashboardSkeleton extends StatelessWidget {
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    SkeletonBox(height: 22, width: 220),
-                    SkeletonBox(height: 36, width: 100),
+                  children: [
+                    const Expanded(
+                      flex: 2,
+                      child: SkeletonBox(height: 22, width: double.infinity),
+                    ),
+                    const SizedBox(width: 16),
+                    const SkeletonBox(height: 36, width: 100),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -309,33 +313,33 @@ class DashboardSkeleton extends StatelessWidget {
                       children: const [
                         Row(
                           children: [
-                            SkeletonBox(height: 56, width: 56),
-                            SizedBox(width: 20),
+                            const SkeletonBox(height: 56, width: 56),
+                            const SizedBox(width: 20),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                                children: const [
                                   SkeletonBox(height: 20, width: 120),
                                   SizedBox(height: 6),
                                   SkeletonBox(height: 15),
                                 ],
                               ),
                             ),
-                            SizedBox(width: 12),
-                            SkeletonBox(height: 24, width: 80),
+                            const SizedBox(width: 12),
+                            const SkeletonBox(height: 24, width: 80),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Row(
-                          children: [
+                          children: const [
                             Expanded(child: SkeletonBox(height: 60)),
                             SizedBox(width: 16),
                             Expanded(child: SkeletonBox(height: 60)),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Row(
-                          children: [
+                          children: const [
                             Expanded(child: SkeletonBox(height: 48)),
                             SizedBox(width: 16),
                             Expanded(child: SkeletonBox(height: 48)),
@@ -368,14 +372,15 @@ class _SummarySkeletonCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          SkeletonBox(height: 28, width: 28),
-          SizedBox(height: 16),
-          SkeletonBox(height: 32, width: 80),
-          SizedBox(height: 8),
-          SkeletonBox(height: 16, width: 100),
-          SizedBox(height: 6),
-          SkeletonBox(height: 28, width: 140),
+        children: [
+          const SkeletonBox(height: 28, width: 28),
+          const SizedBox(height: 16),
+          const SkeletonBox(height: 32, width: 80),
+          const SizedBox(height: 8),
+          const SkeletonBox(height: 16, width: 100),
+          const SizedBox(height: 6),
+          // Make the last skeleton box responsive to prevent overflow
+          const SkeletonBox(height: 28, width: double.infinity),
         ],
       ),
     );
