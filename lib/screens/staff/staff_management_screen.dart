@@ -167,7 +167,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) =>
-            StaffDetailScreen(staff: staff, startInEdit: true),
+            StaffDetailScreen(staff: staff, startInEdit: false),
       ),
     );
     if (result is Map && result['updated'] is Staff) {

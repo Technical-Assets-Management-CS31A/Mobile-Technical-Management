@@ -336,6 +336,57 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
   }
 
+  Widget _buildInfoCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -444,161 +495,249 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Item Image (if exists and not editing)
-              if (!_isEditing && widget.item.itemImage.isNotEmpty) ...[
-                Container(
-                  width: double.infinity,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        spreadRadius: 1,
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      widget.item.itemImage,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+              // Form Fields or Info Cards
+              if (_isEditing) ...[
+                // Item Name
+                _buildFormField(
+                  label: 'Item Name',
+                  controller: _nameController,
+                  icon: Icons.inventory_2,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter an item name';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 20),
-              ],
 
-              // Item Name
-              _buildFormField(
-                label: 'Item Name',
-                controller: _nameController,
-                icon: Icons.inventory_2,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter an item name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                // Serial Number
+                _buildFormField(
+                  label: 'Serial Number',
+                  controller: _serialController,
+                  icon: Icons.qr_code,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a serial number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
 
-              // Serial Number
-              _buildFormField(
-                label: 'Serial Number',
-                controller: _serialController,
-                icon: Icons.qr_code,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a serial number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                // Category
+                _buildDropdownField(
+                  label: 'Category',
+                  icon: Icons.category,
+                  value: _selectedCategory,
+                  items: const [
+                    'Electronics',
+                    'Cables',
+                    'Adapters',
+                    'Peripherals',
+                    'Networking',
+                    'Storage',
+                    'Audio',
+                    'Display',
+                    'Other',
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedCategory = val);
+                  },
+                ),
+                const SizedBox(height: 20),
 
-              // Category
-              _buildDropdownField(
-                label: 'Category',
-                icon: Icons.category,
-                value: _selectedCategory,
-                items: const [
-                  'Electronics',
-                  'Cables',
-                  'Adapters',
-                  'Peripherals',
-                  'Networking',
-                  'Storage',
-                  'Audio',
-                  'Display',
-                  'Other',
+                // Condition
+                _buildDropdownField(
+                  label: 'Condition',
+                  icon: Icons.info,
+                  value: _selectedCondition,
+                  items: const ['New', 'Good', 'Fair', 'In Use'],
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedCondition = val);
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // Item Type
+                _buildFormField(
+                  label: 'Item Type',
+                  controller: _typeController,
+                  icon: Icons.label,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter an item type';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // Item Model
+                _buildFormField(
+                  label: 'Item Model',
+                  controller: _modelController,
+                  icon: Icons.model_training,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter an item model';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // Item Make
+                _buildFormField(
+                  label: 'Item Make',
+                  controller: _makeController,
+                  icon: Icons.business,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter an item make';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // Description
+                _buildFormField(
+                  label: 'Description',
+                  controller: _descriptionController,
+                  icon: Icons.description,
+                  maxLines: 4,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a description';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+              ] else ...[
+                // Read-only View
+                // Item Image (if exists)
+                if (widget.item.itemImage.isNotEmpty) ...[
+                  Container(
+                    width: double.infinity,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        widget.item.itemImage,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(
+                              Icons.broken_image,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                 ],
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedCategory = val);
-                },
-              ),
-              const SizedBox(height: 20),
 
-              // Condition
-              _buildDropdownField(
-                label: 'Condition',
-                icon: Icons.info,
-                value: _selectedCondition,
-                items: const ['New', 'Good', 'Fair', 'In Use'],
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedCondition = val);
-                },
-              ),
-              const SizedBox(height: 20),
+                _buildInfoCard(
+                  title: 'Item Name',
+                  value: widget.item.itemName,
+                  icon: Icons.inventory_2,
+                  color: const Color(0xFF338AFF),
+                ),
+                const SizedBox(height: 16),
 
-              // Item Type
-              _buildFormField(
-                label: 'Item Type',
-                controller: _typeController,
-                icon: Icons.label,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter an item type';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Serial Number',
+                        value: widget.item.serialNumber,
+                        icon: Icons.qr_code,
+                        color: Colors.purple,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Category',
+                        value: widget.item.itemCategory,
+                        icon: Icons.category,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              // Item Model
-              _buildFormField(
-                label: 'Item Model',
-                controller: _modelController,
-                icon: Icons.model_training,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter an item model';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Condition',
+                        value: widget.item.condition,
+                        icon: Icons.info,
+                        color: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Item Type',
+                        value: widget.item.itemType,
+                        icon: Icons.label,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              // Item Make
-              _buildFormField(
-                label: 'Item Make',
-                controller: _makeController,
-                icon: Icons.business,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter an item make';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Item Model',
+                        value: widget.item.itemModel,
+                        icon: Icons.model_training,
+                        color: Colors.teal,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Item Make',
+                        value: widget.item.itemMake,
+                        icon: Icons.business,
+                        color: Colors.indigo,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              // Description
-              _buildFormField(
-                label: 'Description',
-                controller: _descriptionController,
-                icon: Icons.description,
-                maxLines: 4,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                _buildInfoCard(
+                  title: 'Description',
+                  value: widget.item.description,
+                  icon: Icons.description,
+                  color: Colors.brown,
+                ),
+              ],
 
               // Item Image (in edit mode or add new image)
               if (_isEditing) ...[
