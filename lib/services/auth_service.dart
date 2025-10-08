@@ -1,0 +1,426 @@
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'api_service.dart';
+
+/// Custom exception for authentication errors
+class AuthException implements Exception {
+  final String message;
+  const AuthException(this.message);
+
+  @override
+  String toString() => 'AuthException: $message';
+}
+
+/// Enhanced AuthService with token management and SharedPreferences integration
+class AuthService {
+  static final AuthService _instance = AuthService._internal();
+  factory AuthService() => _instance;
+  AuthService._internal();
+
+  late final ApiService _apiService;
+
+  // Storage keys for SharedPreferences
+  static const String _tokenKey = 'auth_token';
+  static const String _refreshTokenKey = 'refresh_token';
+  static const String _userDataKey = 'user_data';
+  static const String _isLoggedInKey = 'is_logged_in';
+
+  /// Initialize the AuthService with ApiService dependency
+  Future<void> initialize() async {
+    _apiService = ApiService();
+    await _apiService.initialize();
+    print('AuthService initialized');
+  }
+
+  /// Get API base URL from environment variables
+  String get baseUrl =>
+      dotenv.env['API_BASE_URL'] ?? 'http://localhost:5278/api/v1';
+
+  /// Get Swagger base URL
+  String get swaggerBaseUrl =>
+      dotenv.env['SWAGGER_BASE_URL'] ?? 'http://localhost:5278';
+
+  /// Get Swagger UI URL
+  String get swaggerUiUrl =>
+      dotenv.env['SWAGGER_UI_URL'] ?? 'http://localhost:5278/swagger-ui.html';
+
+  /// Get API timeout from environment variables
+  int get apiTimeout =>
+      int.tryParse(dotenv.env['API_TIMEOUT'] ?? '30000') ?? 30000;
+
+  /// Check if Swagger logging is enabled
+  bool get enableSwaggerLogging =>
+      dotenv.env['ENABLE_SWAGGER_LOGGING'] == 'true';
+
+  /// Log API request/response if enabled
+  void _logApiCall(
+    String method,
+    String url, {
+    String? body,
+    String? response,
+    int? statusCode,
+  }) {
+    if (enableSwaggerLogging) {
+      print('=== AUTH API CALL ===');
+      print('$method $url');
+      if (body != null) print('Request Body: $body');
+      if (response != null) print('Response: $response');
+      if (statusCode != null) print('Status Code: $statusCode');
+      print('=====================');
+    }
+  }
+
+  /// Login method with automatic token storage
+  ///
+  /// [username] - User's username or email (will be sent as Identifier)
+  /// [password] - User's password
+  ///
+  /// Returns a Map with success status and user data or error message
+  Future<Map<String, dynamic>> login({
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final loginEndpoint = dotenv.env['AUTH_LOGIN_ENDPOINT'] ?? '/auth/login';
+
+      // Backend expects 'Identifier' field, not 'username'
+      final requestBody = {'Identifier': username, 'password': password};
+
+      _logApiCall(
+        'POST',
+        '${_apiService.baseUrl}$loginEndpoint',
+        body: json.encode(requestBody),
+      );
+
+      final response = await _apiService.post(loginEndpoint, body: requestBody);
+
+      _logApiCall(
+        'POST',
+        '${_apiService.baseUrl}$loginEndpoint',
+        response: json.encode(response),
+        statusCode: 200,
+      );
+
+      // Store tokens and user data
+      await _storeAuthData(response);
+
+      return {'success': true, 'data': response, 'message': 'Login successful'};
+    } on UnauthorizedException {
+      return {'success': false, 'error': 'Invalid credentials'};
+    } on ApiException catch (e) {
+      return {'success': false, 'error': e.message};
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error. Please check your connection.',
+      };
+    }
+  }
+
+  /// Register method
+  ///
+  /// [username] - Desired username
+  /// [password] - User's password
+  /// [email] - User's email address
+  /// [firstName] - Optional first name
+  /// [lastName] - Optional last name
+  /// [middleName] - Optional middle name
+  /// [phoneNumber] - Optional phone number
+  /// [role] - Optional role
+  /// [confirmPassword] - Password confirmation
+  ///
+  /// Returns a Map with success status and user data or error message
+  Future<Map<String, dynamic>> register({
+    required String username,
+    required String password,
+    required String email,
+    String? firstName,
+    String? lastName,
+    String? middleName,
+    String? phoneNumber,
+    String? role,
+    String? confirmPassword,
+  }) async {
+    try {
+      final registerEndpoint =
+          dotenv.env['AUTH_REGISTER_ENDPOINT'] ?? '/auth/register';
+
+      final requestBody = {
+        'username': username,
+        'password': password,
+        'email': email,
+        'firstName': firstName ?? '',
+        'lastName': lastName ?? '',
+        'middleName': middleName,
+        'phoneNumber': phoneNumber ?? '',
+        'role': role ?? '',
+        'confirmPassword': confirmPassword ?? password,
+      };
+
+      _logApiCall(
+        'POST',
+        '${_apiService.baseUrl}$registerEndpoint',
+        body: json.encode(requestBody),
+      );
+
+      final response = await _apiService.post(
+        registerEndpoint,
+        body: requestBody,
+      );
+
+      _logApiCall(
+        'POST',
+        '${_apiService.baseUrl}$registerEndpoint',
+        response: json.encode(response),
+        statusCode: 201,
+      );
+
+      return {
+        'success': true,
+        'data': response,
+        'message': 'Registration successful',
+      };
+    } on ApiException catch (e) {
+      String errorMessage = 'Registration failed. Please try again.';
+
+      if (e.statusCode == 400) {
+        errorMessage = 'Invalid registration data';
+      } else if (e.statusCode == 409) {
+        errorMessage = 'Username or email already exists';
+      }
+
+      return {'success': false, 'error': errorMessage};
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error. Please check your connection.',
+      };
+    }
+  }
+
+  /// Logout method with automatic token cleanup
+  ///
+  /// Returns a Map with success status
+  Future<Map<String, dynamic>> logout() async {
+    try {
+      final logoutEndpoint =
+          dotenv.env['AUTH_LOGOUT_ENDPOINT'] ?? '/auth/logout';
+
+      _logApiCall('POST', '${_apiService.baseUrl}$logoutEndpoint');
+
+      // Attempt to call logout endpoint (optional - may fail if token is already invalid)
+      try {
+        await _apiService.post(logoutEndpoint);
+      } catch (e) {
+        // Ignore logout endpoint errors - we still want to clear local data
+        print('Logout endpoint call failed (this is usually fine): $e');
+      }
+
+      // Clear stored authentication data
+      await _clearAuthData();
+
+      _logApiCall(
+        'POST',
+        '${_apiService.baseUrl}$logoutEndpoint',
+        response: '{"success": true}',
+        statusCode: 200,
+      );
+
+      return {'success': true, 'message': 'Logout successful'};
+    } catch (e) {
+      // Even if logout fails, clear local data
+      await _clearAuthData();
+      return {
+        'success': true,
+        'message': 'Logout successful (local data cleared)',
+      };
+    }
+  }
+
+  /// Refresh token method - called automatically by ApiService
+  ///
+  /// Returns true if refresh was successful, false otherwise
+  Future<bool> refresh() async {
+    try {
+      final refreshToken = await _getStoredRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        print('No refresh token available');
+        return false;
+      }
+
+      final refreshEndpoint =
+          dotenv.env['AUTH_REFRESH_ENDPOINT'] ?? '/auth/refresh';
+
+      final requestBody = {'refresh_token': refreshToken};
+
+      _logApiCall(
+        'POST',
+        '${_apiService.baseUrl}$refreshEndpoint',
+        body: json.encode(requestBody),
+      );
+
+      final response = await _apiService.post(
+        refreshEndpoint,
+        body: requestBody,
+      );
+
+      _logApiCall(
+        'POST',
+        '${_apiService.baseUrl}$refreshEndpoint',
+        response: json.encode(response),
+        statusCode: 200,
+      );
+
+      // Store new tokens
+      await _storeAuthData(response);
+
+      print('Token refreshed successfully');
+      return true;
+    } catch (e) {
+      print('Token refresh failed: $e');
+      // Clear auth data if refresh fails
+      await _clearAuthData();
+      return false;
+    }
+  }
+
+  /// Legacy method for backward compatibility
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    final success = await refresh();
+    return {
+      'success': success,
+      'data': success ? await getStoredUserData() : null,
+    };
+  }
+
+  /// Get Swagger API documentation
+  Future<Map<String, dynamic>> getSwaggerDocs() async {
+    try {
+      final response = await _apiService.get('/v3/api-docs');
+      return {'success': true, 'data': response};
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error while fetching documentation',
+      };
+    }
+  }
+
+  /// Test API connection
+  Future<Map<String, dynamic>> testConnection() async {
+    try {
+      final response = await _apiService.get('/health');
+      return {
+        'success': true,
+        'message': 'API connection successful',
+        'data': response,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error. Please check your connection.',
+      };
+    }
+  }
+
+  // ==================== TOKEN MANAGEMENT METHODS ====================
+
+  /// Store authentication data in SharedPreferences
+  Future<void> _storeAuthData(Map<String, dynamic> response) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Extract tokens from response (adjust field names based on your API)
+      final token =
+          response['access_token'] ??
+          response['token'] ??
+          response['accessToken'];
+      final refreshToken =
+          response['refresh_token'] ?? response['refreshToken'];
+      final userData = response['user'] ?? response['userData'] ?? response;
+
+      if (token != null) {
+        await prefs.setString(_tokenKey, token);
+        await prefs.setBool(_isLoggedInKey, true);
+        print('Auth token stored successfully');
+      }
+
+      if (refreshToken != null) {
+        await prefs.setString(_refreshTokenKey, refreshToken);
+        print('Refresh token stored successfully');
+      }
+
+      if (userData != null) {
+        await prefs.setString(_userDataKey, json.encode(userData));
+        print('User data stored successfully');
+      }
+    } catch (e) {
+      print('Error storing auth data: $e');
+    }
+  }
+
+  /// Clear all authentication data from SharedPreferences
+  Future<void> _clearAuthData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_tokenKey);
+      await prefs.remove(_refreshTokenKey);
+      await prefs.remove(_userDataKey);
+      await prefs.setBool(_isLoggedInKey, false);
+      print('Auth data cleared successfully');
+    } catch (e) {
+      print('Error clearing auth data: $e');
+    }
+  }
+
+  /// Get stored refresh token
+  Future<String?> _getStoredRefreshToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_refreshTokenKey);
+    } catch (e) {
+      print('Error getting stored refresh token: $e');
+      return null;
+    }
+  }
+
+  /// Get stored user data
+  Future<Map<String, dynamic>?> getStoredUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userDataString = prefs.getString(_userDataKey);
+      if (userDataString != null) {
+        return json.decode(userDataString) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error getting stored user data: $e');
+      return null;
+    }
+  }
+
+  /// Check if user is logged in
+  Future<bool> isLoggedIn() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool(_isLoggedInKey) ?? false;
+      final token = prefs.getString(_tokenKey);
+      return isLoggedIn && token != null && token.isNotEmpty;
+    } catch (e) {
+      print('Error checking login status: $e');
+      return false;
+    }
+  }
+
+  /// Get stored auth token
+  Future<String?> getStoredToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_tokenKey);
+    } catch (e) {
+      print('Error getting stored token: $e');
+      return null;
+    }
+  }
+}

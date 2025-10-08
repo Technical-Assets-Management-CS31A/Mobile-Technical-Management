@@ -199,7 +199,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Staff member deleted successfully!'),
-              backgroundColor: const Color(0xFFF59E0B),
+              backgroundColor: Color(0xFFF59E0B),
             ),
           );
         }

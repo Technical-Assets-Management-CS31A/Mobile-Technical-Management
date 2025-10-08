@@ -313,33 +313,33 @@ class DashboardSkeleton extends StatelessWidget {
                       children: const [
                         Row(
                           children: [
-                            const SkeletonBox(height: 56, width: 56),
-                            const SizedBox(width: 20),
+                            SkeletonBox(height: 56, width: 56),
+                            SizedBox(width: 20),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   SkeletonBox(height: 20, width: 120),
                                   SizedBox(height: 6),
                                   SkeletonBox(height: 15),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            const SkeletonBox(height: 24, width: 80),
+                            SizedBox(width: 12),
+                            SkeletonBox(height: 24, width: 80),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         Row(
-                          children: const [
+                          children: [
                             Expanded(child: SkeletonBox(height: 60)),
                             SizedBox(width: 16),
                             Expanded(child: SkeletonBox(height: 60)),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         Row(
-                          children: const [
+                          children: [
                             Expanded(child: SkeletonBox(height: 48)),
                             SizedBox(width: 16),
                             Expanded(child: SkeletonBox(height: 48)),

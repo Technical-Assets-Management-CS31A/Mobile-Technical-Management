@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
+import '../../widgets/config_test_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -42,6 +44,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: AppConstants.largePadding),
                     _buildAppearanceSection(),
                     const SizedBox(height: AppConstants.largePadding),
+                    _buildDeveloperSection(),
+                    const SizedBox(height: AppConstants.largePadding),
                     _buildAccountSection(),
                     const SizedBox(height: 100), // Space for bottom bar
                   ],
@@ -52,73 +56,155 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildProfileSection() {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        return Container(
+          padding: const EdgeInsets.all(AppConstants.defaultPadding),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceBright,
+            borderRadius: BorderRadius.circular(
+              AppConstants.defaultBorderRadius,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Profile',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppConstants.defaultPadding),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(width: AppConstants.defaultPadding),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          authProvider.username ?? 'User',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          authProvider.userEmail ?? 'Logged in successfully',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _editProfile,
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppConstants.defaultPadding),
+              _buildAccountDetails(authProvider),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAccountDetails(AuthProvider authProvider) {
     return Container(
       padding: const EdgeInsets.all(AppConstants.defaultPadding),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceBright,
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(AppConstants.smallBorderRadius),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Profile',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            'Account Details',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
-          const SizedBox(height: AppConstants.defaultPadding),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                child: const Icon(Icons.person, color: Colors.white, size: 30),
+          const SizedBox(height: AppConstants.smallPadding),
+          _buildDetailRow('Username', authProvider.username ?? 'N/A'),
+          _buildDetailRow('Email', authProvider.userEmail ?? 'N/A'),
+          _buildDetailRow('Role', authProvider.userRole ?? 'N/A'),
+          _buildDetailRow('Status', authProvider.userStatus ?? 'Active'),
+          _buildDetailRow('User ID', authProvider.userId ?? 'N/A'),
+          _buildDetailRow('Login Time', _getCurrentTime()),
+          if (authProvider.accessToken != null)
+            _buildDetailRow('Session', 'Active'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
-              const SizedBox(width: AppConstants.defaultPadding),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Admin User',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'admin@aclc.com',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
-              IconButton(
-                onPressed: _editProfile,
-                icon: Icon(
-                  Icons.edit_outlined,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  String _getCurrentTime() {
+    final now = DateTime.now();
+    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _buildAppearanceSection() {
@@ -159,6 +245,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeveloperSection() {
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.defaultPadding),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceBright,
+        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Developer',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppConstants.defaultPadding),
+          _buildSettingTile(
+            icon: Icons.api_outlined,
+            title: 'API Configuration Test',
+            subtitle: 'Test your Swagger API configuration',
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Color(AppConstants.neutral400),
+            ),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ConfigTestWidget(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -289,21 +422,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _logout() {
+  void _logout() async {
     setState(() {
       _isLoading = true;
     });
 
-    // Simulate logout process
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        _isLoading = false;
-      });
+    try {
+      // Use AuthProvider to logout
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.logout();
 
       // Navigate to login screen
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    });
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    } catch (e) {
+      // Handle logout error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 }

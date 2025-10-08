@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'screens/auth/login_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'widgets/auth_wrapper.dart';
 import 'providers/theme_provider.dart';
+import 'providers/auth_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -50,7 +60,7 @@ class MyApp extends StatelessWidget {
             );
             return MediaQuery(data: adjusted, child: child!);
           },
-          home: const LoginScreen(),
+          home: const AuthWrapper(),
         );
       },
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/skeleton.dart';
 import '../staff/staff_management_screen.dart';
@@ -9,6 +10,7 @@ import '../settings/settings_screen.dart';
 import '../../services/inventory_service.dart';
 import '../../services/staff_service.dart';
 import '../../services/borrowed_item_service.dart';
+import '../../providers/auth_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.isMobile = true});
@@ -189,6 +191,55 @@ class _DashboardScreenState extends State<DashboardScreen>
                 children: [
                   Image.asset('assets/icons/aclcLOGO.png', height: 32),
                   const SizedBox(width: 12),
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      return PopupMenuButton<String>(
+                        icon: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.account_circle,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        onSelected: (value) async {
+                          if (value == 'logout') {
+                            await _showLogoutDialog(context);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'profile',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.person, size: 20),
+                                const SizedBox(width: 8),
+                                Text(authProvider.username ?? 'User'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'logout',
+                            child: Row(
+                              children: [
+                                Icon(Icons.logout, size: 20, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Logout',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -900,6 +951,35 @@ class _DashboardScreenState extends State<DashboardScreen>
         // Do nothing for unknown cards
         break;
     }
+  }
+
+  Future<void> _showLogoutDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await context.read<AuthProvider>().logout();
+                // The AuthWrapper will automatically redirect to login screen
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
