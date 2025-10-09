@@ -4,7 +4,6 @@ import '../../utils/constants.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
-import '../../widgets/config_test_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -43,8 +42,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildProfileSection(),
                     const SizedBox(height: AppConstants.largePadding),
                     _buildAppearanceSection(),
-                    const SizedBox(height: AppConstants.largePadding),
-                    _buildDeveloperSection(),
                     const SizedBox(height: AppConstants.largePadding),
                     _buildAccountSection(),
                     const SizedBox(height: 100), // Space for bottom bar
@@ -245,53 +242,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               },
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeveloperSection() {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.defaultPadding),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceBright,
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Developer',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: AppConstants.defaultPadding),
-          _buildSettingTile(
-            icon: Icons.api_outlined,
-            title: 'API Configuration Test',
-            subtitle: 'Test your Swagger API configuration',
-            trailing: const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Color(AppConstants.neutral400),
-            ),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ConfigTestWidget(),
-                ),
-              );
-            },
           ),
         ],
       ),

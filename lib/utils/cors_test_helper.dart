@@ -11,7 +11,7 @@ class CorsTestHelper {
       final loginUrl = '$apiBaseUrl/auth/login';
 
       // Make an OPTIONS request (preflight)
-      final response = await http.Request('OPTIONS', Uri.parse(loginUrl))
+      final response = http.Request('OPTIONS', Uri.parse(loginUrl))
         ..headers.addAll({
           'Origin': 'http://localhost:60546',
           'Access-Control-Request-Method': 'POST',

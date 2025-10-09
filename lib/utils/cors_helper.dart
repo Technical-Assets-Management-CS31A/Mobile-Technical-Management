@@ -57,3 +57,4 @@ app.UseCors("AllowFlutterWeb");
     'flutter run -d ios',
   ];
 }
+
