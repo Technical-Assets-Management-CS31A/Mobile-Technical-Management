@@ -73,19 +73,19 @@ class AuthService {
 
   /// Login method with automatic token storage
   ///
-  /// [username] - User's username or email (will be sent as Identifier)
+  /// [identifier] - User's username or email (will be sent as identifier)
   /// [password] - User's password
   ///
   /// Returns a Map with success status and user data or error message
   Future<Map<String, dynamic>> login({
-    required String username,
+    required String identifier,
     required String password,
   }) async {
     try {
       final loginEndpoint = dotenv.env['AUTH_LOGIN_ENDPOINT'] ?? '/auth/login';
 
-      // Backend expects 'Identifier' field, not 'username'
-      final requestBody = {'Identifier': username, 'password': password};
+      // Backend expects 'identifier' field according to study guide
+      final requestBody = {'identifier': identifier, 'password': password};
 
       _logApiCall(
         'POST',
@@ -102,10 +102,26 @@ class AuthService {
         statusCode: 200,
       );
 
-      // Store tokens and user data
-      await _storeAuthData(response);
+      // Handle response according to backend study guide format
+      if (response['success'] == true && response['data'] != null) {
+        // Debug: Check if tokens are in the response
+        print('🔍 Full login response: $response');
+        print('🔍 Response keys: ${response.keys}');
+        print('🔍 Data keys: ${response['data'].keys}');
 
-      return {'success': true, 'data': response, 'message': 'Login successful'};
+        // Store tokens and user data
+        await _storeAuthData(response['data']);
+        return {
+          'success': true,
+          'data': response['data'],
+          'message': response['message'] ?? 'Login successful',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['message'] ?? 'Login failed',
+        };
+      }
     } on UnauthorizedException {
       return {'success': false, 'error': 'Invalid credentials'};
     } on ApiException catch (e) {
@@ -250,7 +266,7 @@ class AuthService {
       }
 
       final refreshEndpoint =
-          dotenv.env['AUTH_REFRESH_ENDPOINT'] ?? '/auth/refresh';
+          dotenv.env['AUTH_REFRESH_ENDPOINT'] ?? '/auth/refresh-token';
 
       final requestBody = {'refresh_token': refreshToken};
 
@@ -272,11 +288,17 @@ class AuthService {
         statusCode: 200,
       );
 
-      // Store new tokens
-      await _storeAuthData(response);
-
-      print('Token refreshed successfully');
-      return true;
+      // Handle response according to backend study guide format
+      if (response['success'] == true && response['data'] != null) {
+        // Store new tokens
+        await _storeAuthData(response['data']);
+        print('Token refreshed successfully');
+        return true;
+      } else {
+        print('Token refresh failed: ${response['message']}');
+        await _clearAuthData();
+        return false;
+      }
     } catch (e) {
       print('Token refresh failed: $e');
       // Clear auth data if refresh fails
@@ -331,30 +353,41 @@ class AuthService {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Extract tokens from response (adjust field names based on your API)
+      // Extract tokens from response for mobile app Bearer token authentication
+      print('🔍 Looking for tokens in response...');
+      print('🔍 access_token: ${response['access_token']}');
+      print('🔍 token: ${response['token']}');
+      print('🔍 accessToken: ${response['accessToken']}');
+      print('🔍 refresh_token: ${response['refresh_token']}');
+      print('🔍 refreshToken: ${response['refreshToken']}');
+
       final token =
           response['access_token'] ??
           response['token'] ??
           response['accessToken'];
       final refreshToken =
           response['refresh_token'] ?? response['refreshToken'];
-      final userData = response['user'] ?? response['userData'] ?? response;
+      final userData = response;
 
+      // Store tokens for Bearer authentication
       if (token != null) {
         await prefs.setString(_tokenKey, token);
-        await prefs.setBool(_isLoggedInKey, true);
-        print('Auth token stored successfully');
+        print(
+          '✅ Access token stored successfully: ${token.substring(0, 20)}...',
+        );
       }
 
       if (refreshToken != null) {
         await prefs.setString(_refreshTokenKey, refreshToken);
-        print('Refresh token stored successfully');
+        print(
+          '✅ Refresh token stored successfully: ${refreshToken.substring(0, 20)}...',
+        );
       }
 
-      if (userData != null) {
-        await prefs.setString(_userDataKey, json.encode(userData));
-        print('User data stored successfully');
-      }
+      // Store user data from login response
+      await prefs.setString(_userDataKey, json.encode(userData));
+      await prefs.setBool(_isLoggedInKey, true);
+      print('User data stored successfully');
     } catch (e) {
       print('Error storing auth data: $e');
     }
@@ -371,17 +404,6 @@ class AuthService {
       print('Auth data cleared successfully');
     } catch (e) {
       print('Error clearing auth data: $e');
-    }
-  }
-
-  /// Get stored refresh token
-  Future<String?> _getStoredRefreshToken() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_refreshTokenKey);
-    } catch (e) {
-      print('Error getting stored refresh token: $e');
-      return null;
     }
   }
 
@@ -406,6 +428,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       final isLoggedIn = prefs.getBool(_isLoggedInKey) ?? false;
       final token = prefs.getString(_tokenKey);
+      // Check if user is logged in and has a valid token
       return isLoggedIn && token != null && token.isNotEmpty;
     } catch (e) {
       print('Error checking login status: $e');
@@ -420,6 +443,17 @@ class AuthService {
       return prefs.getString(_tokenKey);
     } catch (e) {
       print('Error getting stored token: $e');
+      return null;
+    }
+  }
+
+  /// Get stored refresh token
+  Future<String?> _getStoredRefreshToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_refreshTokenKey);
+    } catch (e) {
+      print('Error getting stored refresh token: $e');
       return null;
     }
   }

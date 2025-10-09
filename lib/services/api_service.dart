@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
 
 /// Custom exception classes for API errors
@@ -74,8 +73,8 @@ class ApiService {
       'Accept': 'application/json',
     };
 
-    // Add authorization header if token exists
-    final token = await _getStoredToken();
+    // Add Bearer token for mobile app authentication
+    final token = await _authService.getStoredToken();
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -88,17 +87,6 @@ class ApiService {
     return headers;
   }
 
-  /// Get stored token from SharedPreferences
-  Future<String?> _getStoredToken() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('auth_token');
-    } catch (e) {
-      print('Error getting stored token: $e');
-      return null;
-    }
-  }
-
   /// Handle HTTP response and throw appropriate exceptions
   void _handleResponse(http.Response response) {
     switch (response.statusCode) {
@@ -106,12 +94,31 @@ class ApiService {
       case 201:
         // Success - no exception needed
         break;
+      case 400:
+        // Parse error response according to backend study guide format
+        try {
+          final errorData = json.decode(response.body) as Map<String, dynamic>;
+          final message = errorData['message'] ?? 'Bad request';
+          final errors = errorData['errors'] as List<dynamic>?;
+          throw ApiException(message, statusCode: 400, data: errors);
+        } catch (e) {
+          throw const ApiException('Bad request', statusCode: 400);
+        }
       case 401:
         throw const UnauthorizedException('Authentication required');
       case 403:
         throw const ApiException('Access forbidden', statusCode: 403);
       case 404:
         throw const ApiException('Resource not found', statusCode: 404);
+      case 409:
+        // Parse conflict response according to backend study guide format
+        try {
+          final errorData = json.decode(response.body) as Map<String, dynamic>;
+          final message = errorData['message'] ?? 'Conflict';
+          throw ApiException(message, statusCode: 409);
+        } catch (e) {
+          throw const ApiException('Conflict', statusCode: 409);
+        }
       case 422:
         throw const ApiException('Validation error', statusCode: 422);
       case 500:

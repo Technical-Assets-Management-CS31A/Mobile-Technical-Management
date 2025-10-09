@@ -51,7 +51,8 @@ class AuthProvider extends ChangeNotifier {
       final userId = prefs.getString('user_id');
       final userStatus = prefs.getString('user_status');
 
-      if (token != null && refreshToken != null) {
+      // Check if user is logged in and has valid tokens
+      if (token != null && refreshToken != null && username != null) {
         _accessToken = token;
         _refreshToken = refreshToken;
         _username = username;
@@ -71,7 +72,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Login method
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String identifier, String password) async {
     if (!_isInitialized) {
       await initializeAuth();
     }
@@ -82,34 +83,27 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final result = await _authService.login(
-        username: username,
+        identifier: identifier,
         password: password,
       );
 
       if (result['success'] == true) {
-        final data = result['data'] as Map<String, dynamic>;
+        final userData = result['data'] as Map<String, dynamic>;
 
         // Debug logging
-        print('🔍 Login Response Data: $data');
-        print('🔍 Data type: ${data.runtimeType}');
-        print('🔍 Data keys: ${data.keys}');
+        print('🔍 Login Response Data: $userData');
+        print('🔍 Data type: ${userData.runtimeType}');
+        print('🔍 Data keys: ${userData.keys}');
 
-        // The user data is in data['data'] because AuthService wraps the API response
-        final userData = data['data'] as Map<String, dynamic>;
-
-        // Debug logging
-        print('🔍 User Data: $userData');
-        print('🔍 User Data Keys: ${userData.keys}');
-
-        // Extract tokens from response (handle different field names)
+        // Extract tokens from response for Bearer authentication
         _accessToken =
             userData['access_token'] ??
             userData['token'] ??
             userData['accessToken'];
         _refreshToken = userData['refresh_token'] ?? userData['refreshToken'];
 
-        // Extract user info - userData is the actual user object
-        _username = userData['username'] ?? userData['userName'] ?? username;
+        // Extract user info from response according to backend study guide
+        _username = userData['username'] ?? identifier;
 
         // Store additional user details
         _userEmail = userData['email'];
