@@ -104,10 +104,10 @@ class AuthService {
 
       // Handle response according to backend study guide format
       if (response['success'] == true && response['data'] != null) {
-        // Debug: Check if tokens are in the response
-        print('🔍 Full login response: $response');
-        print('🔍 Response keys: ${response.keys}');
-        print('🔍 Data keys: ${response['data'].keys}');
+        // Debug: User login successful
+        print(
+          '✅ Login successful for: ${response['data']['user']['username'] ?? response['data']['user']['email'] ?? 'User'}',
+        );
 
         // Store tokens and user data
         await _storeAuthData(response['data']);
@@ -354,20 +354,9 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
 
       // Extract tokens from response for mobile app Bearer token authentication
-      print('🔍 Looking for tokens in response...');
-      print('🔍 access_token: ${response['access_token']}');
-      print('🔍 token: ${response['token']}');
-      print('🔍 accessToken: ${response['accessToken']}');
-      print('🔍 refresh_token: ${response['refresh_token']}');
-      print('🔍 refreshToken: ${response['refreshToken']}');
-
-      final token =
-          response['access_token'] ??
-          response['token'] ??
-          response['accessToken'];
-      final refreshToken =
-          response['refresh_token'] ?? response['refreshToken'];
-      final userData = response;
+      final token = response['accessToken'];
+      final refreshToken = response['refreshToken'];
+      final userData = response['user'] ?? response;
 
       // Store tokens for Bearer authentication
       if (token != null) {

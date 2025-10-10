@@ -35,7 +35,20 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadItems();
+    _initializeAndLoadItems();
+  }
+
+  Future<void> _initializeAndLoadItems() async {
+    try {
+      await _inventoryService.initialize();
+      await _loadItems();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error initializing service: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -50,7 +63,14 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
     });
 
     try {
-      final items = await _inventoryService.getItemsByCategory(widget.category);
+      // Convert string category to enum
+      final category = ItemCategory.fromString(widget.category);
+      final items = await _inventoryService.getAllItems(
+        page: _currentPage,
+        pageSize: _pageSize,
+        category: category,
+        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+      );
       setState(() {
         _items = items;
       });
@@ -77,10 +97,7 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
 
       final matchesCondition = _selectedCondition == 'All'
           ? true
-          : (_selectedCondition == 'In Use'
-                ? item.condition.toLowerCase() == 'in use'
-                : item.condition.toLowerCase() ==
-                      _selectedCondition.toLowerCase());
+          : item.condition.displayName == _selectedCondition;
 
       return matchesSearch && matchesCondition;
     }).toList();
@@ -91,6 +108,12 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
       _searchQuery = query;
       _currentPage = 1;
     });
+    // Debounce search to avoid too many API calls
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (_searchQuery == query) {
+        _loadItems();
+      }
+    });
   }
 
   void _onConditionChanged(String? condition) {
@@ -99,6 +122,7 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
       _selectedCondition = condition;
       _currentPage = 1;
     });
+    _loadItems();
   }
 
   void _goToPreviousPage() {
@@ -106,6 +130,7 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
       setState(() {
         _currentPage--;
       });
+      _loadItems();
     }
   }
 
@@ -115,6 +140,7 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
       setState(() {
         _currentPage++;
       });
+      _loadItems();
     }
   }
 
@@ -123,6 +149,7 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
       _pageSize = newSize;
       _currentPage = 1;
     });
+    _loadItems();
   }
 
   void _addNewItem() async {

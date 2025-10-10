@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -29,6 +30,24 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final ImagePicker _imagePicker = ImagePicker();
 
   final InventoryService _inventoryService = InventoryService();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeService();
+  }
+
+  Future<void> _initializeService() async {
+    try {
+      await _inventoryService.initialize();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error initializing service: $e')),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -71,17 +90,28 @@ class _AddItemScreenState extends State<AddItemScreen> {
     });
 
     try {
+      // Convert image to base64 if selected
+      String? imageBase64;
+      if (_selectedImage != null) {
+        final bytes = await _selectedImage!.readAsBytes();
+        imageBase64 = base64Encode(bytes);
+      }
+
       final newItem = Item(
-        id: 0,
+        id: '', // Will be set by the API
         serialNumber: _serialController.text.trim(),
         itemName: _nameController.text.trim(),
-        itemImage: _selectedImage?.path ?? '',
-        itemCategory: _selectedCategory!,
-        condition: _selectedCondition!,
+        image: imageBase64,
+        category: ItemCategory.fromString(_selectedCategory!),
+        condition: ItemCondition.fromString(_selectedCondition!),
         itemType: _typeController.text.trim(),
-        itemModel: _modelController.text.trim(),
+        itemModel: _modelController.text.trim().isEmpty
+            ? null
+            : _modelController.text.trim(),
         itemMake: _makeController.text.trim(),
-        description: _descriptionController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -325,17 +355,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
               _buildDropdownField(
                 label: 'Category *',
                 icon: Icons.category,
-                items: const [
-                  'Electronics',
-                  'Cables',
-                  'Adapters',
-                  'Peripherals',
-                  'Networking',
-                  'Storage',
-                  'Audio',
-                  'Display',
-                  'Other',
-                ],
+                items: ItemCategory.values
+                    .map((category) => category.displayName)
+                    .toList(),
                 value: _selectedCategory,
                 onChanged: (val) {
                   if (val != null) setState(() => _selectedCategory = val);
@@ -353,7 +375,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
               _buildDropdownField(
                 label: 'Condition *',
                 icon: Icons.info,
-                items: const ['New', 'Good', 'Fair', 'In Use'],
+                items: ItemCondition.values
+                    .map((condition) => condition.displayName)
+                    .toList(),
                 value: _selectedCondition,
                 onChanged: (val) {
                   if (val != null) setState(() => _selectedCondition = val);

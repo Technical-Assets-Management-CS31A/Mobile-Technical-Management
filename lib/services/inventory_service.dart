@@ -1,105 +1,104 @@
 import '../models/entities/item.dart';
+import '../models/responses/item_response.dart';
+import 'api_service.dart';
 
 class InventoryService {
   static final InventoryService _instance = InventoryService._internal();
   factory InventoryService() => _instance;
   InventoryService._internal();
 
-  // In-memory storage for demo purposes
-  // In a real app, this would connect to a database or API
-  final List<Item> _items = [
-    Item(
-      id: 1,
-      serialNumber: 'CBL-001',
-      itemName: 'HDMI Cable 1m',
-      itemImage: '',
-      itemCategory: 'Cables',
-      condition: 'Good',
-      createdAt: DateTime.now().subtract(const Duration(days: 30)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 5)),
-    ),
-    Item(
-      id: 2,
-      serialNumber: 'CBL-002',
-      itemName: 'USB-C Cable 2m',
-      itemImage: '',
-      itemCategory: 'Cables',
-      condition: 'In Use',
-      createdAt: DateTime.now().subtract(const Duration(days: 25)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    Item(
-      id: 3,
-      serialNumber: 'ADP-010',
-      itemName: 'USB-C to HDMI Adapter',
-      itemImage: '',
-      itemCategory: 'Adapters',
-      condition: 'Fair',
-      createdAt: DateTime.now().subtract(const Duration(days: 20)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    Item(
-      id: 4,
-      serialNumber: 'PRP-007',
-      itemName: 'Wireless Mouse',
-      itemImage: '',
-      itemCategory: 'Peripherals',
-      condition: 'Good',
-      createdAt: DateTime.now().subtract(const Duration(days: 15)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-  ];
+  ApiService? _apiService;
 
-  int _nextId = 5;
+  /// Initialize the service - gets the existing ApiService singleton
+  Future<void> initialize() async {
+    _apiService = ApiService(); // Gets the singleton instance
+    // Don't call initialize() again since ApiService is already initialized
+  }
+
+  /// Alternative: Initialize with existing ApiService instance
+  void initializeWithApiService(ApiService apiService) {
+    _apiService = apiService;
+  }
+
+  /// Get the ApiService instance (auto-initializes if needed)
+  ApiService get apiService {
+    if (_apiService == null) {
+      _apiService = ApiService(); // Gets the singleton instance
+    }
+    return _apiService!;
+  }
 
   // CREATE - Add a new item
   Future<Item> createItem(Item item) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final response = await apiService.post(
+        'items',
+        body: item.toCreateJson(),
+      );
 
-    final newItem = Item(
-      id: _nextId++,
-      serialNumber: item.serialNumber,
-      itemName: item.itemName,
-      itemImage: item.itemImage,
-      itemCategory: item.itemCategory,
-      condition: item.condition,
-      itemType: item.itemType,
-      itemModel: item.itemModel,
-      itemMake: item.itemMake,
-      description: item.description,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    _items.add(newItem);
-    return newItem;
+      final itemResponse = ItemResponse.fromJson(response);
+      if (itemResponse.success && itemResponse.data != null) {
+        return itemResponse.data!;
+      } else {
+        throw Exception(itemResponse.message);
+      }
+    } catch (e) {
+      throw Exception('Failed to create item: $e');
+    }
   }
 
   // READ - Get all items
-  Future<List<Item>> getAllItems() async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 300));
-    return List.from(_items);
+  Future<List<Item>> getAllItems({
+    int page = 1,
+    int pageSize = 50,
+    String? search,
+    ItemCategory? category,
+    ItemCondition? condition,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
+
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+      if (category != null) {
+        queryParams['category'] = category.name;
+      }
+      if (condition != null) {
+        queryParams['condition'] = condition.name;
+      }
+
+      final response = await apiService.get('items', queryParams: queryParams);
+
+      final itemListResponse = ItemListResponse.fromJson(response);
+      if (itemListResponse.success && itemListResponse.data != null) {
+        return itemListResponse.data!;
+      } else {
+        throw Exception(itemListResponse.message);
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch items: $e');
+    }
   }
 
   // READ - Get items by category
-  Future<List<Item>> getItemsByCategory(String category) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 300));
-    return _items
-        .where(
-          (item) => item.itemCategory.toLowerCase() == category.toLowerCase(),
-        )
-        .toList();
+  Future<List<Item>> getItemsByCategory(ItemCategory category) async {
+    return getAllItems(category: category);
   }
 
   // READ - Get item by ID
-  Future<Item?> getItemById(int id) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 200));
+  Future<Item?> getItemById(String id) async {
     try {
-      return _items.firstWhere((item) => item.id == id);
+      final response = await apiService.get('items/$id');
+      final itemResponse = ItemResponse.fromJson(response);
+      if (itemResponse.success && itemResponse.data != null) {
+        return itemResponse.data!;
+      } else {
+        return null;
+      }
     } catch (e) {
       return null;
     }
@@ -107,107 +106,192 @@ class InventoryService {
 
   // UPDATE - Update an existing item
   Future<Item?> updateItem(Item updatedItem) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    final index = _items.indexWhere((item) => item.id == updatedItem.id);
-    if (index != -1) {
-      final item = Item(
-        id: updatedItem.id,
-        serialNumber: updatedItem.serialNumber,
-        itemName: updatedItem.itemName,
-        itemImage: updatedItem.itemImage,
-        itemCategory: updatedItem.itemCategory,
-        condition: updatedItem.condition,
-        itemType: updatedItem.itemType,
-        itemModel: updatedItem.itemModel,
-        itemMake: updatedItem.itemMake,
-        description: updatedItem.description,
-        createdAt: _items[index].createdAt,
-        updatedAt: DateTime.now(),
+    try {
+      final response = await apiService.put(
+        'items/${updatedItem.id}',
+        body: updatedItem.toUpdateJson(),
       );
 
-      _items[index] = item;
-      return item;
+      final itemResponse = ItemResponse.fromJson(response);
+      if (itemResponse.success && itemResponse.data != null) {
+        return itemResponse.data!;
+      } else {
+        throw Exception(itemResponse.message);
+      }
+    } catch (e) {
+      throw Exception('Failed to update item: $e');
     }
-    return null;
   }
 
-  // DELETE - Delete an item
-  Future<bool> deleteItem(int id) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    final index = _items.indexWhere((item) => item.id == id);
-    if (index != -1) {
-      _items.removeAt(index);
-      return true;
+  // DELETE - Archive an item (soft delete)
+  Future<bool> deleteItem(String id) async {
+    try {
+      final response = await apiService.delete('items/archive$id');
+      final itemResponse = ItemResponse.fromJson(response);
+      return itemResponse.success;
+    } catch (e) {
+      throw Exception('Failed to delete item: $e');
     }
-    return false;
   }
 
   // Get category statistics
-  Future<Map<String, Map<String, int>>> getCategoryStats() async {
-    await Future.delayed(const Duration(milliseconds: 200));
+  Future<Map<String, Map<String, int>>> getCategoryStats({
+    bool includeBorrowedStats = false,
+  }) async {
+    try {
+      // Get all items to calculate statistics
+      final response = await apiService.get(
+        'items',
+        queryParams: {'pageSize': '1000'},
+      );
+      final itemListResponse = ItemListResponse.fromJson(response);
 
-    final Map<String, Map<String, int>> stats = {};
-    final categories = [
-      'Electronics',
-      'Cables',
-      'Adapters',
-      'Peripherals',
-      'Networking',
-      'Storage',
-      'Audio',
-      'Display',
-      'Other',
-    ];
+      if (itemListResponse.success && itemListResponse.data != null) {
+        final items = itemListResponse.data!;
+        final Map<String, Map<String, int>> stats = {};
 
-    // Initialize all categories
-    for (final category in categories) {
-      stats[category] = {'total': 0, 'borrowed': 0, 'available': 0};
-    }
-
-    // Count items by category and condition
-    for (final item in _items) {
-      if (stats.containsKey(item.itemCategory)) {
-        stats[item.itemCategory]!['total'] =
-            (stats[item.itemCategory]!['total'] ?? 0) + 1;
-        if (item.condition.toLowerCase() == 'in use') {
-          stats[item.itemCategory]!['borrowed'] =
-              (stats[item.itemCategory]!['borrowed'] ?? 0) + 1;
+        // Initialize all categories
+        for (final category in ItemCategory.values) {
+          stats[category.displayName] = {
+            'total': 0,
+            'borrowed': 0,
+            'available': 0,
+          };
         }
+
+        // Calculate total items per category
+        for (final item in items) {
+          final categoryName = item.category.displayName;
+
+          if (stats.containsKey(categoryName)) {
+            // Increment total count
+            stats[categoryName]!['total'] =
+                (stats[categoryName]!['total'] ?? 0) + 1;
+          }
+        }
+
+        // If requested, try to get borrowed items statistics
+        if (includeBorrowedStats) {
+          try {
+            final borrowedStats = await _getBorrowedItemStats();
+            // Merge borrowed statistics
+            for (final entry in borrowedStats.entries) {
+              if (stats.containsKey(entry.key)) {
+                stats[entry.key]!['borrowed'] = entry.value;
+              }
+            }
+          } catch (e) {
+            // If borrowed stats fail, continue with just total counts
+            print('Warning: Could not fetch borrowed item statistics: $e');
+          }
+        }
+
+        // Calculate available items (total - borrowed)
+        for (final category in stats.keys) {
+          final total = stats[category]!['total'] ?? 0;
+          final borrowed = stats[category]!['borrowed'] ?? 0;
+          stats[category]!['available'] = total - borrowed;
+        }
+
+        return stats;
+      } else {
+        throw Exception(itemListResponse.message);
       }
+    } catch (e) {
+      // Fallback to empty stats if API fails
+      final Map<String, Map<String, int>> stats = {};
+      for (final category in ItemCategory.values) {
+        stats[category.displayName] = {
+          'total': 0,
+          'borrowed': 0,
+          'available': 0,
+        };
+      }
+      return stats;
     }
+  }
 
-    // Calculate available items
-    for (final category in stats.keys) {
-      final total = stats[category]!['total'] ?? 0;
-      final borrowed = stats[category]!['borrowed'] ?? 0;
-      stats[category]!['available'] = total - borrowed;
+  // Helper method to get borrowed item statistics from lent items endpoint
+  Future<Map<String, int>> _getBorrowedItemStats() async {
+    try {
+      final response = await apiService.get(
+        'lentItems',
+        queryParams: {'pageSize': '1000'},
+      );
+      final lentItemsResponse = ItemListResponse.fromJson(response);
+
+      if (lentItemsResponse.success && lentItemsResponse.data != null) {
+        final Map<String, int> borrowedStats = {};
+
+        // Initialize all categories
+        for (final category in ItemCategory.values) {
+          borrowedStats[category.displayName] = 0;
+        }
+
+        // Count borrowed items by category
+        // Note: This is a placeholder implementation
+        // To properly implement this, you would need to:
+        // 1. Fetch the actual item details for each lent item to get the category
+        // 2. Count items by category that are currently lent out
+        // For now, we'll return empty borrowed stats
+
+        return borrowedStats;
+      }
+      return {};
+    } catch (e) {
+      return {};
     }
-
-    return stats;
   }
 
   // Search items
   Future<List<Item>> searchItems(String query) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    if (query.isEmpty) return getAllItems();
+    return getAllItems(search: query);
+  }
 
-    if (query.isEmpty) return _items;
+  // Get archived items
+  Future<List<Item>> getArchivedItems({int page = 1, int pageSize = 50}) async {
+    try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
 
-    final lowerQuery = query.toLowerCase();
-    return _items
-        .where(
-          (item) =>
-              item.itemName.toLowerCase().contains(lowerQuery) ||
-              item.serialNumber.toLowerCase().contains(lowerQuery) ||
-              item.itemCategory.toLowerCase().contains(lowerQuery) ||
-              item.itemType.toLowerCase().contains(lowerQuery) ||
-              item.itemModel.toLowerCase().contains(lowerQuery) ||
-              item.itemMake.toLowerCase().contains(lowerQuery) ||
-              item.description.toLowerCase().contains(lowerQuery),
-        )
-        .toList();
+      final response = await apiService.get(
+        'archiveitems',
+        queryParams: queryParams,
+      );
+
+      final itemListResponse = ItemListResponse.fromJson(response);
+      if (itemListResponse.success && itemListResponse.data != null) {
+        return itemListResponse.data!;
+      } else {
+        throw Exception(itemListResponse.message);
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch archived items: $e');
+    }
+  }
+
+  // Restore archived item
+  Future<bool> restoreItem(String id) async {
+    try {
+      final response = await apiService.delete('archiveitems/restore/$id');
+      final itemResponse = ItemResponse.fromJson(response);
+      return itemResponse.success;
+    } catch (e) {
+      throw Exception('Failed to restore item: $e');
+    }
+  }
+
+  // Permanently delete archived item
+  Future<bool> permanentlyDeleteItem(String id) async {
+    try {
+      final response = await apiService.delete('archiveitems/$id');
+      final itemResponse = ItemResponse.fromJson(response);
+      return itemResponse.success;
+    } catch (e) {
+      throw Exception('Failed to permanently delete item: $e');
+    }
   }
 }

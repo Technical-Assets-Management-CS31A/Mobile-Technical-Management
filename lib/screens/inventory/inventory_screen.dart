@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens.dart';
 import '../../services/inventory_service.dart';
+import '../../models/entities/item.dart';
 import 'add_item_screen.dart';
 import '../../widgets/skeleton.dart';
 
@@ -24,7 +25,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _initializeAndLoadData();
+  }
+
+  Future<void> _initializeAndLoadData() async {
+    try {
+      await _inventoryService.initialize();
+      await _loadData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error initializing service: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -246,64 +260,46 @@ class _InventoryScreenState extends State<InventoryScreen> {
   // Data and filtering for categories
   List<Map<String, Object>> get _allCategories {
     final realCounts = _categoryCounts;
-    return [
-      {
-        'name': 'Cables',
-        'total': realCounts['Cables']?['total'] ?? 0,
-        'borrowed': realCounts['Cables']?['borrowed'] ?? 0,
-        'color': Theme.of(context).colorScheme.primary,
-        'icon': Icons.cable,
-      },
-      {
-        'name': 'Adapters',
-        'total': realCounts['Adapters']?['total'] ?? 0,
-        'borrowed': realCounts['Adapters']?['borrowed'] ?? 0,
-        'color': const Color(0xFF10B981),
-        'icon': Icons.power,
-      },
-      {
-        'name': 'Peripherals',
-        'total': realCounts['Peripherals']?['total'] ?? 0,
-        'borrowed': realCounts['Peripherals']?['borrowed'] ?? 0,
-        'color': const Color(0xFFEF4444),
-        'icon': Icons.keyboard,
-      },
-      {
-        'name': 'Networking',
-        'total': realCounts['Networking']?['total'] ?? 0,
-        'borrowed': realCounts['Networking']?['borrowed'] ?? 0,
-        'color': const Color(0xFFF59E0B),
-        'icon': Icons.router,
-      },
-      {
-        'name': 'Storage',
-        'total': realCounts['Storage']?['total'] ?? 0,
-        'borrowed': realCounts['Storage']?['borrowed'] ?? 0,
-        'color': const Color(0xFF8B5CF6),
-        'icon': Icons.storage,
-      },
-      {
-        'name': 'Audio',
-        'total': realCounts['Audio']?['total'] ?? 0,
-        'borrowed': realCounts['Audio']?['borrowed'] ?? 0,
-        'color': const Color(0xFF14B8A6),
-        'icon': Icons.headphones,
-      },
-      {
-        'name': 'Display',
-        'total': realCounts['Display']?['total'] ?? 0,
-        'borrowed': realCounts['Display']?['borrowed'] ?? 0,
-        'color': const Color(0xFF6366F1),
-        'icon': Icons.monitor,
-      },
-      {
-        'name': 'Other',
-        'total': realCounts['Other']?['total'] ?? 0,
-        'borrowed': realCounts['Other']?['borrowed'] ?? 0,
-        'color': Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-        'icon': Icons.devices_other,
-      },
-    ];
+    return ItemCategory.values.map((category) {
+      final categoryName = category.displayName;
+      return {
+        'name': categoryName,
+        'total': realCounts[categoryName]?['total'] ?? 0,
+        'borrowed': realCounts[categoryName]?['borrowed'] ?? 0,
+        'color': _getCategoryColor(category),
+        'icon': _getCategoryIcon(category),
+      };
+    }).toList();
+  }
+
+  Color _getCategoryColor(ItemCategory category) {
+    switch (category) {
+      case ItemCategory.Electronics:
+        return const Color(0xFF06B6D4);
+      case ItemCategory.Keys:
+        return const Color(0xFFF59E0B);
+      case ItemCategory.MediaEquipment:
+        return const Color(0xFFEC4899);
+      case ItemCategory.Tools:
+        return const Color(0xFF8B5CF6);
+      case ItemCategory.Miscellaneous:
+        return const Color(0xFF6B7280);
+    }
+  }
+
+  IconData _getCategoryIcon(ItemCategory category) {
+    switch (category) {
+      case ItemCategory.Electronics:
+        return Icons.devices;
+      case ItemCategory.Keys:
+        return Icons.vpn_key;
+      case ItemCategory.MediaEquipment:
+        return Icons.monitor;
+      case ItemCategory.Tools:
+        return Icons.build;
+      case ItemCategory.Miscellaneous:
+        return Icons.category;
+    }
   }
 
   List<Map<String, Object>> get _filteredCategories {

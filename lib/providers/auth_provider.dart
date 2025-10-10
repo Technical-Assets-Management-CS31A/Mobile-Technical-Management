@@ -96,28 +96,19 @@ class AuthProvider extends ChangeNotifier {
         print('🔍 Data keys: ${userData.keys}');
 
         // Extract tokens from response for Bearer authentication
-        _accessToken =
-            userData['access_token'] ??
-            userData['token'] ??
-            userData['accessToken'];
-        _refreshToken = userData['refresh_token'] ?? userData['refreshToken'];
+        _accessToken = userData['accessToken'];
+        _refreshToken = userData['refreshToken'];
 
-        // Extract user info from response according to backend study guide
-        _username = userData['username'] ?? identifier;
+        // Extract user info from nested user object
+        final user = userData['user'] ?? userData;
+        _username = user['username'] ?? identifier;
+        _userEmail = user['email'];
+        _userRole = user['userRole'] ?? user['role'];
+        _userId = user['id'];
+        _userStatus = user['status'];
 
-        // Store additional user details
-        _userEmail = userData['email'];
-        _userRole = userData['userRole'] ?? userData['role'];
-        _userId = userData['id'];
-        _userStatus = userData['status'];
-
-        // Debug logging
-        print('🔍 Extracted User Data:');
-        print('  Username: $_username');
-        print('  Email: $_userEmail');
-        print('  Role: $_userRole');
-        print('  ID: $_userId');
-        print('  Status: $_userStatus');
+        // Debug logging - user info only
+        print('👤 User: $_username ($_userRole)');
 
         _isAuthenticated = true;
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -27,8 +28,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   late TextEditingController _modelController;
   late TextEditingController _makeController;
   late TextEditingController _descriptionController;
-  late String _selectedCategory;
-  late String _selectedCondition;
+  late ItemCategory _selectedCategory;
+  late ItemCondition _selectedCondition;
   XFile? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
   final InventoryService _inventoryService = InventoryService();
@@ -42,13 +43,47 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     _nameController = TextEditingController(text: widget.item.itemName);
     _serialController = TextEditingController(text: widget.item.serialNumber);
     _typeController = TextEditingController(text: widget.item.itemType);
-    _modelController = TextEditingController(text: widget.item.itemModel);
+    _modelController = TextEditingController(text: widget.item.itemModel ?? '');
     _makeController = TextEditingController(text: widget.item.itemMake);
     _descriptionController = TextEditingController(
-      text: widget.item.description,
+      text: widget.item.description ?? '',
     );
-    _selectedCategory = widget.item.itemCategory;
+    _selectedCategory = widget.item.category;
     _selectedCondition = widget.item.condition;
+    _initializeService();
+  }
+
+  Future<void> _initializeService() async {
+    try {
+      await _inventoryService.initialize();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error initializing service: $e')),
+        );
+      }
+    }
+  }
+
+  /// Helper method to decode base64 image data
+  Uint8List? _decodeBase64Image(String? imageData) {
+    if (imageData == null || imageData.isEmpty) return null;
+
+    try {
+      // Remove data URL prefix if present
+      String base64Data = imageData;
+      if (imageData.startsWith('data:image/')) {
+        final commaIndex = imageData.indexOf(',');
+        if (commaIndex != -1) {
+          base64Data = imageData.substring(commaIndex + 1);
+        }
+      }
+
+      return base64Decode(base64Data);
+    } catch (e) {
+      print('Error decoding base64 image: $e');
+      return null;
+    }
   }
 
   @override
@@ -94,10 +129,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         _nameController.text = widget.item.itemName;
         _serialController.text = widget.item.serialNumber;
         _typeController.text = widget.item.itemType;
-        _modelController.text = widget.item.itemModel;
+        _modelController.text = widget.item.itemModel ?? '';
         _makeController.text = widget.item.itemMake;
-        _descriptionController.text = widget.item.description;
-        _selectedCategory = widget.item.itemCategory;
+        _descriptionController.text = widget.item.description ?? '';
+        _selectedCategory = widget.item.category;
         _selectedCondition = widget.item.condition;
         _selectedImage = null;
       }
@@ -114,17 +149,30 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     });
 
     try {
+      // Convert image to base64 if selected
+      String? imageBase64;
+      if (_selectedImage != null) {
+        final bytes = await _selectedImage!.readAsBytes();
+        imageBase64 = base64Encode(bytes);
+      } else if (widget.item.image != null) {
+        imageBase64 = widget.item.image;
+      }
+
       final updatedItem = Item(
         id: widget.item.id,
         serialNumber: _serialController.text.trim(),
         itemName: _nameController.text.trim(),
-        itemImage: _selectedImage?.path ?? widget.item.itemImage,
-        itemCategory: _selectedCategory,
+        image: imageBase64,
+        category: _selectedCategory,
         condition: _selectedCondition,
         itemType: _typeController.text.trim(),
-        itemModel: _modelController.text.trim(),
+        itemModel: _modelController.text.trim().isEmpty
+            ? null
+            : _modelController.text.trim(),
         itemMake: _makeController.text.trim(),
-        description: _descriptionController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
         createdAt: widget.item.createdAt,
         updatedAt: DateTime.now(),
       );
@@ -361,25 +409,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'electronics':
+  IconData _getCategoryIcon(ItemCategory category) {
+    switch (category) {
+      case ItemCategory.Electronics:
         return Icons.devices;
-      case 'cables':
-        return Icons.cable;
-      case 'adapters':
-        return Icons.settings_input_component;
-      case 'peripherals':
-        return Icons.keyboard;
-      case 'networking':
-        return Icons.router;
-      case 'storage':
-        return Icons.storage;
-      case 'audio':
-        return Icons.headphones;
-      case 'display':
+      case ItemCategory.Keys:
+        return Icons.vpn_key;
+      case ItemCategory.MediaEquipment:
         return Icons.monitor;
-      default:
+      case ItemCategory.Tools:
+        return Icons.build;
+      case ItemCategory.Miscellaneous:
         return Icons.category;
     }
   }
@@ -523,7 +563,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        _getCategoryIcon(widget.item.itemCategory),
+                        _getCategoryIcon(widget.item.category),
                         color: Theme.of(context).colorScheme.primary,
                         size: 48,
                       ),
@@ -588,20 +628,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 _buildDropdownField(
                   label: 'Category',
                   icon: Icons.category,
-                  value: _selectedCategory,
-                  items: const [
-                    'Electronics',
-                    'Cables',
-                    'Adapters',
-                    'Peripherals',
-                    'Networking',
-                    'Storage',
-                    'Audio',
-                    'Display',
-                    'Other',
-                  ],
+                  value: _selectedCategory.displayName,
+                  items: ItemCategory.values
+                      .map((category) => category.displayName)
+                      .toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedCategory = val);
+                    if (val != null) {
+                      setState(
+                        () => _selectedCategory = ItemCategory.fromString(val),
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: 20),
@@ -610,10 +646,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 _buildDropdownField(
                   label: 'Condition',
                   icon: Icons.info,
-                  value: _selectedCondition,
-                  items: const ['New', 'Good', 'Fair', 'In Use'],
+                  value: _selectedCondition.displayName,
+                  items: ItemCondition.values
+                      .map((condition) => condition.displayName)
+                      .toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedCondition = val);
+                    if (val != null) {
+                      setState(
+                        () =>
+                            _selectedCondition = ItemCondition.fromString(val),
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: 20),
@@ -677,7 +720,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ] else ...[
                 // Read-only View
                 // Item Image (if exists)
-                if (widget.item.itemImage.isNotEmpty) ...[
+                if (widget.item.image != null &&
+                    widget.item.image!.isNotEmpty) ...[
                   Container(
                     width: double.infinity,
                     height: 250,
@@ -700,18 +744,36 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        widget.item.itemImage,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(
-                              Icons.broken_image,
-                              size: 64,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.5),
-                            ),
+                      child: Builder(
+                        builder: (context) {
+                          final imageBytes = _decodeBase64Image(
+                            widget.item.image,
+                          );
+                          if (imageBytes == null) {
+                            return Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 64,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.5),
+                              ),
+                            );
+                          }
+                          return Image.memory(
+                            imageBytes,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 64,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -742,7 +804,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     Expanded(
                       child: _buildInfoCard(
                         title: 'Category',
-                        value: widget.item.itemCategory,
+                        value: widget.item.category.displayName,
                         icon: Icons.category,
                         color: Colors.orange,
                       ),
@@ -756,7 +818,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     Expanded(
                       child: _buildInfoCard(
                         title: 'Condition',
-                        value: widget.item.condition,
+                        value: widget.item.condition.displayName,
                         icon: Icons.info,
                         color: Colors.green,
                       ),
@@ -779,7 +841,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     Expanded(
                       child: _buildInfoCard(
                         title: 'Item Model',
-                        value: widget.item.itemModel,
+                        value: widget.item.itemModel ?? 'N/A',
                         icon: Icons.model_training,
                         color: Colors.teal,
                       ),
@@ -799,7 +861,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
                 _buildInfoCard(
                   title: 'Description',
-                  value: widget.item.description,
+                  value: widget.item.description ?? 'N/A',
                   icon: Icons.description,
                   color: Colors.brown,
                 ),
@@ -846,7 +908,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       ),
                       const SizedBox(height: 12),
                       if (_selectedImage != null ||
-                          widget.item.itemImage.isNotEmpty) ...[
+                          (widget.item.image != null &&
+                              widget.item.image!.isNotEmpty)) ...[
                         Container(
                           width: double.infinity,
                           height: 200,
@@ -874,20 +937,41 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                       );
                                     },
                                   )
-                                : widget.item.itemImage.isNotEmpty
-                                ? Image.network(
-                                    widget.item.itemImage,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Center(
-                                        child: Icon(
-                                          Icons.broken_image,
-                                          size: 48,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withOpacity(0.5),
-                                        ),
+                                : (widget.item.image != null &&
+                                      widget.item.image!.isNotEmpty)
+                                ? Builder(
+                                    builder: (context) {
+                                      final imageBytes = _decodeBase64Image(
+                                        widget.item.image,
+                                      );
+                                      if (imageBytes == null) {
+                                        return Center(
+                                          child: Icon(
+                                            Icons.broken_image,
+                                            size: 48,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withOpacity(0.5),
+                                          ),
+                                        );
+                                      }
+                                      return Image.memory(
+                                        imageBytes,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                              return Center(
+                                                child: Icon(
+                                                  Icons.broken_image,
+                                                  size: 48,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withOpacity(0.5),
+                                                ),
+                                              );
+                                            },
                                       );
                                     },
                                   )
@@ -902,14 +986,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           onPressed: _pickImage,
                           icon: Icon(
                             _selectedImage == null &&
-                                    widget.item.itemImage.isEmpty
+                                    (widget.item.image == null ||
+                                        widget.item.image!.isEmpty)
                                 ? Icons.add_photo_alternate
                                 : Icons.edit,
                             color: Theme.of(context).colorScheme.primary,
                           ),
                           label: Text(
                             _selectedImage == null &&
-                                    widget.item.itemImage.isEmpty
+                                    (widget.item.image == null ||
+                                        widget.item.image!.isEmpty)
                                 ? 'Select Image'
                                 : 'Change Image',
                             style: TextStyle(
