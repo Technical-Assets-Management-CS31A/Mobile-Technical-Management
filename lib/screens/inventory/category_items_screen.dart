@@ -91,6 +91,9 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
 
   List<Item> get _filteredItems {
     return _items.where((item) {
+      // First, ensure the item belongs to the selected category
+      final matchesCategory = item.category.displayName == widget.category;
+
       final matchesSearch =
           item.itemName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           item.serialNumber.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -99,7 +102,7 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
           ? true
           : item.condition.displayName == _selectedCondition;
 
-      return matchesSearch && matchesCondition;
+      return matchesCategory && matchesSearch && matchesCondition;
     }).toList();
   }
 
