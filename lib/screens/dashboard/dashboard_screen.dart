@@ -8,7 +8,6 @@ import '../inventory/inventory_screen.dart';
 import '../history/history_screen.dart';
 import '../settings/settings_screen.dart';
 import '../../services/inventory_service.dart';
-import '../../services/staff_service.dart';
 import '../../services/borrowed_item_service.dart';
 import '../../providers/auth_provider.dart';
 
@@ -47,20 +46,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _loadDashboardData() async {
     try {
       final inventoryService = InventoryService();
-      final staffService = StaffService();
       final borrowedItemService = BorrowedItemService();
 
-      // Fetch all items
-      final items = await inventoryService.getAllItems();
+      // Fetch dashboard summary from API
+      final summaryData = await inventoryService.getDashboardSummary();
 
-      // Fetch category statistics
-      final categoryStats = await inventoryService.getCategoryStats();
-
-      // Fetch borrowed items statistics from BorrowedItemService
-      final borrowedStats = await borrowedItemService.getStatistics();
-      final totalBorrowedItems = borrowedStats['total'] ?? 0;
-
-      // Fetch recent borrowed items (last 3 items)
+      // Fetch recent borrowed items (last 3 items) - still using local service for now
       final allBorrowedItems = await borrowedItemService.getAllBorrowedItems();
       final recentItems = allBorrowedItems
           .take(3)
@@ -76,20 +67,12 @@ class _DashboardScreenState extends State<DashboardScreen>
           )
           .toList();
 
-      // Count categories that have items
-      final categoriesWithItems = categoryStats.entries
-          .where((entry) => entry.value['total']! > 0)
-          .length;
-
-      // Fetch active staff count from StaffService
-      final activeStaffCount = await staffService.getActiveStaffCount();
-
       if (mounted) {
         setState(() {
-          _totalItems = items.length;
-          _borrowedItems = totalBorrowedItems;
-          _categoryCount = categoriesWithItems;
-          _activeStaff = activeStaffCount;
+          _totalItems = summaryData.totalItems ?? 0;
+          _borrowedItems = summaryData.totalLentItems ?? 0;
+          _categoryCount = summaryData.totalItemsCategories ?? 0;
+          _activeStaff = summaryData.totalActiveUsers ?? 0;
           _recentBorrowedItems = recentItems;
           _isLoading = false;
         });

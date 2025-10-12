@@ -57,6 +57,9 @@ class SwaggerHelper {
   static String get historyEndpoint =>
       dotenv.env['HISTORY_ENDPOINT'] ?? '/history';
 
+  static String get summaryEndpoint =>
+      dotenv.env['SUMMARY_ENDPOINT'] ?? '/summary';
+
   // Build full URL for an endpoint
   static String buildUrl(String endpoint) {
     return '$apiBaseUrl$endpoint';
@@ -135,8 +138,8 @@ class SwaggerHelper {
         'staff': staffEndpoint,
         'borrowedItems': borrowedItemsEndpoint,
         'history': historyEndpoint,
+        'summary': summaryEndpoint,
       },
     };
   }
 }
-

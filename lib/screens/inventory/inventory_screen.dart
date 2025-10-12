@@ -53,12 +53,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
     });
 
     try {
-      // Load data from service and update category stats
-      await _inventoryService.getAllItems();
-      // Get updated category counts
+      // Only get category stats - this already fetches all items internally
       _categoryCounts = await _inventoryService.getCategoryStats();
-      // Trigger rebuild to update category counts
-      setState(() {});
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(

@@ -29,6 +29,7 @@ enum ItemCategory {
         return ItemCategory.Keys;
       case 'mediaequipment':
       case 'media_equipment':
+      case 'media equipment':
         return ItemCategory.MediaEquipment;
       case 'tools':
         return ItemCategory.Tools;
@@ -89,6 +90,7 @@ enum ItemCondition {
         return ItemCondition.Refurbished;
       case 'needrepair':
       case 'need_repair':
+      case 'need repair':
         return ItemCondition.NeedRepair;
       default:
         return ItemCondition.Good;

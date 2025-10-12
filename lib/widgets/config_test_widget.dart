@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../utils/config_validator.dart';
 import '../services/auth_service.dart';
-import '../utils/cors_test_helper.dart';
 
 class ConfigTestWidget extends StatefulWidget {
   const ConfigTestWidget({super.key});
@@ -14,8 +13,6 @@ class ConfigTestWidget extends StatefulWidget {
 class _ConfigTestWidgetState extends State<ConfigTestWidget> {
   bool _isTestingConnection = false;
   String _connectionResult = '';
-  bool _isTestingCors = false;
-  String _corsResult = '';
 
   @override
   void initState() {
@@ -48,36 +45,6 @@ class _ConfigTestWidgetState extends State<ConfigTestWidget> {
     } finally {
       setState(() {
         _isTestingConnection = false;
-      });
-    }
-  }
-
-  Future<void> _testCors() async {
-    setState(() {
-      _isTestingCors = true;
-      _corsResult = '';
-    });
-
-    try {
-      final result = await CorsTestHelper.testCorsPreflight();
-
-      setState(() {
-        if (result['success']) {
-          _corsResult =
-              '✅ CORS preflight successful!\n'
-              'Status: ${result['statusCode']}\n'
-              'Headers: ${result['corsHeaders']}';
-        } else {
-          _corsResult = '❌ CORS preflight failed: ${result['error']}';
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _corsResult = '❌ CORS test error: $e';
-      });
-    } finally {
-      setState(() {
-        _isTestingCors = false;
       });
     }
   }
@@ -225,112 +192,6 @@ class _ConfigTestWidgetState extends State<ConfigTestWidget> {
                                 ? Colors.green.shade700
                                 : Colors.red.shade700,
                             fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // CORS Test
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '🌐 CORS Test',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.green.withOpacity(0.3),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Your CORS Configuration:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text('✅ Allows all localhost origins'),
-                          const Text('✅ Allows all HTTP methods'),
-                          const Text('✅ Allows all headers'),
-                          const Text('✅ Allows credentials'),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Flutter Origin: http://localhost:60546',
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                              color: Colors.green.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isTestingCors ? null : _testCors,
-                        child: _isTestingCors
-                            ? const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text('Testing CORS...'),
-                                ],
-                              )
-                            : const Text('Test CORS Preflight'),
-                      ),
-                    ),
-                    if (_corsResult.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: _corsResult.contains('✅')
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: _corsResult.contains('✅')
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                        ),
-                        child: Text(
-                          _corsResult,
-                          style: TextStyle(
-                            color: _corsResult.contains('✅')
-                                ? Colors.green.shade700
-                                : Colors.red.shade700,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: 'monospace',
-                            fontSize: 12,
                           ),
                         ),
                       ),

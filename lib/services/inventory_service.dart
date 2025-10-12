@@ -1,5 +1,5 @@
 import '../models/entities/item.dart';
-import '../models/responses/item_response.dart';
+import '../models/responses/responses.dart';
 import 'api_service.dart';
 
 class InventoryService {
@@ -292,6 +292,22 @@ class InventoryService {
       return itemResponse.success;
     } catch (e) {
       throw Exception('Failed to permanently delete item: $e');
+    }
+  }
+
+  // Get dashboard summary data
+  Future<SummaryData> getDashboardSummary() async {
+    try {
+      final response = await apiService.get('summary');
+      final summaryResponse = SummaryResponse.fromJson(response);
+
+      if (summaryResponse.success && summaryResponse.data != null) {
+        return summaryResponse.data!;
+      } else {
+        throw Exception(summaryResponse.message);
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch dashboard summary: $e');
     }
   }
 }
