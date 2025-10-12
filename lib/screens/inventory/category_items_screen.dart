@@ -274,9 +274,20 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
                   ),
                   items: const [
                     DropdownMenuItem(value: 'All', child: Text('All')),
+                    DropdownMenuItem(value: 'New', child: Text('New')),
                     DropdownMenuItem(value: 'Good', child: Text('Good')),
-                    DropdownMenuItem(value: 'Fair', child: Text('Fair')),
-                    DropdownMenuItem(value: 'In Use', child: Text('In Use')),
+                    DropdownMenuItem(
+                      value: 'Defective',
+                      child: Text('Defective'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Refurbished',
+                      child: Text('Refurbished'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Need Repair',
+                      child: Text('Need Repair'),
+                    ),
                   ],
                   onChanged: _onConditionChanged,
                 ),
@@ -404,6 +415,21 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
     );
   }
 
+  Color _getConditionColor(ItemCondition condition) {
+    switch (condition) {
+      case ItemCondition.New:
+        return const Color(0xFF4CAF50); // Green
+      case ItemCondition.Good:
+        return const Color(0xFF2196F3); // Blue
+      case ItemCondition.Defective:
+        return const Color(0xFFF44336); // Red
+      case ItemCondition.Refurbished:
+        return const Color(0xFF9C27B0); // Purple
+      case ItemCondition.NeedRepair:
+        return const Color(0xFFFF9800); // Orange
+    }
+  }
+
   Widget _buildItemTile(BuildContext context, Item item) {
     return Container(
       decoration: BoxDecoration(
@@ -432,8 +458,46 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
           item.itemName,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(
-          'SN: ${item.serialNumber} • Condition: ${item.condition}',
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SN: ${item.serialNumber} • ${item.itemMake}',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            if (item.itemModel != null && item.itemModel!.isNotEmpty)
+              Text(
+                'Model: ${item.itemModel}',
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                  fontSize: 12,
+                ),
+              ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getConditionColor(item.condition).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _getConditionColor(item.condition).withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                item.condition.displayName,
+                style: TextStyle(
+                  color: _getConditionColor(item.condition),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _navigateToItemDetail(item),

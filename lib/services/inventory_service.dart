@@ -107,14 +107,15 @@ class InventoryService {
   // UPDATE - Update an existing item
   Future<Item?> updateItem(Item updatedItem) async {
     try {
-      final response = await apiService.put(
+      final response = await apiService.patchMultipart(
         'items/${updatedItem.id}',
-        body: updatedItem.toUpdateJson(),
+        fields: updatedItem.toUpdateFormData(),
       );
 
       final itemResponse = ItemResponse.fromJson(response);
-      if (itemResponse.success && itemResponse.data != null) {
-        return itemResponse.data!;
+      if (itemResponse.success) {
+        // Return the updated item data if available, otherwise return the original item
+        return itemResponse.data ?? updatedItem;
       } else {
         throw Exception(itemResponse.message);
       }

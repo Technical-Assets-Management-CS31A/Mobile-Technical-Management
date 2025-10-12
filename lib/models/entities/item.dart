@@ -192,6 +192,21 @@ class Item {
     };
   }
 
+  // Helper method for updating items as form data (for multipart requests)
+  Map<String, String> toUpdateFormData() {
+    return {
+      'SerialNumber': serialNumber,
+      'Image': image ?? '',
+      'ItemName': itemName,
+      'ItemType': itemType,
+      'ItemModel': itemModel ?? '',
+      'ItemMake': itemMake,
+      'Description': description ?? '',
+      'Category': category.name,
+      'Condition': condition.name,
+    };
+  }
+
   // Copy with method for updates
   Item copyWith({
     String? id,
