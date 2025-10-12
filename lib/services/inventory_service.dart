@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../models/entities/item.dart';
 import '../models/responses/responses.dart';
 import 'api_service.dart';
@@ -31,9 +33,31 @@ class InventoryService {
   // CREATE - Add a new item
   Future<Item> createItem(Item item) async {
     try {
-      final response = await apiService.post(
+      // Prepare form data
+      final formData = item.toCreateFormData();
+
+      Map<String, List<int>>? files;
+
+      // If there's an image, handle it as a file
+      if (item.image != null && item.image!.isNotEmpty) {
+        try {
+          // Decode base64 image to bytes
+          final base64String = item.image!.contains(',')
+              ? item.image!.split(',')[1]
+              : item.image!;
+          final bytes = base64Decode(base64String);
+          files = {'Image': bytes};
+        } catch (e) {
+          print('Warning: Could not decode base64 image: $e');
+          // If base64 decoding fails, send as string field
+          formData['Image'] = item.image!;
+        }
+      }
+
+      final response = await apiService.postMultipart(
         'items',
-        body: item.toCreateJson(),
+        fields: formData,
+        files: files,
       );
 
       final itemResponse = ItemResponse.fromJson(response);
@@ -107,9 +131,39 @@ class InventoryService {
   // UPDATE - Update an existing item
   Future<Item?> updateItem(Item updatedItem) async {
     try {
+      // Prepare form data and files
+      final formData = updatedItem.toUpdateFormData();
+      Map<String, List<int>>? files;
+
+      // If there's a new image, handle it as a file
+      if (updatedItem.image != null && updatedItem.image!.isNotEmpty) {
+        // Check if this is a new image (base64 encoded) or existing image
+        // If it's base64, convert it to bytes and send as file
+        if (updatedItem.image!.startsWith('data:image/') ||
+            (updatedItem.image!.length > 100 &&
+                !updatedItem.image!.contains('http'))) {
+          // This is likely a base64 encoded image
+          try {
+            final base64String = updatedItem.image!.contains(',')
+                ? updatedItem.image!.split(',')[1]
+                : updatedItem.image!;
+            final bytes = base64Decode(base64String);
+            files = {'Image': bytes};
+            // Remove image from form data since we're sending it as file
+            formData.remove('Image');
+          } catch (e) {
+            // If base64 decoding fails, send as string field
+            print(
+              'Warning: Could not decode base64 image, sending as string field: $e',
+            );
+          }
+        }
+      }
+
       final response = await apiService.patchMultipart(
         'items/${updatedItem.id}',
-        fields: updatedItem.toUpdateFormData(),
+        fields: formData,
+        files: files,
       );
 
       final itemResponse = ItemResponse.fromJson(response);

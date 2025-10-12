@@ -31,6 +31,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   late ItemCategory _selectedCategory;
   late ItemCondition _selectedCondition;
   XFile? _selectedImage;
+  bool _imageRemoved = false; // Track if user explicitly removed the image
   final ImagePicker _imagePicker = ImagePicker();
   final InventoryService _inventoryService = InventoryService();
   bool _isLoading = false;
@@ -108,6 +109,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       if (image != null) {
         setState(() {
           _selectedImage = image;
+          _imageRemoved =
+              false; // Reset the removed flag when new image is selected
         });
       }
     } catch (e) {
@@ -120,6 +123,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         );
       }
     }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _selectedImage = null;
+      _imageRemoved = true;
+    });
   }
 
   void _toggleEdit() {
@@ -135,6 +145,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         _selectedCategory = widget.item.category;
         _selectedCondition = widget.item.condition;
         _selectedImage = null;
+        _imageRemoved = false;
       }
     });
   }
@@ -149,12 +160,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     });
 
     try {
-      // Convert image to base64 if selected
+      // Handle image updates
       String? imageBase64;
       if (_selectedImage != null) {
+        // User selected a new image - convert to base64
         final bytes = await _selectedImage!.readAsBytes();
         imageBase64 = base64Encode(bytes);
-      } else if (widget.item.image != null) {
+      } else if (_imageRemoved) {
+        // User explicitly removed the image
+        imageBase64 = null;
+      } else {
+        // No changes to image - keep existing image
         imageBase64 = widget.item.image;
       }
 
@@ -980,40 +996,78 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         ),
                         const SizedBox(height: 12),
                       ],
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _pickImage,
-                          icon: Icon(
-                            _selectedImage == null &&
-                                    (widget.item.image == null ||
-                                        widget.item.image!.isEmpty)
-                                ? Icons.add_photo_alternate
-                                : Icons.edit,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          label: Text(
-                            _selectedImage == null &&
-                                    (widget.item.image == null ||
-                                        widget.item.image!.isEmpty)
-                                ? 'Select Image'
-                                : 'Change Image',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _pickImage,
+                              icon: Icon(
+                                _selectedImage == null &&
+                                        (widget.item.image == null ||
+                                            widget.item.image!.isEmpty)
+                                    ? Icons.add_photo_alternate
+                                    : Icons.edit,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              label: Text(
+                                _selectedImage == null &&
+                                        (widget.item.image == null ||
+                                            widget.item.image!.isEmpty)
+                                    ? 'Select Image'
+                                    : 'Change Image',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
                             ),
                           ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 2,
+                          if (_selectedImage != null ||
+                              (widget.item.image != null &&
+                                  widget.item.image!.isNotEmpty)) ...[
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _removeImage,
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                label: Text(
+                                  'Remove',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: Theme.of(context).colorScheme.error,
+                                    width: 2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
+                          ],
+                        ],
                       ),
                     ],
                   ),

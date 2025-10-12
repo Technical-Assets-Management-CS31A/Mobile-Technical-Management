@@ -176,6 +176,20 @@ class Item {
     };
   }
 
+  // Helper method for creating items as form data (for multipart requests)
+  Map<String, String> toCreateFormData() {
+    return {
+      'SerialNumber': serialNumber,
+      'ItemName': itemName,
+      'ItemType': itemType,
+      'ItemModel': itemModel ?? '',
+      'ItemMake': itemMake,
+      'Description': description ?? '',
+      'Category': category.name,
+      'Condition': condition.name,
+    };
+  }
+
   // Helper method for updating items (without timestamps)
   Map<String, dynamic> toUpdateJson() {
     return {

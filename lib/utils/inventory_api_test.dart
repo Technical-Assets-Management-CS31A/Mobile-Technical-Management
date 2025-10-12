@@ -70,9 +70,49 @@ class InventoryApiTest {
 
       final createdItem = await _inventoryService.createItem(testItem);
       print('✅ Item created successfully with ID: ${createdItem.id}');
+      print(
+        '✅ Item created with FormData (multipart) - Bad Request issue should be fixed!',
+      );
       return createdItem;
     } catch (e) {
       print('❌ Create item test failed: $e');
+      return null;
+    }
+  }
+
+  /// Test item creation with image (use with caution in production)
+  static Future<Item?> testCreateItemWithImage() async {
+    try {
+      print('➕ Testing: Create item with image...');
+
+      // Create a test image (simple base64 encoded 1x1 pixel PNG)
+      const testImageBase64 =
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
+      final testItem = Item(
+        id: '', // Will be set by API
+        serialNumber: 'TEST-IMG-${DateTime.now().millisecondsSinceEpoch}',
+        itemName: 'Test Item with Image',
+        itemType: 'Test Type',
+        itemMake: 'Test Make',
+        category: ItemCategory.Electronics,
+        condition: ItemCondition.New,
+        description: 'This is a test item with image created by API test',
+        image: testImageBase64,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final createdItem = await _inventoryService.createItem(testItem);
+      print(
+        '✅ Item with image created successfully with ID: ${createdItem.id}',
+      );
+      print(
+        '✅ Image uploaded as file in FormData - Bad Request issue should be fixed!',
+      );
+      return createdItem;
+    } catch (e) {
+      print('❌ Create item with image test failed: $e');
       return null;
     }
   }
@@ -120,6 +160,51 @@ class InventoryApiTest {
     }
   }
 
+  /// Test image update functionality
+  static Future<bool> testImageUpdate(String itemId) async {
+    try {
+      print('🖼️ Testing: Image update functionality...');
+
+      // Get the existing item
+      final existingItem = await _inventoryService.getItemById(itemId);
+      if (existingItem == null) {
+        print('❌ Could not find item with ID: $itemId');
+        return false;
+      }
+
+      // Create a test image (simple base64 encoded 1x1 pixel PNG)
+      const testImageBase64 =
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
+      // Update the item with the test image
+      final updatedItem = existingItem.copyWith(
+        image: testImageBase64,
+        updatedAt: DateTime.now(),
+      );
+
+      final result = await _inventoryService.updateItem(updatedItem);
+      if (result != null) {
+        print('✅ Image update test passed');
+
+        // Verify the image was updated
+        final verifyItem = await _inventoryService.getItemById(itemId);
+        if (verifyItem != null && verifyItem.image == testImageBase64) {
+          print('✅ Image verification passed');
+          return true;
+        } else {
+          print('❌ Image verification failed - image not updated correctly');
+          return false;
+        }
+      } else {
+        print('❌ Image update failed');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Image update test failed: $e');
+      return false;
+    }
+  }
+
   /// Run full CRUD test cycle (use with caution in production)
   static Future<void> runFullCrudTest() async {
     try {
@@ -129,6 +214,13 @@ class InventoryApiTest {
       final createdItem = await testCreateItem();
       if (createdItem == null) {
         print('❌ CRUD test failed at creation step');
+        return;
+      }
+
+      // Create with image
+      final createdItemWithImage = await testCreateItemWithImage();
+      if (createdItemWithImage == null) {
+        print('❌ CRUD test failed at creation with image step');
         return;
       }
 
@@ -154,7 +246,15 @@ class InventoryApiTest {
         return;
       }
 
+      // Delete item with image
+      final deleteImageSuccess = await testDeleteItem(createdItemWithImage.id);
+      if (!deleteImageSuccess) {
+        print('❌ CRUD test failed at delete image item step');
+        return;
+      }
+
       print('🎉 Full CRUD test cycle completed successfully!');
+      print('🎉 FormData (multipart) implementation working correctly!');
     } catch (e) {
       print('❌ Full CRUD test failed: $e');
       rethrow;

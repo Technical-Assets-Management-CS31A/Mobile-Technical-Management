@@ -428,6 +428,120 @@ class ApiService {
     }
   }
 
+  /// Perform POST request with multipart/form-data
+  ///
+  /// [endpoint] - API endpoint (e.g., '/items' or 'items')
+  /// [fields] - Form fields as Map<String, String>
+  /// [files] - Optional file fields as Map<String, List<int>>
+  /// [headers] - Optional additional headers
+  ///
+  /// Returns the response body as a Map<String, dynamic>
+  Future<Map<String, dynamic>> postMultipart(
+    String endpoint, {
+    Map<String, String>? fields,
+    Map<String, List<int>>? files,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      final url = _getFullUrl(endpoint);
+      print('POST Multipart Request: $url');
+
+      // Create multipart request
+      final request = http.MultipartRequest('POST', Uri.parse(url));
+
+      // Add authorization header
+      final token = await _authService.getStoredToken();
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Add additional headers (excluding Content-Type as it's set by multipart)
+      if (headers != null) {
+        headers.forEach((key, value) {
+          if (key.toLowerCase() != 'content-type') {
+            request.headers[key] = value;
+          }
+        });
+      }
+
+      // Add form fields
+      if (fields != null) {
+        fields.forEach((key, value) {
+          request.fields[key] = value;
+        });
+      }
+
+      // Add file fields
+      if (files != null) {
+        files.forEach((key, value) {
+          request.files.add(
+            http.MultipartFile.fromBytes(key, value, filename: '${key}.png'),
+          );
+        });
+      }
+
+      // Send the request
+      final streamedResponse = await _client.send(request);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      // Handle 401 responses with token refresh
+      if (response.statusCode == 401) {
+        final refreshSuccess = await _authService.refresh();
+        if (refreshSuccess) {
+          // Retry the request with new token
+          final retryRequest = http.MultipartRequest('POST', Uri.parse(url));
+          final newToken = await _authService.getStoredToken();
+          if (newToken != null && newToken.isNotEmpty) {
+            retryRequest.headers['Authorization'] = 'Bearer $newToken';
+          }
+
+          // Re-add fields and files
+          if (fields != null) {
+            fields.forEach((key, value) {
+              retryRequest.fields[key] = value;
+            });
+          }
+          if (files != null) {
+            files.forEach((key, value) {
+              retryRequest.files.add(
+                http.MultipartFile.fromBytes(
+                  key,
+                  value,
+                  filename: '${key}.png',
+                ),
+              );
+            });
+          }
+
+          final retryStreamedResponse = await _client.send(retryRequest);
+          final retryResponse = await http.Response.fromStream(
+            retryStreamedResponse,
+          );
+          _handleResponse(retryResponse);
+          return json.decode(retryResponse.body) as Map<String, dynamic>;
+        } else {
+          throw const UnauthorizedException(
+            'Session expired. Please login again.',
+          );
+        }
+      }
+
+      _handleResponse(response);
+      return json.decode(response.body) as Map<String, dynamic>;
+    } on SocketException {
+      throw const NetworkException('No internet connection');
+    } on FormatException {
+      throw const ApiException('Invalid response format');
+    } catch (e) {
+      if (e is ApiException ||
+          e is NetworkException ||
+          e is UnauthorizedException) {
+        rethrow;
+      }
+      throw ApiException('Unexpected error: $e');
+    }
+  }
+
   /// Perform PATCH request with multipart/form-data
   ///
   /// [endpoint] - API endpoint (e.g., '/users/123' or 'users/123')
