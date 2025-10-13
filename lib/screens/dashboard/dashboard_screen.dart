@@ -6,7 +6,6 @@ import '../staff/staff_management_screen.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../inventory/inventory_screen.dart';
 import '../history/history_screen.dart';
-import '../settings/settings_screen.dart';
 import '../../services/inventory_service.dart';
 import '../../services/borrowed_item_service.dart';
 import '../../providers/auth_provider.dart';
@@ -261,8 +260,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         return 'Users';
       case 3:
         return 'History';
-      case 4:
-        return 'Settings';
       default:
         return 'Dashboard';
     }
@@ -276,8 +273,6 @@ class _DashboardScreenState extends State<DashboardScreen>
       return StaffManagementScreen(isMobile: true);
     } else if (_selectedIndex == 3) {
       return HistoryScreen(isMobile: true);
-    } else if (_selectedIndex == 4) {
-      return const SettingsScreen();
     }
 
     return RefreshIndicator(
