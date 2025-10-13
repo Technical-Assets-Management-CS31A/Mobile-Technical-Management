@@ -1,11 +1,11 @@
 {
-    "name": "testproject",
-    "short_name": "testproject",
+    "name": "Technical Management",
+    "short_name": "TechMgmt",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Technical Management - Mobile application for managing technical resources and inventory.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
