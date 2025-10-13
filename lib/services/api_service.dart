@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'auth_service.dart';
 
 /// Custom exception classes for API errors
@@ -474,8 +475,18 @@ class ApiService {
       // Add file fields
       if (files != null) {
         files.forEach((key, value) {
+          // Detect MIME type from file content
+          final mimeType = _detectMimeType(value);
+          final extension = _getExtensionFromMimeType(mimeType);
+          final filename = '${key}$extension';
+
           request.files.add(
-            http.MultipartFile.fromBytes(key, value, filename: '${key}.png'),
+            http.MultipartFile.fromBytes(
+              key,
+              value,
+              filename: filename,
+              contentType: MediaType.parse(mimeType),
+            ),
           );
         });
       }
@@ -503,11 +514,17 @@ class ApiService {
           }
           if (files != null) {
             files.forEach((key, value) {
+              // Detect MIME type from file content
+              final mimeType = _detectMimeType(value);
+              final extension = _getExtensionFromMimeType(mimeType);
+              final filename = '${key}$extension';
+
               retryRequest.files.add(
                 http.MultipartFile.fromBytes(
                   key,
                   value,
-                  filename: '${key}.png',
+                  filename: filename,
+                  contentType: MediaType.parse(mimeType),
                 ),
               );
             });
@@ -588,8 +605,18 @@ class ApiService {
       // Add file fields
       if (files != null) {
         files.forEach((key, value) {
+          // Detect MIME type from file content
+          final mimeType = _detectMimeType(value);
+          final extension = _getExtensionFromMimeType(mimeType);
+          final filename = '${key}$extension';
+
           request.files.add(
-            http.MultipartFile.fromBytes(key, value, filename: key),
+            http.MultipartFile.fromBytes(
+              key,
+              value,
+              filename: filename,
+              contentType: MediaType.parse(mimeType),
+            ),
           );
         });
       }
@@ -617,8 +644,18 @@ class ApiService {
           }
           if (files != null) {
             files.forEach((key, value) {
+              // Detect MIME type from file content
+              final mimeType = _detectMimeType(value);
+              final extension = _getExtensionFromMimeType(mimeType);
+              final filename = '${key}$extension';
+
               retryRequest.files.add(
-                http.MultipartFile.fromBytes(key, value, filename: key),
+                http.MultipartFile.fromBytes(
+                  key,
+                  value,
+                  filename: filename,
+                  contentType: MediaType.parse(mimeType),
+                ),
               );
             });
           }
@@ -649,6 +686,71 @@ class ApiService {
         rethrow;
       }
       throw ApiException('Unexpected error: $e');
+    }
+  }
+
+  /// Detect MIME type from file content (magic bytes)
+  String _detectMimeType(List<int> bytes) {
+    if (bytes.length < 4) return 'application/octet-stream';
+
+    // Check for common image formats by magic bytes
+    if (bytes.length >= 8) {
+      // PNG: 89 50 4E 47 0D 0A 1A 0A
+      if (bytes[0] == 0x89 &&
+          bytes[1] == 0x50 &&
+          bytes[2] == 0x4E &&
+          bytes[3] == 0x47) {
+        return 'image/png';
+      }
+
+      // JPEG: FF D8 FF
+      if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+        return 'image/jpeg';
+      }
+
+      // GIF: 47 49 46 38 (GIF8)
+      if (bytes[0] == 0x47 &&
+          bytes[1] == 0x49 &&
+          bytes[2] == 0x46 &&
+          bytes[3] == 0x38) {
+        return 'image/gif';
+      }
+
+      // WebP: 52 49 46 46 ... 57 45 42 50
+      if (bytes.length >= 12 &&
+          bytes[0] == 0x52 &&
+          bytes[1] == 0x49 &&
+          bytes[2] == 0x46 &&
+          bytes[3] == 0x46 &&
+          bytes[8] == 0x57 &&
+          bytes[9] == 0x45 &&
+          bytes[10] == 0x42 &&
+          bytes[11] == 0x50) {
+        return 'image/webp';
+      }
+    }
+
+    // Default to JPEG for unknown formats (most common for mobile images)
+    return 'image/jpeg';
+  }
+
+  /// Get file extension from MIME type
+  String _getExtensionFromMimeType(String mimeType) {
+    switch (mimeType) {
+      case 'image/png':
+        return '.png';
+      case 'image/jpeg':
+        return '.jpg';
+      case 'image/gif':
+        return '.gif';
+      case 'image/webp':
+        return '.webp';
+      case 'image/bmp':
+        return '.bmp';
+      case 'image/tiff':
+        return '.tiff';
+      default:
+        return '.jpg'; // Default to .jpg for unknown image types
     }
   }
 
