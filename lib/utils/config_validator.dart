@@ -28,7 +28,6 @@ class ConfigValidator {
       'AUTH_LOGIN_ENDPOINT',
       'AUTH_LOGOUT_ENDPOINT',
       'AUTH_REFRESH_ENDPOINT',
-      'AUTH_REGISTER_ENDPOINT',
     ];
 
     for (final endpoint in authEndpoints) {
@@ -101,8 +100,6 @@ class ConfigValidator {
           '$apiBaseUrl${dotenv.env['AUTH_LOGOUT_ENDPOINT'] ?? '/auth/logout'}',
       'refresh':
           '$apiBaseUrl${dotenv.env['AUTH_REFRESH_ENDPOINT'] ?? '/auth/refresh'}',
-      'register':
-          '$apiBaseUrl${dotenv.env['AUTH_REGISTER_ENDPOINT'] ?? '/auth/register'}',
       'inventory':
           '$apiBaseUrl${dotenv.env['INVENTORY_ENDPOINT'] ?? '/inventory'}',
       'staff': '$apiBaseUrl${dotenv.env['STAFF_ENDPOINT'] ?? '/staff'}',
@@ -112,4 +109,3 @@ class ConfigValidator {
     };
   }
 }
-

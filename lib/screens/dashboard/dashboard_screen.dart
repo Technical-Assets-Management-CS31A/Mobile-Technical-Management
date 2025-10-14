@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/skeleton.dart';
-import '../staff/staff_management_screen.dart';
+import '../users/staff_management_screen.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../inventory/inventory_screen.dart';
 import '../history/history_screen.dart';

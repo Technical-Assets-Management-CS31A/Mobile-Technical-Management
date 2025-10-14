@@ -23,6 +23,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _modelController = TextEditingController();
   final _makeController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _barcodeController = TextEditingController();
   String? _selectedCategory;
   String? _selectedCondition;
   bool _isLoading = false;
@@ -57,6 +58,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     _modelController.dispose();
     _makeController.dispose();
     _descriptionController.dispose();
+    _barcodeController.dispose();
     super.dispose();
   }
 
@@ -112,6 +114,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
+        barcode: _barcodeController.text.trim().isEmpty
+            ? null
+            : _barcodeController.text.trim(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -477,6 +482,16 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 20),
+
+              // Barcode
+              _buildFormField(
+                label: 'Barcode',
+                hint: 'Enter barcode (optional)',
+                controller: _barcodeController,
+                icon: Icons.qr_code_2,
+                keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 20),
 

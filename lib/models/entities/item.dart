@@ -109,6 +109,7 @@ class Item {
   final String? description; // Made nullable
   final ItemCategory category; // Changed from String to enum
   final ItemCondition condition; // Changed from String to enum
+  final String? barcode; // Barcode data from API
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -123,6 +124,7 @@ class Item {
     this.description,
     required this.category,
     required this.condition,
+    this.barcode,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -139,6 +141,7 @@ class Item {
       description: json['description'],
       category: ItemCategory.fromString(json['category'] ?? ''),
       condition: ItemCondition.fromString(json['condition'] ?? ''),
+      barcode: json['barcode'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
@@ -156,6 +159,7 @@ class Item {
       'description': description,
       'category': category.name,
       'condition': condition.name,
+      'barcode': barcode,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -173,6 +177,7 @@ class Item {
       'description': description,
       'category': category.name,
       'condition': condition.name,
+      'barcode': barcode,
     };
   }
 
@@ -187,6 +192,7 @@ class Item {
       'Description': description ?? '',
       'Category': category.name,
       'Condition': condition.name,
+      'Barcode': barcode ?? '',
     };
   }
 
@@ -203,6 +209,7 @@ class Item {
       'description': description,
       'category': category.name,
       'condition': condition.name,
+      'barcode': barcode,
     };
   }
 
@@ -218,6 +225,7 @@ class Item {
       'Description': description ?? '',
       'Category': category.name,
       'Condition': condition.name,
+      'Barcode': barcode ?? '',
     };
   }
 
@@ -233,6 +241,7 @@ class Item {
     String? description,
     ItemCategory? category,
     ItemCondition? condition,
+    String? barcode,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -247,6 +256,7 @@ class Item {
       description: description ?? this.description,
       category: category ?? this.category,
       condition: condition ?? this.condition,
+      barcode: barcode ?? this.barcode,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

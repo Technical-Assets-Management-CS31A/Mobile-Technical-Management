@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/entities/item.dart';
 import '../../services/inventory_service.dart';
+import '../../widgets/barcode_widget.dart';
 import 'item_detail_screen.dart';
 import 'add_item_screen.dart';
 
@@ -179,6 +180,59 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
       _itemsModified = true;
       _loadItems();
     }
+  }
+
+  void _showBarcodeDialog(Item item) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surfaceBright,
+          title: Text(
+            'Item Barcode',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                item.itemName,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'SN: ${item.serialNumber}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 16),
+              BarcodeDisplayWidget(
+                barcodeData: item.barcode,
+                width: 250,
+                height: 100,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Close',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -502,7 +556,21 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
             ),
           ],
         ),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (item.barcode != null && item.barcode!.isNotEmpty)
+              IconButton(
+                icon: Icon(
+                  Icons.qr_code_2,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () => _showBarcodeDialog(item),
+                tooltip: 'View Barcode',
+              ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
         onTap: () => _navigateToItemDetail(item),
       ),
     );

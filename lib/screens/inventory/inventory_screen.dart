@@ -17,7 +17,7 @@ class InventoryScreen extends StatefulWidget {
 class _InventoryScreenState extends State<InventoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _statusFilter = 'All'; // All, Available, Borrowed
+  String _statusFilter = 'All';
   final InventoryService _inventoryService = InventoryService();
   bool _isLoading = true;
   Map<String, Map<String, int>> _categoryCounts = {};

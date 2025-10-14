@@ -220,51 +220,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Register method
-  Future<Map<String, dynamic>> register({
-    required String firstName,
-    required String lastName,
-    String? middleName,
-    required String username,
-    required String email,
-    String? phoneNumber,
-    required String password,
-    required String confirmPassword,
-    required String role,
-  }) async {
-    if (!_isInitialized) {
-      await initializeAuth();
-    }
-
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final result = await _authService.register(
-        username: username,
-        password: password,
-        email: email,
-        firstName: firstName,
-        lastName: lastName,
-        middleName: middleName,
-        phoneNumber: phoneNumber,
-        role: role,
-        confirmPassword: confirmPassword,
-      );
-
-      _isLoading = false;
-      notifyListeners();
-
-      return result;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString();
-      notifyListeners();
-      return {'success': false, 'error': _errorMessage};
-    }
-  }
-
   // Clear error message
   void clearError() {
     _errorMessage = null;

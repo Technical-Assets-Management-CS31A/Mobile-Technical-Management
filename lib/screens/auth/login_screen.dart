@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../../providers/auth_provider.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -225,25 +224,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         );
                       },
-                    ),
-                    const SizedBox(height: 32),
-                    // Create account
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Create account ?',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
                     ),
                   ],
                 ),

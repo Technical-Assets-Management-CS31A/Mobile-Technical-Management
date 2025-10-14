@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/entities/item.dart';
 import '../../services/inventory_service.dart';
+import '../../widgets/barcode_widget.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   const ItemDetailScreen({
@@ -28,6 +29,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   late TextEditingController _modelController;
   late TextEditingController _makeController;
   late TextEditingController _descriptionController;
+  late TextEditingController _barcodeController;
   late ItemCategory _selectedCategory;
   late ItemCondition _selectedCondition;
   XFile? _selectedImage;
@@ -49,6 +51,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     _descriptionController = TextEditingController(
       text: widget.item.description ?? '',
     );
+    _barcodeController = TextEditingController(text: widget.item.barcode ?? '');
     _selectedCategory = widget.item.category;
     _selectedCondition = widget.item.condition;
     _initializeService();
@@ -95,6 +98,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     _modelController.dispose();
     _makeController.dispose();
     _descriptionController.dispose();
+    _barcodeController.dispose();
     super.dispose();
   }
 
@@ -142,6 +146,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         _modelController.text = widget.item.itemModel ?? '';
         _makeController.text = widget.item.itemMake;
         _descriptionController.text = widget.item.description ?? '';
+        _barcodeController.text = widget.item.barcode ?? '';
         _selectedCategory = widget.item.category;
         _selectedCondition = widget.item.condition;
         _selectedImage = null;
@@ -189,6 +194,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
+        barcode: _barcodeController.text.trim().isEmpty
+            ? null
+            : _barcodeController.text.trim(),
         createdAt: widget.item.createdAt,
         updatedAt: DateTime.now(),
       );
@@ -733,6 +741,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
+
+                // Barcode
+                _buildFormField(
+                  label: 'Barcode',
+                  controller: _barcodeController,
+                  icon: Icons.qr_code_2,
+                ),
+                const SizedBox(height: 20),
               ] else ...[
                 // Read-only View
                 // Item Image (if exists)
@@ -880,6 +896,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   value: widget.item.description ?? 'N/A',
                   icon: Icons.description,
                   color: Colors.brown,
+                ),
+                const SizedBox(height: 16),
+
+                // Barcode Display
+                Center(
+                  child: BarcodeDisplayWidget(
+                    barcodeData: widget.item.barcode,
+                    width: 250,
+                    height: 100,
+                    label: 'Item Barcode',
+                  ),
                 ),
               ],
 
