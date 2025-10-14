@@ -159,13 +159,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    _getAppBarTitle(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      return Text(
+                        authProvider.userRole ?? 'User',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -173,55 +177,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                 children: [
                   Image.asset('assets/icons/aclcLOGO.png', height: 32),
                   const SizedBox(width: 12),
-                  Consumer<AuthProvider>(
-                    builder: (context, authProvider, child) {
-                      return PopupMenuButton<String>(
-                        icon: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.account_circle,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        onSelected: (value) async {
-                          if (value == 'logout') {
-                            await _showLogoutDialog(context);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'profile',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.person, size: 20),
-                                const SizedBox(width: 8),
-                                Text(authProvider.username ?? 'User'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'logout',
-                            child: Row(
-                              children: [
-                                Icon(Icons.logout, size: 20, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Logout',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -248,21 +203,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     if (hour < 12) return 'Morning';
     if (hour < 17) return 'Afternoon';
     return 'Evening';
-  }
-
-  String _getAppBarTitle() {
-    switch (_selectedIndex) {
-      case 0:
-        return 'Dashboard';
-      case 1:
-        return 'Inventory List';
-      case 2:
-        return 'Users';
-      case 3:
-        return 'History';
-      default:
-        return 'Dashboard';
-    }
   }
 
   Widget _buildMainContent() {
