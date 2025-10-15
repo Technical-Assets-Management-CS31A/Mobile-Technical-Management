@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../screens/archive/archive_screen.dart';
 
 class BottomBar extends StatelessWidget {
   final int selectedIndex;
@@ -427,13 +428,10 @@ class BottomBar extends StatelessWidget {
 
   void _navigateToArchive(BuildContext context) {
     Navigator.of(context).pop(); // Close the menu first
-    // Show placeholder for archive screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Archive screen coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    // Navigate to archive screen
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const ArchiveScreen()));
   }
 
   void _showLogoutDialog(BuildContext context) {

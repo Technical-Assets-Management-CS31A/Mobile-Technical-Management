@@ -9,3 +9,6 @@ export 'users/add_staff_screen.dart';
 export 'users/staff_detail_screen.dart';
 export 'history/history_screen.dart';
 export 'settings/settings_screen.dart';
+export 'archive/archive_screen.dart';
+export 'archive/items_archive_screen.dart';
+export 'archive/users_archive_screen.dart';
