@@ -125,12 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               });
               _loadDashboardData();
             }
-            // Use animateToPage instead of jumpToPage for smoother transitions
-            _pageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
+            _pageController.jumpToPage(index);
           }
         },
       ),
@@ -491,11 +486,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                               _previousIndex = _selectedIndex;
                               _selectedIndex = 3; // Navigate to history screen
                             });
-                            _pageController.animateToPage(
-                              3,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                            );
+                            _pageController.jumpToPage(3);
                           },
                           icon: const Icon(
                             Icons.history,
@@ -569,11 +560,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                             _previousIndex = _selectedIndex;
                             _selectedIndex = 3; // Navigate to history screen
                           });
-                          _pageController.animateToPage(
-                            3,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
+                          _pageController.jumpToPage(3);
                         },
                         icon: const Icon(
                           Icons.history,
@@ -915,11 +902,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       _selectedIndex = targetIndex;
     });
 
-    _pageController.animateToPage(
-      targetIndex,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    _pageController.jumpToPage(targetIndex);
   }
 
   @override
