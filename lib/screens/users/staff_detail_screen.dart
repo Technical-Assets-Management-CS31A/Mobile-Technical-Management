@@ -220,11 +220,12 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -236,26 +237,35 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -273,14 +283,31 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     }
   }
 
+  Color _getPositionColor(String position) {
+    switch (position.toLowerCase()) {
+      case 'admin':
+        return const Color(0xFFE53E3E);
+      case 'manager':
+        return const Color(0xFF3182CE);
+      case 'supervisor':
+        return const Color(0xFF38A169);
+      case 'staff':
+        return const Color(0xFF805AD5);
+      case 'technical':
+        return const Color(0xFF3182CE);
+      default:
+        return const Color(0xFF718096);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit User' : 'User Details'),
-        backgroundColor: const Color(0xFF338AFF),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         elevation: 0,
         actions: [
           if (_isSaving)
@@ -527,35 +554,126 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                         title: 'Username',
                         value: widget.staff.username,
                         icon: Icons.account_circle,
-                        color: Colors.purple,
+                        color: Colors.teal,
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: _buildInfoCard(
-                        title: 'Role',
-                        value: widget.staff.position,
-                        icon: Icons.work,
-                        color: Colors.orange,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceBright,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _getPositionColor(
+                              widget.staff.position,
+                            ).withOpacity(0.2),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.shadow.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: _getPositionColor(
+                                      widget.staff.position,
+                                    ).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.work,
+                                    color: _getPositionColor(
+                                      widget.staff.position,
+                                    ),
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Position',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.7),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getPositionColor(
+                                  widget.staff.position,
+                                ).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: _getPositionColor(
+                                    widget.staff.position,
+                                  ).withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                widget.staff.position,
+                                style: TextStyle(
+                                  color: _getPositionColor(
+                                    widget.staff.position,
+                                  ),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
 
-                _buildInfoCard(
-                  title: 'Email',
-                  value: widget.staff.email,
-                  icon: Icons.email,
-                  color: Colors.green,
-                ),
-                const SizedBox(height: 16),
-
-                _buildInfoCard(
-                  title: 'Phone Number',
-                  value: widget.staff.phoneNumber,
-                  icon: Icons.phone,
-                  color: Colors.blue,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Email',
+                        value: widget.staff.email,
+                        icon: Icons.email,
+                        color: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Phone Number',
+                        value: widget.staff.phoneNumber,
+                        icon: Icons.phone,
+                        color: Colors.purple,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ],

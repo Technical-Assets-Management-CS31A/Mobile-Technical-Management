@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/entities/item.dart';
-import '../../services/inventory_service.dart';
+import '../../services/archive_service.dart';
+import '../../widgets/barcode_widget.dart';
+import 'archive_item_detail_screen.dart';
 
 class ItemsArchiveScreen extends StatefulWidget {
   const ItemsArchiveScreen({super.key});
@@ -18,7 +20,7 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
   int _pageSize = 10;
   int _currentPage = 1;
 
-  final InventoryService _inventoryService = InventoryService();
+  final ArchiveService _archiveService = ArchiveService();
   List<Item> _items = [];
   bool _isLoading = true;
 
@@ -30,7 +32,7 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
 
   Future<void> _initializeAndLoadItems() async {
     try {
-      await _inventoryService.initialize();
+      await _archiveService.initialize();
       await _loadItems();
     } catch (e) {
       if (mounted) {
@@ -53,9 +55,18 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
     });
 
     try {
-      // Load archived items - you'll need to implement this in your service
-      // For now, using empty list as placeholder
-      final items = <Item>[];
+      // Load archived items using the ArchiveService
+      final items = await _archiveService.getArchivedItems(
+        page: _currentPage,
+        pageSize: _pageSize,
+        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        condition: _selectedCondition != 'All'
+            ? ItemCondition.values.firstWhere(
+                (c) => c.displayName == _selectedCondition,
+                orElse: () => ItemCondition.New,
+              )
+            : null,
+      );
 
       setState(() {
         _items = items;
@@ -122,17 +133,159 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
     });
   }
 
+  Future<void> _restoreItem(Item item) async {
+    try {
+      final success = await _archiveService.restoreItem(item.id);
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${item.itemName} has been restored successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          await _loadItems(); // Refresh the list
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to restore ${item.itemName}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error restoring item: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _permanentlyDeleteItem(Item item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permanently Delete Item'),
+        content: Text(
+          'Are you sure you want to permanently delete "${item.itemName}"? '
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final success = await _archiveService.permanentlyDeleteItem(item.id);
+        if (success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${item.itemName} has been permanently deleted'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            await _loadItems(); // Refresh the list
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to delete ${item.itemName}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting item: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   void _showBarcodeDialog(Item item) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Barcode: ${item.itemName}'),
+        title: Text(
+          'Barcode: ${item.itemName.isNotEmpty ? item.itemName : 'Archived Item'}',
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Serial Number: ${item.serialNumber}'),
+            Text(
+              'Serial Number: ${item.serialNumber.isNotEmpty ? item.serialNumber : 'N/A'}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 16),
             if (item.barcode != null && item.barcode!.isNotEmpty)
-              Text('Barcode: ${item.barcode}'),
+              BarcodeDisplayWidget(
+                barcodeData: item.barcode!,
+                width: 250,
+                height: 100,
+                label: 'Item Barcode',
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceBright,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withOpacity(0.3),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.qr_code_2,
+                      size: 48,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.3),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No barcode available',
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.5),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
         actions: [
@@ -424,14 +577,14 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
           ),
         ),
         title: Text(
-          item.itemName,
+          item.itemName.isNotEmpty ? item.itemName : 'Archived Item',
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'SN: ${item.serialNumber} • ${item.itemMake}',
+              'SN: ${item.serialNumber.isNotEmpty ? item.serialNumber : 'N/A'} • ${item.itemMake}',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -480,14 +633,30 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
                 onPressed: () => _showBarcodeDialog(item),
                 tooltip: 'View Barcode',
               ),
-            const Icon(Icons.chevron_right),
+            IconButton(
+              icon: Icon(Icons.restore, color: Colors.green),
+              onPressed: () => _restoreItem(item),
+              tooltip: 'Restore Item',
+            ),
+            IconButton(
+              icon: Icon(Icons.delete_forever, color: Colors.red),
+              onPressed: () => _permanentlyDeleteItem(item),
+              tooltip: 'Permanently Delete',
+            ),
           ],
         ),
-        onTap: () {
-          // Navigate to item detail or show archived item info
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Viewing archived item: ${item.itemName}')),
+        onTap: () async {
+          // Navigate to archive item detail screen
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ArchiveItemDetailScreen(item: item),
+            ),
           );
+
+          // If item was restored or deleted, refresh the list
+          if (result == true) {
+            await _loadItems();
+          }
         },
       ),
     );

@@ -448,6 +448,21 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
   }
 
+  Color _getConditionColor(ItemCondition condition) {
+    switch (condition) {
+      case ItemCondition.New:
+        return const Color(0xFF4CAF50); // Green
+      case ItemCondition.Good:
+        return const Color(0xFF2196F3); // Blue
+      case ItemCondition.Defective:
+        return const Color(0xFFF44336); // Red
+      case ItemCondition.Refurbished:
+        return const Color(0xFF9C27B0); // Purple
+      case ItemCondition.NeedRepair:
+        return const Color(0xFFFF9800); // Orange
+    }
+  }
+
   Widget _buildInfoCard({
     required String title,
     required String value,
@@ -459,6 +474,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
@@ -473,28 +489,35 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.7),
-                  fontWeight: FontWeight.w500,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -835,10 +858,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildInfoCard(
-                        title: 'Category',
-                        value: widget.item.category.displayName,
+                        title: 'Item Type',
+                        value: widget.item.itemType,
                         icon: Icons.category,
-                        color: Colors.orange,
+                        color: Colors.green,
                       ),
                     ),
                   ],
@@ -849,19 +872,103 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   children: [
                     Expanded(
                       child: _buildInfoCard(
-                        title: 'Condition',
-                        value: widget.item.condition.displayName,
-                        icon: Icons.info,
-                        color: Colors.green,
+                        title: 'Category',
+                        value: widget.item.category.displayName,
+                        icon: Icons.label,
+                        color: Colors.teal,
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: _buildInfoCard(
-                        title: 'Item Type',
-                        value: widget.item.itemType,
-                        icon: Icons.label,
-                        color: Colors.blue,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceBright,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _getConditionColor(
+                              widget.item.condition,
+                            ).withOpacity(0.2),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.shadow.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: _getConditionColor(
+                                      widget.item.condition,
+                                    ).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.assessment,
+                                    color: _getConditionColor(
+                                      widget.item.condition,
+                                    ),
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Condition',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.7),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getConditionColor(
+                                  widget.item.condition,
+                                ).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: _getConditionColor(
+                                    widget.item.condition,
+                                  ).withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                widget.item.condition.displayName,
+                                style: TextStyle(
+                                  color: _getConditionColor(
+                                    widget.item.condition,
+                                  ),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

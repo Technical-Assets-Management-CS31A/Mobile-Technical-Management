@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/entities/staff.dart';
+import '../../services/archive_service.dart';
+import 'archive_user_detail_screen.dart';
 
 class UsersArchiveScreen extends StatefulWidget {
   const UsersArchiveScreen({super.key});
@@ -17,13 +19,27 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
   int _pageSize = 10;
   int _currentPage = 1;
 
+  final ArchiveService _archiveService = ArchiveService();
   List<Staff> _staffList = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadStaffData();
+    _initializeAndLoadUsers();
+  }
+
+  Future<void> _initializeAndLoadUsers() async {
+    try {
+      await _archiveService.initialize();
+      await _loadStaffData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error initializing service: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -38,9 +54,13 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
     });
 
     try {
-      // Load archived staff - you'll need to implement this in your service
-      // For now, using empty list as placeholder
-      final staff = <Staff>[];
+      // Load archived users using the ArchiveService
+      final staff = await _archiveService.getArchivedUsers(
+        page: _currentPage,
+        pageSize: _pageSize,
+        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        status: _selectedFilter != 'All' ? _selectedFilter : null,
+      );
 
       setState(() {
         _staffList = staff;
@@ -99,6 +119,100 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
     setState(() {
       _currentPage = page;
     });
+  }
+
+  Future<void> _restoreUser(Staff staff) async {
+    try {
+      final success = await _archiveService.restoreUser(staff.id);
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${staff.name} has been restored successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          await _loadStaffData(); // Refresh the list
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to restore ${staff.name}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error restoring user: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _permanentlyDeleteUser(Staff staff) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permanently Delete User'),
+        content: Text(
+          'Are you sure you want to permanently delete "${staff.name}"? '
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final success = await _archiveService.permanentlyDeleteUser(staff.id);
+        if (success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${staff.name} has been permanently deleted'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            await _loadStaffData(); // Refresh the list
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to delete ${staff.name}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting user: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Color _getPositionColor(String position) {
@@ -354,150 +468,174 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
   }
 
   Widget _buildStaffCard(Staff staff) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceBright,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () async {
+        // Navigate to archive user detail screen
+        final result = await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ArchiveUserDetailScreen(staff: staff),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Avatar
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: _getPositionColor(staff.position).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(25),
+        );
+
+        // If user was restored or deleted, refresh the list
+        if (result == true) {
+          await _loadStaffData();
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceBright,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // Avatar
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: _getPositionColor(staff.position).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Icon(
+                    Icons.archive,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
                 ),
-                child: Icon(
-                  Icons.archive,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Staff info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      staff.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                const SizedBox(width: 16),
+                // Staff info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        staff.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      staff.position,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
+                      const SizedBox(height: 4),
+                      Text(
+                        staff.position,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getPositionColor(
-                          staff.position,
-                        ).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
                           color: _getPositionColor(
                             staff.position,
-                          ).withOpacity(0.3),
-                          width: 1,
+                          ).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _getPositionColor(
+                              staff.position,
+                            ).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          staff.status ?? 'Unknown',
+                          style: TextStyle(
+                            color: _getPositionColor(staff.position),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                      child: Text(
-                        staff.status ?? 'Unknown',
-                        style: TextStyle(
-                          color: _getPositionColor(staff.position),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              // Action button
-              IconButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Viewing archived user: ${staff.name}'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.chevron_right),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Additional info
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              children: [
+                // Action buttons
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: _buildInfoItem(Icons.email, 'Email', staff.email),
+                    IconButton(
+                      icon: Icon(Icons.restore, color: Colors.green),
+                      onPressed: () => _restoreUser(staff),
+                      tooltip: 'Restore User',
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildInfoItem(
-                        Icons.phone,
-                        'Phone',
-                        staff.phoneNumber,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInfoItem(
-                        Icons.person,
-                        'Username',
-                        staff.username,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildInfoItem(Icons.badge, 'ID', staff.id),
+                    IconButton(
+                      icon: Icon(Icons.delete_forever, color: Colors.red),
+                      onPressed: () => _permanentlyDeleteUser(staff),
+                      tooltip: 'Permanently Delete',
                     ),
                   ],
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            // Additional info
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoItem(
+                          Icons.email,
+                          'Email',
+                          staff.email,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildInfoItem(
+                          Icons.phone,
+                          'Phone',
+                          staff.phoneNumber,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoItem(
+                          Icons.person,
+                          'Username',
+                          staff.username,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildInfoItem(Icons.badge, 'ID', staff.id),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
