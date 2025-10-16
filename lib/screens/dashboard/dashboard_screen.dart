@@ -20,10 +20,11 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   int _selectedIndex = 0;
   int _previousIndex = 0;
   bool _isLoading = true;
+  late PageController _pageController;
 
   // Dashboard statistics
   int _totalItems = 0;
@@ -39,7 +40,14 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
     _loadDashboardData();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadDashboardData() async {
@@ -97,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             Expanded(
               child: _isLoading
                   ? DashboardSkeleton(isMobile: widget.isMobile)
-                  : _buildMainContent(),
+                  : _buildPageView(),
             ),
           ],
         ),
@@ -109,6 +117,11 @@ class _DashboardScreenState extends State<DashboardScreen>
             _previousIndex = _selectedIndex;
             _selectedIndex = index;
           });
+          _pageController.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+          );
           // Refresh dashboard data when returning to dashboard from other screens
           if (index == 0 && _previousIndex != 0) {
             setState(() {
@@ -205,16 +218,33 @@ class _DashboardScreenState extends State<DashboardScreen>
     return 'Evening';
   }
 
-  Widget _buildMainContent() {
-    // Handle different screens based on sidebar selection
-    if (_selectedIndex == 1) {
-      return InventoryScreen(isMobile: true);
-    } else if (_selectedIndex == 2) {
-      return StaffManagementScreen(isMobile: true);
-    } else if (_selectedIndex == 3) {
-      return HistoryScreen(isMobile: true);
-    }
+  Widget _buildPageView() {
+    return PageView(
+      controller: _pageController,
+      physics: const BouncingScrollPhysics(),
+      onPageChanged: (index) {
+        setState(() {
+          _previousIndex = _selectedIndex;
+          _selectedIndex = index;
+        });
+        // Refresh dashboard data when returning to dashboard from other screens
+        if (index == 0 && _previousIndex != 0) {
+          setState(() {
+            _isLoading = true;
+          });
+          _loadDashboardData();
+        }
+      },
+      children: [
+        _buildDashboardContent(),
+        InventoryScreen(isMobile: true),
+        StaffManagementScreen(isMobile: true),
+        HistoryScreen(isMobile: true),
+      ],
+    );
+  }
 
+  Widget _buildDashboardContent() {
     return RefreshIndicator(
       onRefresh: _loadDashboardData,
       child: SingleChildScrollView(
@@ -452,8 +482,14 @@ class _DashboardScreenState extends State<DashboardScreen>
                         child: TextButton.icon(
                           onPressed: () {
                             setState(() {
+                              _previousIndex = _selectedIndex;
                               _selectedIndex = 3; // Navigate to history screen
                             });
+                            _pageController.animateToPage(
+                              3,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOutCubic,
+                            );
                           },
                           icon: const Icon(
                             Icons.history,
@@ -524,8 +560,14 @@ class _DashboardScreenState extends State<DashboardScreen>
                       child: TextButton.icon(
                         onPressed: () {
                           setState(() {
+                            _previousIndex = _selectedIndex;
                             _selectedIndex = 3; // Navigate to history screen
                           });
+                          _pageController.animateToPage(
+                            3,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeOutCubic,
+                          );
                         },
                         icon: const Icon(
                           Icons.history,
@@ -843,32 +885,35 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _handleCardTap(String cardTitle) {
+    int targetIndex;
     switch (cardTitle) {
       case 'Total Items':
-        setState(() {
-          _selectedIndex = 1; // Navigate to inventory screen
-        });
+        targetIndex = 1; // Navigate to inventory screen
         break;
       case 'Active Users':
-        setState(() {
-          _selectedIndex = 2; // Navigate to staff management screen
-        });
+        targetIndex = 2; // Navigate to staff management screen
         break;
       case 'Borrowed Items':
-        setState(() {
-          _selectedIndex = 3; // Navigate to history screen
-        });
+        targetIndex = 3; // Navigate to history screen
         break;
       case 'Categories':
-        setState(() {
-          _selectedIndex =
-              1; // Navigate to inventory screen (categories are part of inventory)
-        });
+        targetIndex =
+            1; // Navigate to inventory screen (categories are part of inventory)
         break;
       default:
-        // Do nothing for unknown cards
-        break;
+        return; // Do nothing for unknown cards
     }
+
+    setState(() {
+      _previousIndex = _selectedIndex;
+      _selectedIndex = targetIndex;
+    });
+
+    _pageController.animateToPage(
+      targetIndex,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   Future<void> _showLogoutDialog(BuildContext context) async {

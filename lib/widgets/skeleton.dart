@@ -20,6 +20,7 @@ class SkeletonBox extends StatelessWidget {
     return Shimmer.fromColors(
       baseColor: baseColor,
       highlightColor: highlightColor,
+      period: const Duration(milliseconds: 400), // Very fast animation
       child: Container(
         height: height,
         width: width,
