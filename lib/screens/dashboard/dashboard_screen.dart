@@ -40,7 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _selectedIndex);
+    _pageController = PageController(initialPage: 0);
     _loadDashboardData();
   }
 
@@ -113,21 +113,24 @@ class _DashboardScreenState extends State<DashboardScreen>
       bottomNavigationBar: BottomBar(
         selectedIndex: _selectedIndex,
         onItemSelected: (index) {
-          setState(() {
-            _previousIndex = _selectedIndex;
-            _selectedIndex = index;
-          });
-          _pageController.animateToPage(
-            index,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutCubic,
-          );
-          // Refresh dashboard data when returning to dashboard from other screens
-          if (index == 0 && _previousIndex != 0) {
+          if (index != _selectedIndex) {
             setState(() {
-              _isLoading = true;
+              _previousIndex = _selectedIndex;
+              _selectedIndex = index;
             });
-            _loadDashboardData();
+            // Refresh dashboard data when returning to dashboard from other screens
+            if (index == 0 && _previousIndex != 0) {
+              setState(() {
+                _isLoading = true;
+              });
+              _loadDashboardData();
+            }
+            // Use animateToPage instead of jumpToPage for smoother transitions
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
           }
         },
       ),
@@ -221,18 +224,21 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildPageView() {
     return PageView(
       controller: _pageController,
-      physics: const BouncingScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       onPageChanged: (index) {
-        setState(() {
-          _previousIndex = _selectedIndex;
-          _selectedIndex = index;
-        });
-        // Refresh dashboard data when returning to dashboard from other screens
-        if (index == 0 && _previousIndex != 0) {
+        // Only update state if the index actually changed
+        if (index != _selectedIndex) {
           setState(() {
-            _isLoading = true;
+            _previousIndex = _selectedIndex;
+            _selectedIndex = index;
           });
-          _loadDashboardData();
+          // Refresh dashboard data when returning to dashboard from other screens
+          if (index == 0 && _previousIndex != 0) {
+            setState(() {
+              _isLoading = true;
+            });
+            _loadDashboardData();
+          }
         }
       },
       children: [
@@ -487,8 +493,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                             });
                             _pageController.animateToPage(
                               3,
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeOutCubic,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
                             );
                           },
                           icon: const Icon(
@@ -565,8 +571,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                           });
                           _pageController.animateToPage(
                             3,
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutCubic,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
                           );
                         },
                         icon: const Icon(
@@ -911,37 +917,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     _pageController.animateToPage(
       targetIndex,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
-  Future<void> _showLogoutDialog(BuildContext context) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to logout?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Logout', style: TextStyle(color: Colors.red)),
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await context.read<AuthProvider>().logout();
-                // The AuthWrapper will automatically redirect to login screen
-              },
-            ),
-          ],
-        );
-      },
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
     );
   }
 
