@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/entities/staff.dart';
+import '../../utils/constants.dart';
 
 class AddStaffScreen extends StatefulWidget {
   const AddStaffScreen({super.key, required this.isMobile});
@@ -19,11 +20,11 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _positionController = TextEditingController();
-  final _userRoleController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   final List<String> _userRoleOptions = ['Staff', 'Admin'];
+  String? _selectedUserRole;
   bool _isSaving = false;
 
   @override
@@ -35,7 +36,6 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _positionController.dispose();
-    _userRoleController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -63,7 +63,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
       confirmPassword: _confirmPasswordController.text.trim(),
-      userRole: _userRoleController.text.trim(),
+      userRole: _selectedUserRole ?? '',
       status: 'Online',
     );
     if (mounted) {
@@ -340,19 +340,11 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               // Password
               _buildFormField(
                 label: 'Password *',
-                hint: 'Enter password',
+                hint: 'Enter password with special characters',
                 controller: _passwordController,
                 icon: Icons.lock,
                 obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
+                validator: AppConstants.validatePassword,
               ),
               const SizedBox(height: 20),
 
@@ -370,7 +362,8 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                   if (value != _passwordController.text) {
                     return 'Passwords do not match';
                   }
-                  return null;
+                  // Also validate the confirm password has special characters
+                  return AppConstants.validatePassword(value);
                 },
               ),
               const SizedBox(height: 20),
@@ -401,15 +394,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 controller: _phoneController,
                 icon: Icons.phone,
                 keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a phone number';
-                  }
-                  if (value.trim().length > 10) {
-                    return 'Phone number must be 10 characters or less';
-                  }
-                  return null;
-                },
+                validator: AppConstants.validatePhoneNumber,
               ),
               const SizedBox(height: 20),
 
@@ -418,11 +403,11 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 label: 'Role *',
                 icon: Icons.work,
                 items: _userRoleOptions,
-                value: _userRoleController.text.isEmpty
-                    ? null
-                    : _userRoleController.text,
+                value: _selectedUserRole,
                 onChanged: (val) {
-                  if (val != null) _userRoleController.text = val;
+                  setState(() {
+                    _selectedUserRole = val;
+                  });
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {

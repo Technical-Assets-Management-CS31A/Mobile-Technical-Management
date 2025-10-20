@@ -113,7 +113,8 @@ class Staff {
       'phoneNumber': phoneNumber,
       'username': username,
       'password': password, // Include password in JSON for user creation
-      'confirmPassword': confirmPassword, // Include confirm password in JSON for user creation
+      'confirmPassword':
+          confirmPassword, // Include confirm password in JSON for user creation
       'userRole': userRole,
       'status': status,
       '\$type': type,
@@ -124,17 +125,40 @@ class Staff {
 
   // Helper method for registration endpoint - matches curl command structure exactly
   Map<String, dynamic> toRegistrationJson() {
-    return {
-      'username': username,
-      'lastName': lastName,
-      'middleName': middleName,
-      'firstName': firstName,
-      'email': email,
-      'phoneNumber': phoneNumber,
-      'role': userRole,
-      'password': password,
-      'confirmPassword': confirmPassword,
+    // Clean phone number - remove all non-digit characters
+    String? cleanPhoneNumber;
+    if (phoneNumber != null && phoneNumber!.isNotEmpty) {
+      cleanPhoneNumber = phoneNumber!.replaceAll(RegExp(r'[^\d]'), '');
+    }
+
+    // Ensure all required fields are present and not null
+    final registrationData = <String, dynamic>{
+      'username': username.trim(),
+      'lastName': lastName.trim(),
+      'firstName': firstName.trim(),
+      'email': email.trim(),
+      'role': userRole.trim(),
     };
+
+    // Add optional fields only if they have values
+    if (cleanPhoneNumber != null && cleanPhoneNumber.isNotEmpty) {
+      registrationData['phoneNumber'] = cleanPhoneNumber;
+    }
+
+    if (password != null && password!.trim().isNotEmpty) {
+      registrationData['password'] = password!.trim();
+    }
+
+    if (confirmPassword != null && confirmPassword!.trim().isNotEmpty) {
+      registrationData['confirmPassword'] = confirmPassword!.trim();
+    }
+
+    // Add middleName only if it's not null and not empty
+    if (middleName != null && middleName!.trim().isNotEmpty) {
+      registrationData['middleName'] = middleName!.trim();
+    }
+
+    return registrationData;
   }
 
   // Helper method for updating staff as form data (for multipart requests)

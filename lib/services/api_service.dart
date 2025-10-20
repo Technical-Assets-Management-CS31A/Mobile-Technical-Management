@@ -221,9 +221,8 @@ class ApiService {
   }) async {
     try {
       final url = _getFullUrl(endpoint);
-      print('POST Request: $url');
-
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
+
       final response = await _client!.post(
         Uri.parse(url),
         headers: requestHeaders,

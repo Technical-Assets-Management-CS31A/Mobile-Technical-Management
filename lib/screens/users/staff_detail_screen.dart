@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/entities/staff.dart';
+import '../../utils/constants.dart';
 
 class StaffDetailScreen extends StatefulWidget {
   const StaffDetailScreen({
@@ -520,15 +521,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                   controller: _phoneController,
                   icon: Icons.phone,
                   keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a phone number';
-                    }
-                    if (value.trim().length > 10) {
-                      return 'Phone number must be 10 characters or less';
-                    }
-                    return null;
-                  },
+                  validator: AppConstants.validatePhoneNumber,
                 ),
                 const SizedBox(height: 20),
 

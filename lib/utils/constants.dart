@@ -64,4 +64,39 @@ class AppConstants {
       900: Color(0xFF041F41),
     });
   }
+
+  // Phone number validation
+  static String? validatePhoneNumber(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter a phone number';
+    }
+
+    // Remove all non-digit characters
+    String digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
+
+    // Check if exactly 10 digits
+    if (digitsOnly.length != 10) {
+      return 'Phone number must be exactly 10 digits (no spaces, dashes, or other characters)';
+    }
+
+    return null;
+  }
+
+  // Password validation
+  static String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    }
+
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+
+    // Check for special characters
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+      return 'Password must contain at least one special character (!@#\$%^&*(),.?":{}|<>)';
+    }
+
+    return null;
+  }
 }

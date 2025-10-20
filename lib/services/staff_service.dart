@@ -24,9 +24,11 @@ class StaffService {
   // CREATE - Add a new staff member
   Future<Staff> createStaff(Staff staff) async {
     try {
+      final registrationData = staff.toRegistrationJson();
+
       final response = await _apiService.post(
         "$_registrationEndpoint",
-        body: staff.toRegistrationJson(),
+        body: registrationData,
       );
 
       return Staff.fromJson(response['data'] ?? response);
