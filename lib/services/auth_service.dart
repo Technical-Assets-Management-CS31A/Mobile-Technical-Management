@@ -89,7 +89,8 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final loginEndpoint = dotenv.env['AUTH_LOGIN_ENDPOINT'] ?? '/auth/login-mobile';
+      final loginEndpoint =
+          dotenv.env['AUTH_LOGIN_ENDPOINT'] ?? '/auth/login-mobile';
 
       // Backend expects 'identifier' field according to study guide
       final requestBody = {'identifier': identifier, 'password': password};

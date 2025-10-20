@@ -8,6 +8,7 @@ class Staff {
   final String? phoneNumber;
   final String username;
   final String? password; // Password field for user creation
+  final String? confirmPassword; // Confirm password field for user creation
   final String userRole;
   final String? status;
   final String? type; // $type field from API
@@ -32,6 +33,7 @@ class Staff {
     this.phoneNumber,
     required this.username,
     this.password,
+    this.confirmPassword,
     required this.userRole,
     this.status,
     this.type,
@@ -49,6 +51,7 @@ class Staff {
     String? phoneNumber,
     String? username,
     String? password,
+    String? confirmPassword,
     String? userRole,
     String? status,
     String? type,
@@ -65,6 +68,7 @@ class Staff {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       username: username ?? this.username,
       password: password ?? this.password,
+      confirmPassword: confirmPassword ?? this.confirmPassword,
       userRole: userRole ?? this.userRole,
       status: status ?? this.status,
       type: type ?? this.type,
@@ -84,6 +88,8 @@ class Staff {
       phoneNumber: json['phoneNumber'],
       username: json['username'] ?? '',
       password: json['password'], // Password is typically not returned from API
+      confirmPassword:
+          json['confirmPassword'], // Confirm password is typically not returned from API
       userRole: json['userRole'] ?? '',
       status: json['status'],
       type: json['\$type'],
@@ -107,11 +113,27 @@ class Staff {
       'phoneNumber': phoneNumber,
       'username': username,
       'password': password, // Include password in JSON for user creation
+      'confirmPassword': confirmPassword, // Include confirm password in JSON for user creation
       'userRole': userRole,
       'status': status,
       '\$type': type,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+    };
+  }
+
+  // Helper method for registration endpoint - matches curl command structure exactly
+  Map<String, dynamic> toRegistrationJson() {
+    return {
+      'username': username,
+      'lastName': lastName,
+      'middleName': middleName,
+      'firstName': firstName,
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'role': userRole,
+      'password': password,
+      'confirmPassword': confirmPassword,
     };
   }
 

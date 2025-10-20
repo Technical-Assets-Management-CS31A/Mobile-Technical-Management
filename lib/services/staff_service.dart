@@ -9,12 +9,15 @@ class StaffService {
 
   late final ApiService _apiService;
   late final String _staffEndpoint;
+  late final String _registrationEndpoint; // Add this
 
   /// Initialize the StaffService with ApiService dependency
   Future<void> initialize() async {
     _apiService = ApiService();
     await _apiService.initialize();
     _staffEndpoint = dotenv.env['STAFF_ENDPOINT'] ?? '/users';
+    _registrationEndpoint =
+        dotenv.env['REGISTRATION_ENDPOINT'] ?? '/auth/register';
     print('StaffService initialized with endpoint: $_staffEndpoint');
   }
 
@@ -22,8 +25,8 @@ class StaffService {
   Future<Staff> createStaff(Staff staff) async {
     try {
       final response = await _apiService.post(
-        _staffEndpoint,
-        body: staff.toJson(),
+        "$_registrationEndpoint",
+        body: staff.toRegistrationJson(),
       );
 
       return Staff.fromJson(response['data'] ?? response);

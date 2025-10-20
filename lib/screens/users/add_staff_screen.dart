@@ -62,6 +62,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
           : _phoneController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
+      confirmPassword: _confirmPasswordController.text.trim(),
       userRole: _userRoleController.text.trim(),
       status: 'Online',
     );
