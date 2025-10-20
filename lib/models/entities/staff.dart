@@ -113,8 +113,7 @@ class Staff {
       'phoneNumber': phoneNumber,
       'username': username,
       'password': password, // Include password in JSON for user creation
-      'confirmPassword':
-          confirmPassword, // Include confirm password in JSON for user creation
+      'confirmPassword': confirmPassword, // Include confirm password in JSON for user creation
       'userRole': userRole,
       'status': status,
       '\$type': type,
