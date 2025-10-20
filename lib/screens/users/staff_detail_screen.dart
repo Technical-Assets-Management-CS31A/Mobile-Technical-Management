@@ -129,11 +129,11 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -145,16 +145,20 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
         keyboardType: keyboardType,
         obscureText: obscureText,
         enabled: _isEditing,
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF338AFF)),
+          labelStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+          prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
           suffixIcon: suffixIcon,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.surfaceBright,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 16,
@@ -174,11 +178,11 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -188,18 +192,33 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       child: DropdownButtonFormField<String>(
         value: value,
         items: items
-            .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
+            .map(
+              (opt) => DropdownMenuItem(
+                value: opt,
+                child: Text(
+                  opt,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            )
             .toList(),
         onChanged: _isEditing ? onChanged : null,
+        dropdownColor: Theme.of(context).colorScheme.surfaceBright,
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF338AFF)),
+          labelStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+          prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.surfaceBright,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 16,
@@ -369,15 +388,17 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF338AFF).withOpacity(0.1),
-                      const Color(0xFF338AFF).withOpacity(0.05),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.05),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF338AFF).withOpacity(0.2),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.2),
                     width: 1,
                   ),
                 ),
@@ -386,22 +407,24 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF338AFF).withOpacity(0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         _getRoleIcon(widget.staff.position),
-                        color: const Color(0xFF338AFF),
+                        color: Theme.of(context).colorScheme.primary,
                         size: 48,
                       ),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       _isEditing ? 'Edit User Information' : 'User Information',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF338AFF),
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -409,7 +432,12 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                       _isEditing
                           ? 'Update the user details below'
                           : 'View and manage user details',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
+                      ),
                     ),
                   ],
                 ),
@@ -520,7 +548,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                   title: 'Full Name',
                   value: widget.staff.name,
                   icon: Icons.person,
-                  color: const Color(0xFF338AFF),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(height: 16),
 
@@ -531,7 +559,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                         title: 'Username',
                         value: widget.staff.username,
                         icon: Icons.account_circle,
-                        color: Colors.teal,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -638,7 +666,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                         title: 'Email',
                         value: widget.staff.email,
                         icon: Icons.email,
-                        color: Colors.green,
+                        color: Theme.of(context).colorScheme.tertiary,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -647,7 +675,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                         title: 'Phone Number',
                         value: widget.staff.phoneNumber ?? 'No Phone',
                         icon: Icons.phone,
-                        color: Colors.purple,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ],
