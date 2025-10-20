@@ -84,7 +84,8 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
           _searchQuery.isEmpty ||
           staff.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           staff.email.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          staff.position.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (staff.position?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+              false) ||
           staff.username.toLowerCase().contains(_searchQuery.toLowerCase());
 
       final matchesFilter =
@@ -215,7 +216,10 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
     }
   }
 
-  Color _getPositionColor(String position) {
+  Color _getPositionColor(String? position) {
+    if (position == null) {
+      return const Color(0xFF718096);
+    }
     switch (position.toLowerCase()) {
       case 'admin':
         return const Color(0xFFE53E3E);
@@ -225,6 +229,8 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
         return const Color(0xFF38A169);
       case 'staff':
         return const Color(0xFF805AD5);
+      case 'lab technician':
+        return const Color(0xFF10B981);
       default:
         return const Color(0xFF718096);
     }
@@ -530,7 +536,7 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        staff.position,
+                        staff.position ?? 'No Position',
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(
@@ -610,7 +616,7 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
                         child: _buildInfoItem(
                           Icons.phone,
                           'Phone',
-                          staff.phoneNumber,
+                          staff.phoneNumber ?? 'No Phone',
                         ),
                       ),
                     ],

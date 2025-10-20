@@ -18,7 +18,8 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
-  late final ApiService _apiService;
+  ApiService? _apiService;
+  bool _isInitialized = false;
 
   // Storage keys for SharedPreferences
   static const String _tokenKey = 'auth_token';
@@ -28,8 +29,14 @@ class AuthService {
 
   /// Initialize the AuthService with ApiService dependency
   Future<void> initialize() async {
+    if (_isInitialized) {
+      print('AuthService already initialized, skipping...');
+      return;
+    }
+
     _apiService = ApiService();
-    await _apiService.initialize();
+    // Don't call initialize() on ApiService here since it's already initialized in main.dart
+    _isInitialized = true;
     print('AuthService initialized');
   }
 
@@ -82,22 +89,25 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final loginEndpoint = dotenv.env['AUTH_LOGIN_ENDPOINT'] ?? '/auth/login';
+      final loginEndpoint = dotenv.env['AUTH_LOGIN_ENDPOINT'] ?? '/auth/login-mobile';
 
       // Backend expects 'identifier' field according to study guide
       final requestBody = {'identifier': identifier, 'password': password};
 
       _logApiCall(
         'POST',
-        '${_apiService.baseUrl}$loginEndpoint',
+        '${_apiService?.baseUrl ?? baseUrl}$loginEndpoint',
         body: json.encode(requestBody),
       );
 
-      final response = await _apiService.post(loginEndpoint, body: requestBody);
+      final response = await _apiService!.post(
+        loginEndpoint,
+        body: requestBody,
+      );
 
       _logApiCall(
         'POST',
-        '${_apiService.baseUrl}$loginEndpoint',
+        '${_apiService?.baseUrl ?? baseUrl}$loginEndpoint',
         response: json.encode(response),
         statusCode: 200,
       );
@@ -142,11 +152,11 @@ class AuthService {
       final logoutEndpoint =
           dotenv.env['AUTH_LOGOUT_ENDPOINT'] ?? '/auth/logout';
 
-      _logApiCall('POST', '${_apiService.baseUrl}$logoutEndpoint');
+      _logApiCall('POST', '${_apiService?.baseUrl ?? baseUrl}$logoutEndpoint');
 
       // Attempt to call logout endpoint (optional - may fail if token is already invalid)
       try {
-        await _apiService.post(logoutEndpoint);
+        await _apiService!.post(logoutEndpoint);
       } catch (e) {
         // Ignore logout endpoint errors - we still want to clear local data
         print('Logout endpoint call failed (this is usually fine): $e');
@@ -157,7 +167,7 @@ class AuthService {
 
       _logApiCall(
         'POST',
-        '${_apiService.baseUrl}$logoutEndpoint',
+        '${_apiService?.baseUrl ?? baseUrl}$logoutEndpoint',
         response: '{"success": true}',
         statusCode: 200,
       );
@@ -191,18 +201,18 @@ class AuthService {
 
       _logApiCall(
         'POST',
-        '${_apiService.baseUrl}$refreshEndpoint',
+        '${_apiService?.baseUrl ?? baseUrl}$refreshEndpoint',
         body: json.encode(requestBody),
       );
 
-      final response = await _apiService.post(
+      final response = await _apiService!.post(
         refreshEndpoint,
         body: requestBody,
       );
 
       _logApiCall(
         'POST',
-        '${_apiService.baseUrl}$refreshEndpoint',
+        '${_apiService?.baseUrl ?? baseUrl}$refreshEndpoint',
         response: json.encode(response),
         statusCode: 200,
       );
@@ -238,7 +248,7 @@ class AuthService {
   /// Get Swagger API documentation
   Future<Map<String, dynamic>> getSwaggerDocs() async {
     try {
-      final response = await _apiService.get('/v3/api-docs');
+      final response = await _apiService!.get('/v3/api-docs');
       return {'success': true, 'data': response};
     } catch (e) {
       return {
@@ -251,7 +261,7 @@ class AuthService {
   /// Test API connection
   Future<Map<String, dynamic>> testConnection() async {
     try {
-      final response = await _apiService.get('/health');
+      final response = await _apiService!.get('/health');
       return {
         'success': true,
         'message': 'API connection successful',

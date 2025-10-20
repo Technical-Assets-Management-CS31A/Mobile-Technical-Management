@@ -40,21 +40,28 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  late final String _baseUrl;
-  late final AuthService _authService;
-  late final http.Client _client;
+  String? _baseUrl;
+  AuthService? _authService;
+  http.Client? _client;
+  bool _isInitialized = false;
 
   /// Initialize the API service with base URL and dependencies
   Future<void> initialize() async {
+    if (_isInitialized) {
+      print('ApiService already initialized, skipping...');
+      return;
+    }
+
     _baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5278/api/v1';
     _authService = AuthService();
     _client = http.Client();
+    _isInitialized = true;
 
     print('ApiService initialized with base URL: $_baseUrl');
   }
 
   /// Get the base URL for API requests
-  String get baseUrl => _baseUrl;
+  String get baseUrl => _baseUrl ?? 'http://localhost:5278/api/v1';
 
   /// Get the full URL by combining base URL with endpoint
   String _getFullUrl(String endpoint) {
@@ -62,7 +69,7 @@ class ApiService {
     final cleanEndpoint = endpoint.startsWith('/')
         ? endpoint.substring(1)
         : endpoint;
-    return '$_baseUrl/$cleanEndpoint';
+    return '${_baseUrl ?? 'http://localhost:5278/api/v1'}/$cleanEndpoint';
   }
 
   /// Get headers with authorization token
@@ -75,9 +82,11 @@ class ApiService {
     };
 
     // Add Bearer token for mobile app authentication
-    final token = await _authService.getStoredToken();
-    if (token != null && token.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $token';
+    if (_authService != null) {
+      final token = await _authService!.getStoredToken();
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
     }
 
     // Add any additional headers
@@ -93,6 +102,7 @@ class ApiService {
     switch (response.statusCode) {
       case 200:
       case 201:
+      case 204:
         // Success - no exception needed
         break;
       case 400:
@@ -157,18 +167,18 @@ class ApiService {
       print('GET Request: $url');
 
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
-      final response = await _client.get(
+      final response = await _client!.get(
         Uri.parse(url),
         headers: requestHeaders,
       );
 
       // Handle 401 responses with token refresh
       if (response.statusCode == 401) {
-        final refreshSuccess = await _authService.refresh();
+        final refreshSuccess = await _authService?.refresh() ?? false;
         if (refreshSuccess) {
           // Retry the request with new token
           final newHeaders = await _getHeaders(additionalHeaders: headers);
-          final retryResponse = await _client.get(
+          final retryResponse = await _client!.get(
             Uri.parse(url),
             headers: newHeaders,
           );
@@ -214,7 +224,7 @@ class ApiService {
       print('POST Request: $url');
 
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
-      final response = await _client.post(
+      final response = await _client!.post(
         Uri.parse(url),
         headers: requestHeaders,
         body: body != null ? json.encode(body) : null,
@@ -222,11 +232,11 @@ class ApiService {
 
       // Handle 401 responses with token refresh
       if (response.statusCode == 401) {
-        final refreshSuccess = await _authService.refresh();
+        final refreshSuccess = await _authService?.refresh() ?? false;
         if (refreshSuccess) {
           // Retry the request with new token
           final newHeaders = await _getHeaders(additionalHeaders: headers);
-          final retryResponse = await _client.post(
+          final retryResponse = await _client!.post(
             Uri.parse(url),
             headers: newHeaders,
             body: body != null ? json.encode(body) : null,
@@ -271,18 +281,18 @@ class ApiService {
       print('DELETE Request: $url');
 
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
-      final response = await _client.delete(
+      final response = await _client!.delete(
         Uri.parse(url),
         headers: requestHeaders,
       );
 
       // Handle 401 responses with token refresh
       if (response.statusCode == 401) {
-        final refreshSuccess = await _authService.refresh();
+        final refreshSuccess = await _authService?.refresh() ?? false;
         if (refreshSuccess) {
           // Retry the request with new token
           final newHeaders = await _getHeaders(additionalHeaders: headers);
-          final retryResponse = await _client.delete(
+          final retryResponse = await _client!.delete(
             Uri.parse(url),
             headers: newHeaders,
           );
@@ -328,7 +338,7 @@ class ApiService {
       print('PUT Request: $url');
 
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
-      final response = await _client.put(
+      final response = await _client!.put(
         Uri.parse(url),
         headers: requestHeaders,
         body: body != null ? json.encode(body) : null,
@@ -336,11 +346,11 @@ class ApiService {
 
       // Handle 401 responses with token refresh
       if (response.statusCode == 401) {
-        final refreshSuccess = await _authService.refresh();
+        final refreshSuccess = await _authService?.refresh() ?? false;
         if (refreshSuccess) {
           // Retry the request with new token
           final newHeaders = await _getHeaders(additionalHeaders: headers);
-          final retryResponse = await _client.put(
+          final retryResponse = await _client!.put(
             Uri.parse(url),
             headers: newHeaders,
             body: body != null ? json.encode(body) : null,
@@ -387,7 +397,7 @@ class ApiService {
       print('PATCH Request: $url');
 
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
-      final response = await _client.patch(
+      final response = await _client!.patch(
         Uri.parse(url),
         headers: requestHeaders,
         body: body != null ? json.encode(body) : null,
@@ -395,11 +405,11 @@ class ApiService {
 
       // Handle 401 responses with token refresh
       if (response.statusCode == 401) {
-        final refreshSuccess = await _authService.refresh();
+        final refreshSuccess = await _authService?.refresh() ?? false;
         if (refreshSuccess) {
           // Retry the request with new token
           final newHeaders = await _getHeaders(additionalHeaders: headers);
-          final retryResponse = await _client.patch(
+          final retryResponse = await _client!.patch(
             Uri.parse(url),
             headers: newHeaders,
             body: body != null ? json.encode(body) : null,
@@ -414,6 +424,12 @@ class ApiService {
       }
 
       _handleResponse(response);
+
+      // Handle 204 No Content responses
+      if (response.statusCode == 204) {
+        return {'success': true, 'message': 'No content'};
+      }
+
       return json.decode(response.body) as Map<String, dynamic>;
     } on SocketException {
       throw const NetworkException('No internet connection');
@@ -451,7 +467,7 @@ class ApiService {
       final request = http.MultipartRequest('POST', Uri.parse(url));
 
       // Add authorization header
-      final token = await _authService.getStoredToken();
+      final token = await _authService?.getStoredToken();
       if (token != null && token.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $token';
       }
@@ -492,16 +508,16 @@ class ApiService {
       }
 
       // Send the request
-      final streamedResponse = await _client.send(request);
+      final streamedResponse = await _client!.send(request);
       final response = await http.Response.fromStream(streamedResponse);
 
       // Handle 401 responses with token refresh
       if (response.statusCode == 401) {
-        final refreshSuccess = await _authService.refresh();
+        final refreshSuccess = await _authService?.refresh() ?? false;
         if (refreshSuccess) {
           // Retry the request with new token
           final retryRequest = http.MultipartRequest('POST', Uri.parse(url));
-          final newToken = await _authService.getStoredToken();
+          final newToken = await _authService?.getStoredToken();
           if (newToken != null && newToken.isNotEmpty) {
             retryRequest.headers['Authorization'] = 'Bearer $newToken';
           }
@@ -530,7 +546,7 @@ class ApiService {
             });
           }
 
-          final retryStreamedResponse = await _client.send(retryRequest);
+          final retryStreamedResponse = await _client!.send(retryRequest);
           final retryResponse = await http.Response.fromStream(
             retryStreamedResponse,
           );
@@ -581,7 +597,7 @@ class ApiService {
       final request = http.MultipartRequest('PATCH', Uri.parse(url));
 
       // Add authorization header
-      final token = await _authService.getStoredToken();
+      final token = await _authService?.getStoredToken();
       if (token != null && token.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $token';
       }
@@ -622,16 +638,16 @@ class ApiService {
       }
 
       // Send the request
-      final streamedResponse = await _client.send(request);
+      final streamedResponse = await _client!.send(request);
       final response = await http.Response.fromStream(streamedResponse);
 
       // Handle 401 responses with token refresh
       if (response.statusCode == 401) {
-        final refreshSuccess = await _authService.refresh();
+        final refreshSuccess = await _authService?.refresh() ?? false;
         if (refreshSuccess) {
           // Retry the request with new token
           final retryRequest = http.MultipartRequest('PATCH', Uri.parse(url));
-          final newToken = await _authService.getStoredToken();
+          final newToken = await _authService?.getStoredToken();
           if (newToken != null && newToken.isNotEmpty) {
             retryRequest.headers['Authorization'] = 'Bearer $newToken';
           }
@@ -660,7 +676,7 @@ class ApiService {
             });
           }
 
-          final retryStreamedResponse = await _client.send(retryRequest);
+          final retryStreamedResponse = await _client!.send(retryRequest);
           final retryResponse = await http.Response.fromStream(
             retryStreamedResponse,
           );
@@ -756,6 +772,6 @@ class ApiService {
 
   /// Dispose of the HTTP client
   void dispose() {
-    _client.close();
+    _client?.close();
   }
 }

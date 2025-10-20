@@ -18,14 +18,13 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _positionController = TextEditingController();
+  final _userRoleController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _positionController = TextEditingController();
 
-  final List<String> _positionOptions = ['Technical', 'Admin'];
+  final List<String> _userRoleOptions = ['Staff', 'Admin'];
   bool _isSaving = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -35,9 +34,10 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
     _usernameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _positionController.dispose();
+    _userRoleController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _positionController.dispose();
     super.dispose();
   }
 
@@ -53,12 +53,17 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       middleName: _middleNameController.text.trim().isEmpty
           ? null
           : _middleNameController.text.trim(),
-      position: _positionController.text.trim(),
+      position: _positionController.text.trim().isEmpty
+          ? null
+          : _positionController.text.trim(),
       email: _emailController.text.trim(),
-      phoneNumber: _phoneController.text.trim(),
+      phoneNumber: _phoneController.text.trim().isEmpty
+          ? null
+          : _phoneController.text.trim(),
       username: _usernameController.text.trim(),
-      password: _passwordController.text,
-      status: 'active',
+      password: _passwordController.text.trim(),
+      userRole: _userRoleController.text.trim(),
+      status: 'Online',
     );
     if (mounted) {
       Navigator.of(context).pop({'created': newStaff});
@@ -303,6 +308,44 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               ),
               const SizedBox(height: 20),
 
+              // Password
+              _buildFormField(
+                label: 'Password *',
+                hint: 'Enter password',
+                controller: _passwordController,
+                icon: Icons.lock,
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Confirm Password
+              _buildFormField(
+                label: 'Confirm Password *',
+                hint: 'Confirm your password',
+                controller: _confirmPasswordController,
+                icon: Icons.lock_outline,
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please confirm your password';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
               // Email
               _buildFormField(
                 label: 'Email *',
@@ -333,70 +376,8 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a phone number';
                   }
-                  if (!RegExp(r'^09\d{9}$').hasMatch(value)) {
-                    return 'Please enter valid format: 09XXXXXXXXX';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // Password
-              _buildFormField(
-                label: 'Password *',
-                hint: 'Enter password',
-                controller: _passwordController,
-                icon: Icons.lock,
-                obscureText: _obscurePassword,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                    color: Colors.grey,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // Confirm Password
-              _buildFormField(
-                label: 'Confirm Password *',
-                hint: 'Confirm password',
-                controller: _confirmPasswordController,
-                icon: Icons.lock_outline,
-                obscureText: _obscureConfirmPassword,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirmPassword
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                    color: Colors.grey,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscureConfirmPassword = !_obscureConfirmPassword;
-                    });
-                  },
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
-                  }
-                  if (value != _passwordController.text) {
-                    return 'Passwords do not match';
+                  if (value.trim().length > 10) {
+                    return 'Phone number must be 10 characters or less';
                   }
                   return null;
                 },
@@ -407,12 +388,12 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               _buildDropdownField(
                 label: 'Role *',
                 icon: Icons.work,
-                items: _positionOptions,
-                value: _positionController.text.isEmpty
+                items: _userRoleOptions,
+                value: _userRoleController.text.isEmpty
                     ? null
-                    : _positionController.text,
+                    : _userRoleController.text,
                 onChanged: (val) {
-                  if (val != null) _positionController.text = val;
+                  if (val != null) _userRoleController.text = val;
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {

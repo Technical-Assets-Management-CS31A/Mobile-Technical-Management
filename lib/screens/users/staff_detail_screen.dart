@@ -23,12 +23,10 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
-  late TextEditingController _passwordController;
-  String _position = 'Technical';
+  String _userRole = 'Staff';
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
-  bool _obscurePassword = true;
-  final List<String> _positionOptions = ['Technical', 'Admin'];
+  final List<String> _userRoleOptions = ['Staff', 'Admin'];
 
   @override
   void initState() {
@@ -41,9 +39,10 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     );
     _usernameController = TextEditingController(text: widget.staff.username);
     _emailController = TextEditingController(text: widget.staff.email);
-    _phoneController = TextEditingController(text: widget.staff.phoneNumber);
-    _passwordController = TextEditingController(text: widget.staff.password);
-    _position = widget.staff.position;
+    _phoneController = TextEditingController(
+      text: widget.staff.phoneNumber ?? '',
+    );
+    _userRole = widget.staff.userRole;
   }
 
   @override
@@ -54,7 +53,6 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     _usernameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -67,9 +65,8 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
         _middleNameController.text = widget.staff.middleName ?? '';
         _usernameController.text = widget.staff.username;
         _emailController.text = widget.staff.email;
-        _phoneController.text = widget.staff.phoneNumber;
-        _passwordController.text = widget.staff.password;
-        _position = widget.staff.position;
+        _phoneController.text = widget.staff.phoneNumber ?? '';
+        _userRole = widget.staff.userRole;
       }
     });
   }
@@ -87,9 +84,10 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
           : _middleNameController.text.trim(),
       username: _usernameController.text.trim(),
       email: _emailController.text.trim(),
-      phoneNumber: _phoneController.text.trim(),
-      password: _passwordController.text,
-      position: _position,
+      phoneNumber: _phoneController.text.trim().isEmpty
+          ? null
+          : _phoneController.text.trim(),
+      userRole: _userRole,
     );
     if (mounted) {
       Navigator.of(context).pop({'updated': updated});
@@ -272,18 +270,26 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     );
   }
 
-  IconData _getRoleIcon(String role) {
+  IconData _getRoleIcon(String? role) {
+    if (role == null) {
+      return Icons.person;
+    }
     switch (role.toLowerCase()) {
       case 'admin':
         return Icons.admin_panel_settings;
       case 'technical':
+        return Icons.build;
+      case 'lab technician':
         return Icons.build;
       default:
         return Icons.person;
     }
   }
 
-  Color _getPositionColor(String position) {
+  Color _getPositionColor(String? position) {
+    if (position == null) {
+      return const Color(0xFF718096);
+    }
     switch (position.toLowerCase()) {
       case 'admin':
         return const Color(0xFFE53E3E);
@@ -295,6 +301,8 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
         return const Color(0xFF805AD5);
       case 'technical':
         return const Color(0xFF3182CE);
+      case 'lab technician':
+        return const Color(0xFF10B981);
       default:
         return const Color(0xFF718096);
     }
@@ -488,39 +496,8 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter a phone number';
                     }
-                    if (!RegExp(r'^09\d{9}$').hasMatch(value)) {
-                      return 'Please enter valid format: 09XXXXXXXXX';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Password
-                _buildFormField(
-                  label: 'Password',
-                  controller: _passwordController,
-                  icon: Icons.lock,
-                  obscureText: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
+                    if (value.trim().length > 10) {
+                      return 'Phone number must be 10 characters or less';
                     }
                     return null;
                   },
@@ -531,10 +508,10 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                 _buildDropdownField(
                   label: 'Role',
                   icon: Icons.work,
-                  value: _position,
-                  items: _positionOptions,
+                  value: _userRole,
+                  items: _userRoleOptions,
                   onChanged: (val) {
-                    if (val != null) setState(() => _position = val);
+                    if (val != null) setState(() => _userRole = val);
                   },
                 ),
               ] else ...[
@@ -636,7 +613,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                                 ),
                               ),
                               child: Text(
-                                widget.staff.position,
+                                widget.staff.position ?? 'No Position',
                                 style: TextStyle(
                                   color: _getPositionColor(
                                     widget.staff.position,
@@ -668,7 +645,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                     Expanded(
                       child: _buildInfoCard(
                         title: 'Phone Number',
-                        value: widget.staff.phoneNumber,
+                        value: widget.staff.phoneNumber ?? 'No Phone',
                         icon: Icons.phone,
                         color: Colors.purple,
                       ),

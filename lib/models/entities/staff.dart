@@ -3,12 +3,14 @@ class Staff {
   final String firstName;
   final String lastName;
   final String? middleName;
-  final String position;
+  final String? position;
   final String email;
-  final String phoneNumber;
+  final String? phoneNumber;
   final String username;
-  final String password;
+  final String? password; // Password field for user creation
+  final String userRole;
   final String? status;
+  final String? type; // $type field from API
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -25,12 +27,14 @@ class Staff {
     required this.firstName,
     required this.lastName,
     this.middleName,
-    required this.position,
+    this.position,
     required this.email,
-    required this.phoneNumber,
+    this.phoneNumber,
     required this.username,
-    required this.password,
+    this.password,
+    required this.userRole,
     this.status,
+    this.type,
     this.createdAt,
     this.updatedAt,
   });
@@ -45,7 +49,9 @@ class Staff {
     String? phoneNumber,
     String? username,
     String? password,
+    String? userRole,
     String? status,
+    String? type,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -59,7 +65,9 @@ class Staff {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       username: username ?? this.username,
       password: password ?? this.password,
+      userRole: userRole ?? this.userRole,
       status: status ?? this.status,
+      type: type ?? this.type,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -67,16 +75,18 @@ class Staff {
 
   factory Staff.fromJson(Map<String, dynamic> json) {
     return Staff(
-      id: json['id'],
-      firstName: json['first_name'] ?? json['name']?.split(' ')[0] ?? '',
-      lastName: json['last_name'] ?? json['name']?.split(' ').last ?? '',
-      middleName: json['middle_name'],
+      id: json['id'] ?? '',
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      middleName: json['middleName'],
       position: json['position'],
-      email: json['email'],
-      phoneNumber: json['phone_number'] ?? '',
+      email: json['email'] ?? '',
+      phoneNumber: json['phoneNumber'],
       username: json['username'] ?? '',
-      password: json['password'] ?? '',
+      password: json['password'], // Password is typically not returned from API
+      userRole: json['userRole'] ?? '',
       status: json['status'],
+      type: json['\$type'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
@@ -89,17 +99,53 @@ class Staff {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'first_name': firstName,
-      'last_name': lastName,
-      'middle_name': middleName,
+      'firstName': firstName,
+      'lastName': lastName,
+      'middleName': middleName,
       'position': position,
       'email': email,
-      'phone_number': phoneNumber,
+      'phoneNumber': phoneNumber,
       'username': username,
-      'password': password,
+      'password': password, // Include password in JSON for user creation
+      'userRole': userRole,
       'status': status,
+      '\$type': type,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+    };
+  }
+
+  // Helper method for updating staff as form data (for multipart requests)
+  Map<String, String> toUpdateFormData() {
+    return {
+      'FirstName': firstName,
+      'LastName': lastName,
+      'MiddleName': middleName ?? '',
+      'Position': position ?? '',
+      'Email': email,
+      'PhoneNumber': phoneNumber ?? '',
+      'Username': username,
+      'Password': password ?? '', // Include password in form data
+      'UserRole': userRole,
+      'Status': status ?? '',
+    };
+  }
+
+  // Helper method for updating staff (without timestamps)
+  Map<String, dynamic> toUpdateJson() {
+    return {
+      'id': id,
+      'firstName': firstName,
+      'lastName': lastName,
+      'middleName': middleName,
+      'position': position,
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'username': username,
+      'password': password, // Include password in update JSON
+      'userRole': userRole,
+      'status': status,
+      '\$type': type,
     };
   }
 }

@@ -1,228 +1,241 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/entities/staff.dart';
+import 'api_service.dart';
 
 class StaffService {
   static final StaffService _instance = StaffService._internal();
   factory StaffService() => _instance;
   StaffService._internal();
 
-  // In-memory storage for demo purposes
-  // In a real app, this would connect to a database or API
-  final List<Staff> _staff = [
-    Staff(
-      id: '1',
-      firstName: 'Alice',
-      lastName: 'Johnson',
-      middleName: 'Marie',
-      position: 'Technical',
-      email: 'alice@example.com',
-      phoneNumber: '09123456789',
-      username: 'alice.johnson',
-      password: 'password123',
-      status: 'active',
-      createdAt: DateTime.now().subtract(const Duration(days: 180)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 5)),
-    ),
-    Staff(
-      id: '2',
-      firstName: 'Bob',
-      lastName: 'Martinez',
-      position: 'Admin',
-      email: 'bob@example.com',
-      phoneNumber: '09234567890',
-      username: 'bob.martinez',
-      password: 'password123',
-      status: 'active',
-      createdAt: DateTime.now().subtract(const Duration(days: 150)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    Staff(
-      id: '3',
-      firstName: 'Carla',
-      lastName: 'Reyes',
-      middleName: 'Santos',
-      position: 'Technical',
-      email: 'carla@example.com',
-      phoneNumber: '09345678901',
-      username: 'carla.reyes',
-      password: 'password123',
-      status: 'offline',
-      createdAt: DateTime.now().subtract(const Duration(days: 120)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 10)),
-    ),
-    Staff(
-      id: '4',
-      firstName: 'David',
-      lastName: 'Smith',
-      position: 'Admin',
-      email: 'david@example.com',
-      phoneNumber: '09456789012',
-      username: 'david.smith',
-      password: 'password123',
-      status: 'active',
-      createdAt: DateTime.now().subtract(const Duration(days: 90)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    Staff(
-      id: '5',
-      firstName: 'Eve',
-      lastName: 'Thompson',
-      position: 'Technical',
-      email: 'eve@example.com',
-      phoneNumber: '09567890123',
-      username: 'eve.thompson',
-      password: 'password123',
-      status: 'active',
-      createdAt: DateTime.now().subtract(const Duration(days: 60)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-  ];
+  late final ApiService _apiService;
+  late final String _staffEndpoint;
 
-  int _nextId = 6;
+  /// Initialize the StaffService with ApiService dependency
+  Future<void> initialize() async {
+    _apiService = ApiService();
+    await _apiService.initialize();
+    _staffEndpoint = dotenv.env['STAFF_ENDPOINT'] ?? '/users';
+    print('StaffService initialized with endpoint: $_staffEndpoint');
+  }
 
   // CREATE - Add a new staff member
   Future<Staff> createStaff(Staff staff) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final response = await _apiService.post(
+        _staffEndpoint,
+        body: staff.toJson(),
+      );
 
-    final newStaff = staff.copyWith(
-      id: (_nextId++).toString(),
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    _staff.insert(0, newStaff);
-    return newStaff;
+      return Staff.fromJson(response['data'] ?? response);
+    } catch (e) {
+      throw Exception('Failed to create staff: $e');
+    }
   }
 
   // READ - Get all staff
   Future<List<Staff>> getAllStaff() async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 300));
-    return List.from(_staff);
+    try {
+      final response = await _apiService.get(_staffEndpoint);
+      final List<dynamic> userData = response['data'] ?? response;
+
+      // Filter only staff and admin members from the mixed user types
+      final staffData = userData.where((user) {
+        final userRole = user['userRole'] as String?;
+        return userRole == 'Staff' || userRole == 'Admin';
+      }).toList();
+
+      return staffData.map((json) => Staff.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch staff: $e');
+    }
   }
 
   // READ - Get staff by ID
   Future<Staff?> getStaffById(String id) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 200));
     try {
-      return _staff.firstWhere((staff) => staff.id == id);
+      final response = await _apiService.get('$_staffEndpoint/$id');
+      return Staff.fromJson(response['data'] ?? response);
     } catch (e) {
-      return null;
+      if (e.toString().contains('404') || e.toString().contains('Not found')) {
+        return null;
+      }
+      throw Exception('Failed to fetch staff by ID: $e');
     }
   }
 
   // READ - Get staff by position
   Future<List<Staff>> getStaffByPosition(String position) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 300));
-    return _staff
-        .where(
-          (staff) => staff.position.toLowerCase() == position.toLowerCase(),
-        )
-        .toList();
+    try {
+      final response = await _apiService.get(
+        '$_staffEndpoint?position=$position',
+      );
+      final List<dynamic> userData = response['data'] ?? response;
+
+      // Filter only staff and admin members with the specified position
+      final staffData = userData.where((user) {
+        final userRole = user['userRole'] as String?;
+        final userPosition = user['position'] as String?;
+        return (userRole == 'Staff' || userRole == 'Admin') &&
+            userPosition?.toLowerCase() == position.toLowerCase();
+      }).toList();
+
+      return staffData.map((json) => Staff.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch staff by position: $e');
+    }
   }
 
   // READ - Get active staff count
   Future<int> getActiveStaffCount() async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 200));
-    return _staff
-        .where((staff) => staff.status?.toLowerCase() == 'active')
-        .length;
+    try {
+      final response = await _apiService.get('$_staffEndpoint?status=Online');
+      final List<dynamic> userData = response['data'] ?? response;
+
+      // Filter only active staff and admin members
+      final activeStaff = userData.where((user) {
+        final userRole = user['userRole'] as String?;
+        final status = user['status'] as String?;
+        return (userRole == 'Staff' || userRole == 'Admin') &&
+            status?.toLowerCase() == 'online';
+      }).toList();
+
+      return activeStaff.length;
+    } catch (e) {
+      throw Exception('Failed to fetch active staff count: $e');
+    }
   }
 
   // READ - Get staff statistics
   Future<Map<String, int>> getStaffStats() async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    try {
+      final response = await _apiService.get('$_staffEndpoint/stats');
+      return Map<String, int>.from(response['data'] ?? response);
+    } catch (e) {
+      // Fallback to calculating stats from all staff if stats endpoint doesn't exist
+      try {
+        final allStaff = await getAllStaff();
+        final stats = {
+          'total': allStaff.length,
+          'active': 0,
+          'offline': 0,
+          'lab_technician': 0,
+          'admin': 0,
+          'other': 0,
+        };
 
-    final stats = {
-      'total': _staff.length,
-      'active': 0,
-      'offline': 0,
-      'technical': 0,
-      'admin': 0,
-    };
+        for (final staff in allStaff) {
+          // Count by status
+          final status = staff.status?.toLowerCase() ?? '';
+          if (status == 'online') {
+            stats['active'] = (stats['active'] ?? 0) + 1;
+          } else if (status == 'offline') {
+            stats['offline'] = (stats['offline'] ?? 0) + 1;
+          }
 
-    for (final staff in _staff) {
-      // Count by status
-      final status = staff.status?.toLowerCase() ?? '';
-      if (status == 'active') {
-        stats['active'] = (stats['active'] ?? 0) + 1;
-      } else if (status == 'offline') {
-        stats['offline'] = (stats['offline'] ?? 0) + 1;
-      }
+          // Count by role and position
+          final userRole = staff.userRole.toLowerCase();
+          final position = staff.position?.toLowerCase() ?? '';
 
-      // Count by position
-      final position = staff.position.toLowerCase();
-      if (position == 'technical') {
-        stats['technical'] = (stats['technical'] ?? 0) + 1;
-      } else if (position == 'admin') {
-        stats['admin'] = (stats['admin'] ?? 0) + 1;
+          if (userRole == 'admin') {
+            stats['admin'] = (stats['admin'] ?? 0) + 1;
+          } else if (position == 'lab technician') {
+            stats['lab_technician'] = (stats['lab_technician'] ?? 0) + 1;
+          } else if (position.isNotEmpty || userRole == 'staff') {
+            stats['other'] = (stats['other'] ?? 0) + 1;
+          }
+        }
+
+        return stats;
+      } catch (fallbackError) {
+        throw Exception('Failed to fetch staff statistics: $e');
       }
     }
-
-    return stats;
   }
 
   // UPDATE - Update an existing staff member
   Future<Staff?> updateStaff(Staff updatedStaff) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      // Prepare JSON data for PATCH request
+      final jsonData = updatedStaff.toUpdateJson();
 
-    final index = _staff.indexWhere((staff) => staff.id == updatedStaff.id);
-    if (index != -1) {
-      final staff = updatedStaff.copyWith(
-        createdAt: _staff[index].createdAt,
-        updatedAt: DateTime.now(),
+      final response = await _apiService.patch(
+        'users/admin-or-staff/profile${updatedStaff.id}',
+        body: jsonData,
       );
 
-      _staff[index] = staff;
-      return staff;
+      // Parse response similar to items
+      if (response['success'] == true) {
+        // Return the updated staff data if available, otherwise return the original staff
+        return response['data'] != null
+            ? Staff.fromJson(response['data'])
+            : updatedStaff;
+      } else {
+        throw Exception(response['message'] ?? 'Failed to update staff');
+      }
+    } catch (e) {
+      if (e.toString().contains('404') || e.toString().contains('Not found')) {
+        return null;
+      }
+      throw Exception('Failed to update staff: $e');
     }
-    return null;
   }
 
   // DELETE - Delete a staff member
   Future<bool> deleteStaff(String id) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    final index = _staff.indexWhere((staff) => staff.id == id);
-    if (index != -1) {
-      _staff.removeAt(index);
+    try {
+      await _apiService.delete('$_staffEndpoint/$id');
       return true;
+    } catch (e) {
+      if (e.toString().contains('404') || e.toString().contains('Not found')) {
+        return false;
+      }
+      throw Exception('Failed to delete staff: $e');
     }
-    return false;
   }
 
   // Search staff
   Future<List<Staff>> searchStaff(String query) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      if (query.isEmpty) {
+        return await getAllStaff();
+      }
 
-    if (query.isEmpty) return _staff;
+      final response = await _apiService.get('$_staffEndpoint/search?q=$query');
+      final List<dynamic> userData = response['data'] ?? response;
 
-    final lowerQuery = query.toLowerCase();
-    return _staff
-        .where(
-          (staff) =>
-              staff.name.toLowerCase().contains(lowerQuery) ||
-              staff.email.toLowerCase().contains(lowerQuery) ||
-              staff.position.toLowerCase().contains(lowerQuery) ||
-              staff.username.toLowerCase().contains(lowerQuery) ||
-              (staff.phoneNumber.contains(lowerQuery)),
-        )
-        .toList();
+      // Filter only staff and admin members from search results
+      final staffData = userData.where((user) {
+        final userRole = user['userRole'] as String?;
+        return userRole == 'Staff' || userRole == 'Admin';
+      }).toList();
+
+      return staffData.map((json) => Staff.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Failed to search staff: $e');
+    }
   }
 
   // Filter staff by status
   Future<List<Staff>> filterByStatus(String status) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    try {
+      if (status.toLowerCase() == 'all') {
+        return await getAllStaff();
+      }
 
-    if (status.toLowerCase() == 'all') return _staff;
+      final response = await _apiService.get('$_staffEndpoint?status=$status');
+      final List<dynamic> userData = response['data'] ?? response;
 
-    return _staff
-        .where((staff) => staff.status?.toLowerCase() == status.toLowerCase())
-        .toList();
+      // Filter only staff and admin members with the specified status
+      final staffData = userData.where((user) {
+        final userRole = user['userRole'] as String?;
+        final userStatus = user['status'] as String?;
+        return (userRole == 'Staff' || userRole == 'Admin') &&
+            userStatus?.toLowerCase() == status.toLowerCase();
+      }).toList();
+
+      return staffData.map((json) => Staff.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Failed to filter staff by status: $e');
+    }
   }
 }

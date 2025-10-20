@@ -219,7 +219,10 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
     );
   }
 
-  Color _getPositionColor(String position) {
+  Color _getPositionColor(String? position) {
+    if (position == null) {
+      return const Color(0xFF718096);
+    }
     switch (position.toLowerCase()) {
       case 'admin':
         return const Color(0xFFE53E3E);
@@ -229,6 +232,8 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
         return const Color(0xFF38A169);
       case 'staff':
         return const Color(0xFF805AD5);
+      case 'lab technician':
+        return const Color(0xFF10B981);
       default:
         return const Color(0xFF718096);
     }
@@ -378,7 +383,7 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
                       ),
                     ),
                     child: Text(
-                      widget.staff.position,
+                      widget.staff.position ?? 'No Position',
                       style: TextStyle(
                         color: _getPositionColor(widget.staff.position),
                         fontSize: 16,
@@ -414,7 +419,7 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
                 Expanded(
                   child: _buildInfoCard(
                     title: 'Phone',
-                    value: widget.staff.phoneNumber,
+                    value: widget.staff.phoneNumber ?? 'No Phone',
                     icon: Icons.phone,
                     color: Colors.purple,
                   ),

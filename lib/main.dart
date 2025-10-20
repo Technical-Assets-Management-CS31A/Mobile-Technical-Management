@@ -5,12 +5,18 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'widgets/auth_wrapper.dart';
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
+import 'services/staff_service.dart';
+import 'services/api_service.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Load environment variables
   await dotenv.load(fileName: ".env");
+
+  // Initialize services
+  await _initializeServices();
 
   runApp(
     MultiProvider(
@@ -21,6 +27,26 @@ void main() async {
       child: const MyApp(),
     ),
   );
+}
+
+/// Initialize all required services
+Future<void> _initializeServices() async {
+  try {
+    // Initialize API service first
+    await ApiService().initialize();
+
+    // Initialize Auth service
+    await AuthService().initialize();
+
+    // Initialize Staff service
+    await StaffService().initialize();
+
+    print('All services initialized successfully');
+  } catch (e) {
+    print('Error initializing services: $e');
+    // Continue app startup even if services fail to initialize
+    // This allows the app to show error messages instead of crashing
+  }
 }
 
 class MyApp extends StatelessWidget {

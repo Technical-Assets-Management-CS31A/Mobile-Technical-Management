@@ -37,9 +37,9 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Initialize AuthService first
+      // Get the already initialized AuthService instance
       _authService = AuthService();
-      await _authService.initialize();
+      // Don't call initialize() here since it's already initialized in main.dart
       _isInitialized = true;
 
       final prefs = await SharedPreferences.getInstance();

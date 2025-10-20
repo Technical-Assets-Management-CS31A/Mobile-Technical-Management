@@ -24,7 +24,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   int _currentPage = 1;
   final List<int> _pageSizeOptions = [5, 10, 20, 50];
   int _pageSize = 10;
-  final List<String> _filterOptions = ['All', 'Technical', 'Admin'];
+  final List<String> _filterOptions = ['All', 'Admin', 'Lab Technician'];
 
   final _nameController = TextEditingController();
   final _positionController = TextEditingController();
@@ -83,11 +83,16 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       _filteredStaffList = _staffList.where((staff) {
         final matchesSearch =
             staff.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            staff.position.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            (staff.position?.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ??
+                false) ||
             staff.email.toLowerCase().contains(_searchQuery.toLowerCase());
 
         final matchesFilter =
-            _selectedFilter == 'All' || staff.position == _selectedFilter;
+            _selectedFilter == 'All' ||
+            (_selectedFilter == 'Admin' && staff.userRole == 'Admin') ||
+            (staff.position == _selectedFilter);
 
         return matchesSearch && matchesFilter;
       }).toList();
@@ -438,12 +443,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _onFilterChanged('Technical'),
+                  onTap: () => _onFilterChanged('Admin'),
                   child: _buildSummaryCard(
-                    'Technical',
-                    '${_staffList.where((s) => s.position == 'Technical').length}',
-                    Icons.build,
-                    const Color(0xFF10B981),
+                    'Admin',
+                    '${_staffList.where((s) => s.userRole == 'Admin').length}',
+                    Icons.shield,
+                    const Color(0xFF3B82F6),
                   ),
                 ),
               ),
@@ -454,12 +459,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _onFilterChanged('Admin'),
+                  onTap: () => _onFilterChanged('Lab Technician'),
                   child: _buildSummaryCard(
-                    'Admins',
-                    '${_staffList.where((s) => s.position == 'Admin').length}',
-                    Icons.admin_panel_settings,
-                    Theme.of(context).colorScheme.primary,
+                    'Lab Technician',
+                    '${_staffList.where((s) => s.position == 'Lab Technician').length}',
+                    Icons.build,
+                    const Color(0xFF10B981),
                   ),
                 ),
               ),
@@ -469,7 +474,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                   onTap: () => _onFilterChanged('All'),
                   child: _buildSummaryCard(
                     'Active Users',
-                    '${_staffList.where((s) => (s.status ?? 'active') == 'active').length}/${_staffList.length}',
+                    '${_staffList.where((s) => (s.status ?? 'Offline') == 'Online').length}/${_staffList.length}',
                     Icons.check_circle,
                     const Color(0xFF10B981),
                   ),
@@ -498,24 +503,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _onFilterChanged('Technical'),
-                  child: _buildSummaryCard(
-                    'Technical',
-                    '${_staffList.where((s) => s.position == 'Technical').length}',
-                    Icons.build,
-                    const Color(0xFF10B981),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: GestureDetector(
                   onTap: () => _onFilterChanged('Admin'),
                   child: _buildSummaryCard(
-                    'Admins',
-                    '${_staffList.where((s) => s.position == 'Admin').length}',
-                    Icons.admin_panel_settings,
-                    Theme.of(context).colorScheme.primary,
+                    'Admin',
+                    '${_staffList.where((s) => s.userRole == 'Admin').length}',
+                    Icons.shield,
+                    const Color(0xFF3B82F6),
                   ),
                 ),
               ),
@@ -526,17 +519,27 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _onFilterChanged('All'),
+                  onTap: () => _onFilterChanged('Lab Technician'),
                   child: _buildSummaryCard(
-                    'Active Users',
-                    '${_staffList.where((s) => (s.status ?? 'active') == 'active').length}/${_staffList.length}',
-                    Icons.check_circle,
+                    'Lab Technician',
+                    '${_staffList.where((s) => s.position == 'Lab Technician').length}',
+                    Icons.build,
                     const Color(0xFF10B981),
                   ),
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(child: SizedBox.shrink()),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _onFilterChanged('All'),
+                  child: _buildSummaryCard(
+                    'Active Users',
+                    '${_staffList.where((s) => (s.status ?? 'Offline') == 'Online').length}/${_staffList.length}',
+                    Icons.check_circle,
+                    const Color(0xFF10B981),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -876,14 +879,20 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                 width: widget.isMobile ? 50 : 60,
                 height: widget.isMobile ? 50 : 60,
                 decoration: BoxDecoration(
-                  color: _getPositionColor(staff.position).withOpacity(0.1),
+                  color: _getPositionColor(
+                    staff.position,
+                    userRole: staff.userRole,
+                  ).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(
                     widget.isMobile ? 25 : 30,
                   ),
                 ),
                 child: Icon(
-                  _getPositionIcon(staff.position),
-                  color: _getPositionColor(staff.position),
+                  _getPositionIcon(staff.position, userRole: staff.userRole),
+                  color: _getPositionColor(
+                    staff.position,
+                    userRole: staff.userRole,
+                  ),
                   size: widget.isMobile ? 24 : 28,
                 ),
               ),
@@ -905,7 +914,9 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      staff.position,
+                      staff.userRole == 'Admin'
+                          ? 'Admin'
+                          : (staff.position ?? 'No Position'),
                       style: TextStyle(
                         fontSize: widget.isMobile ? 12 : 14,
                         color: Theme.of(
@@ -964,14 +975,20 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                           decoration: BoxDecoration(
                             color: _getPositionColor(
                               staff.position,
+                              userRole: staff.userRole,
                             ).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            staff.position,
+                            staff.userRole == 'Admin'
+                                ? 'Admin'
+                                : (staff.position ?? 'No Position'),
                             style: TextStyle(
                               fontSize: 12,
-                              color: _getPositionColor(staff.position),
+                              color: _getPositionColor(
+                                staff.position,
+                                userRole: staff.userRole,
+                              ),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1075,7 +1092,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                       child: _buildInfoItem(
                         Icons.phone,
                         'Phone',
-                        staff.phoneNumber,
+                        staff.phoneNumber ?? 'No Phone',
                         widget.isMobile,
                       ),
                     ),
@@ -1159,23 +1176,31 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     );
   }
 
-  Color _getPositionColor(String position) {
+  Color _getPositionColor(String? position, {String? userRole}) {
+    if (userRole == 'Admin') {
+      return const Color(0xFF3B82F6);
+    }
+    if (position == null) {
+      return Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    }
     switch (position.toLowerCase()) {
-      case 'technical':
+      case 'lab technician':
         return const Color(0xFF10B981);
-      case 'admin':
-        return Theme.of(context).colorScheme.primary;
       default:
         return Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     }
   }
 
-  IconData _getPositionIcon(String position) {
+  IconData _getPositionIcon(String? position, {String? userRole}) {
+    if (userRole == 'Admin') {
+      return Icons.shield;
+    }
+    if (position == null) {
+      return Icons.person;
+    }
     switch (position.toLowerCase()) {
-      case 'technical':
+      case 'lab technician':
         return Icons.build;
-      case 'admin':
-        return Icons.admin_panel_settings;
       default:
         return Icons.person;
     }
