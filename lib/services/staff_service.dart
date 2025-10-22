@@ -9,7 +9,8 @@ class StaffService {
 
   late final ApiService _apiService;
   late final String _staffEndpoint;
-  late final String _registrationEndpoint; // Add this
+  late final String _registrationEndpoint;
+  late final String _deleteEndpoint; // Add this
 
   /// Initialize the StaffService with ApiService dependency
   Future<void> initialize() async {
@@ -18,6 +19,8 @@ class StaffService {
     _staffEndpoint = dotenv.env['STAFF_ENDPOINT'] ?? '/users';
     _registrationEndpoint =
         dotenv.env['REGISTRATION_ENDPOINT'] ?? '/auth/register';
+    _deleteEndpoint = dotenv.env['DELETE_ENDPOINT'] ?? '/users/archive';
+    ;
     print('StaffService initialized with endpoint: $_staffEndpoint');
   }
 
@@ -188,12 +191,9 @@ class StaffService {
   // DELETE - Delete a staff member
   Future<bool> deleteStaff(String id) async {
     try {
-      await _apiService.delete('$_staffEndpoint/$id');
-      return true;
+      final response = await _apiService.delete('$_deleteEndpoint/$id');
+      return response['success'] == true;
     } catch (e) {
-      if (e.toString().contains('404') || e.toString().contains('Not found')) {
-        return false;
-      }
       throw Exception('Failed to delete staff: $e');
     }
   }

@@ -83,6 +83,9 @@ class ApiService {
 
     // Add Bearer token for mobile app authentication
     if (_authService != null) {
+      // Check if token needs refresh before making request
+      await _authService!.refreshIfNeeded();
+
       final token = await _authService!.getStoredToken();
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
@@ -103,7 +106,8 @@ class ApiService {
       case 200:
       case 201:
       case 204:
-        // Success - no exception needed
+        // Success - check for token expiration warnings in response
+        _checkForTokenExpirationWarning(response);
         break;
       case 400:
         // Parse error response according to backend study guide format
@@ -139,6 +143,42 @@ class ApiService {
           'Request failed with status: ${response.statusCode}',
           statusCode: response.statusCode,
         );
+    }
+  }
+
+  /// Check for token expiration warnings in successful responses
+  void _checkForTokenExpirationWarning(http.Response response) {
+    try {
+      if (response.body.isNotEmpty) {
+        final responseData = json.decode(response.body) as Map<String, dynamic>;
+
+        // Check for various token expiration indicators
+        final data = responseData['data'] as Map<String, dynamic>?;
+        final message = responseData['message'] as String?;
+
+        // Check if response indicates token expires soon
+        if (data != null &&
+            (data['tokenExpiresSoon'] == true ||
+                data['expiresSoon'] == true ||
+                data['tokenExpiryWarning'] == true)) {
+          print('⚠️ API response indicates token expires soon');
+          // Trigger proactive refresh
+          _authService?.refreshIfNeeded();
+        }
+
+        // Check message for expiration warnings
+        if (message != null &&
+            (message.toLowerCase().contains('expires soon') ||
+                message.toLowerCase().contains('token expiring') ||
+                message.toLowerCase().contains('refresh recommended'))) {
+          print('⚠️ API message indicates token expiration warning');
+          // Trigger proactive refresh
+          _authService?.refreshIfNeeded();
+        }
+      }
+    } catch (e) {
+      // Ignore parsing errors for this check
+      print('Error checking for token expiration warning: $e');
     }
   }
 

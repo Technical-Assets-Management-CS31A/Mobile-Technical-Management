@@ -223,6 +223,19 @@ class AuthService {
         // Store new tokens
         await _storeAuthData(response['data']);
         print('Token refreshed successfully');
+
+        // Check if the response indicates the token is almost expired
+        if (response['data']['tokenExpiresSoon'] == true ||
+            response['data']['expiresSoon'] == true ||
+            response['message']?.toString().toLowerCase().contains(
+                  'expires soon',
+                ) ==
+                true) {
+          print('Token expires soon, requesting another refresh token...');
+          // Request another refresh token proactively
+          await _requestProactiveRefresh();
+        }
+
         return true;
       } else {
         print('Token refresh failed: ${response['message']}');
@@ -374,6 +387,83 @@ class AuthService {
     } catch (e) {
       print('Error getting stored refresh token: $e');
       return null;
+    }
+  }
+
+  /// Request a proactive refresh token when current token expires soon
+  Future<void> _requestProactiveRefresh() async {
+    try {
+      print('Requesting proactive refresh token...');
+      final success = await refresh();
+      if (success) {
+        print('Proactive refresh token obtained successfully');
+      } else {
+        print('Failed to obtain proactive refresh token');
+      }
+    } catch (e) {
+      print('Error during proactive refresh: $e');
+    }
+  }
+
+  /// Check if the current token is almost expired
+  /// Returns true if token expires within the next 5 minutes
+  Future<bool> isTokenExpiringSoon() async {
+    try {
+      final token = await getStoredToken();
+      if (token == null || token.isEmpty) {
+        return true; // No token means it's "expired"
+      }
+
+      // For JWT tokens, we can decode and check expiration
+      // This is a simplified check - in production you might want to use a JWT library
+      try {
+        // Basic JWT payload extraction (this is simplified)
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          // Decode the payload (base64url)
+          final payload = parts[1];
+          // Add padding if needed
+          final paddedPayload = payload + '=' * (4 - payload.length % 4);
+          final decoded = utf8.decode(base64Url.decode(paddedPayload));
+          final payloadMap = json.decode(decoded) as Map<String, dynamic>;
+
+          final exp = payloadMap['exp'] as int?;
+          if (exp != null) {
+            final expirationTime = DateTime.fromMillisecondsSinceEpoch(
+              exp * 1000,
+            );
+            final now = DateTime.now();
+            final timeUntilExpiry = expirationTime.difference(now);
+
+            // Consider token expiring soon if it expires within 5 minutes
+            return timeUntilExpiry.inMinutes <= 5;
+          }
+        }
+      } catch (e) {
+        print('Error parsing token expiration: $e');
+        // If we can't parse the token, assume it might be expired
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      print('Error checking token expiration: $e');
+      return true; // Assume expired if we can't check
+    }
+  }
+
+  /// Enhanced refresh method that checks for token expiration
+  Future<bool> refreshIfNeeded() async {
+    try {
+      // Check if token is expiring soon
+      if (await isTokenExpiringSoon()) {
+        print('Token is expiring soon, refreshing...');
+        return await refresh();
+      }
+      return true; // Token is still valid
+    } catch (e) {
+      print('Error in refreshIfNeeded: $e');
+      return false;
     }
   }
 }
