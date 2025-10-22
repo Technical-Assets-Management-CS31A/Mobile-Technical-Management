@@ -193,36 +193,10 @@ class ArchiveService {
   // ========== ARCHIVED USERS/STAFF ==========
 
   /// Get all archived users/staff
-  Future<List<Staff>> getArchivedUsers({
-    int page = 1,
-    int pageSize = 50,
-    String? search,
-    String? position,
-    String? status,
-  }) async {
+  Future<List<Staff>> getArchivedUsers() async {
     try {
-      final queryParams = <String, String>{
-        'page': page.toString(),
-        'pageSize': pageSize.toString(),
-      };
+      final response = await apiService.get('ArchiveUsers');
 
-      if (search != null && search.isNotEmpty) {
-        queryParams['search'] = search;
-      }
-      if (position != null && position.isNotEmpty) {
-        queryParams['position'] = position;
-      }
-      if (status != null && status.isNotEmpty) {
-        queryParams['status'] = status;
-      }
-
-      final response = await apiService.get(
-        'archivestaff',
-        queryParams: queryParams,
-      );
-
-      // Assuming we have a StaffListResponse similar to ItemListResponse
-      // For now, we'll parse the response manually
       if (response['success'] == true && response['data'] != null) {
         final List<dynamic> staffData = response['data'];
         return staffData.map((json) => Staff.fromJson(json)).toList();
@@ -271,8 +245,18 @@ class ArchiveService {
 
   /// Search archived users
   Future<List<Staff>> searchArchivedUsers(String query) async {
-    if (query.isEmpty) return getArchivedUsers();
-    return getArchivedUsers(search: query);
+    // Since backend doesn't support search parameters,
+    // we get all users and filter client-side
+    final allUsers = await getArchivedUsers();
+    if (query.isEmpty) return allUsers;
+
+    return allUsers.where((user) {
+      return user.name.toLowerCase().contains(query.toLowerCase()) ||
+          user.email.toLowerCase().contains(query.toLowerCase()) ||
+          (user.position?.toLowerCase().contains(query.toLowerCase()) ??
+              false) ||
+          user.username.toLowerCase().contains(query.toLowerCase());
+    }).toList();
   }
 
   // ========== ARCHIVE STATISTICS ==========

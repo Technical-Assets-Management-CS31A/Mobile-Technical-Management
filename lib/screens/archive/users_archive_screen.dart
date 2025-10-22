@@ -54,13 +54,8 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
     });
 
     try {
-      // Load archived users using the ArchiveService
-      final staff = await _archiveService.getArchivedUsers(
-        page: _currentPage,
-        pageSize: _pageSize,
-        search: _searchQuery.isNotEmpty ? _searchQuery : null,
-        status: _selectedFilter != 'All' ? _selectedFilter : null,
-      );
+      // Load archived users using the ArchiveService (no pagination parameters)
+      final staff = await _archiveService.getArchivedUsers();
 
       setState(() {
         _staffList = staff;
@@ -93,6 +88,16 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
 
       return matchesSearch && matchesFilter;
     }).toList();
+  }
+
+  // Get paginated items for display (client-side pagination)
+  List<Staff> get _paginatedStaffList {
+    final filteredStaff = _filteredStaffList;
+    final startIndex = (_currentPage - 1) * _pageSize;
+    final endIndex = (startIndex + _pageSize) > filteredStaff.length
+        ? filteredStaff.length
+        : startIndex + _pageSize;
+    return filteredStaff.sublist(startIndex, endIndex);
   }
 
   void _onSearchChanged(String query) {
@@ -373,7 +378,7 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
     final endIndex = (startIndex + _pageSize) > totalItems
         ? totalItems
         : startIndex + _pageSize;
-    final pageItems = filteredStaff.sublist(startIndex, endIndex);
+    final pageItems = _paginatedStaffList;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
