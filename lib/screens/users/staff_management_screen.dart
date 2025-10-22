@@ -34,10 +34,20 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   final _passwordController = TextEditingController();
   final _searchController = TextEditingController();
 
+  // Store reference to ScaffoldMessenger to avoid disposal issues
+  ScaffoldMessengerState? _scaffoldMessenger;
+
   @override
   void initState() {
     super.initState();
     _loadStaffData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Store reference to ScaffoldMessenger to avoid disposal issues
+    _scaffoldMessenger = _scaffoldMessenger;
   }
 
   Future<void> _loadStaffData() async {
@@ -59,9 +69,9 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error loading staff: $e')));
+        _scaffoldMessenger?.showSnackBar(
+          SnackBar(content: Text('Error loading staff: $e')),
+        );
       }
     }
   }
@@ -151,7 +161,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         );
         await _loadStaffData(); // Reload data from service
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          _scaffoldMessenger?.showSnackBar(
             SnackBar(
               content: Text('${newStaff.name} added successfully!'),
               backgroundColor: const Color(0xFF10B981),
@@ -160,9 +170,9 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error adding staff: $e')));
+          _scaffoldMessenger?.showSnackBar(
+            SnackBar(content: Text('Error adding staff: $e')),
+          );
         }
       }
     }
@@ -181,7 +191,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         await _staffService.updateStaff(updated);
         await _loadStaffData(); // Reload data from service
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          _scaffoldMessenger?.showSnackBar(
             SnackBar(
               content: Text('${updated.name} updated successfully!'),
               backgroundColor: const Color(0xFF10B981),
@@ -201,7 +211,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         await _staffService.deleteStaff(id);
         await _loadStaffData(); // Reload data from service
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          _scaffoldMessenger?.showSnackBar(
             const SnackBar(
               content: Text('Staff member deleted successfully!'),
               backgroundColor: Color(0xFFF59E0B),
@@ -231,7 +241,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         await _staffService.updateStaff(updated);
         await _loadStaffData(); // Reload data from service
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          _scaffoldMessenger?.showSnackBar(
             SnackBar(
               content: Text('${updated.name} updated successfully!'),
               backgroundColor: const Color(0xFF10B981),
@@ -341,7 +351,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                           await _staffService.deleteStaff(staff.id);
                           await _loadStaffData(); // Reload data from service
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            _scaffoldMessenger?.showSnackBar(
                               SnackBar(
                                 content: Text(
                                   '${staff.name} deleted successfully!',
@@ -352,7 +362,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                           }
                         } catch (e) {
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            _scaffoldMessenger?.showSnackBar(
                               SnackBar(
                                 content: Text('Error deleting staff: $e'),
                               ),
