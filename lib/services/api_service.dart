@@ -83,8 +83,11 @@ class ApiService {
 
     // Add Bearer token for mobile app authentication
     if (_authService != null) {
-      // Check if token needs refresh before making request
-      await _authService!.refreshIfNeeded();
+      // Check if token needs refresh before making request (only if user is logged in)
+      final isLoggedIn = await _authService!.isLoggedIn();
+      if (isLoggedIn) {
+        await _authService!.refreshIfNeeded();
+      }
 
       final token = await _authService!.getStoredToken();
       if (token != null && token.isNotEmpty) {
@@ -101,13 +104,13 @@ class ApiService {
   }
 
   /// Handle HTTP response and throw appropriate exceptions
-  void _handleResponse(http.Response response) {
+  Future<void> _handleResponse(http.Response response) async {
     switch (response.statusCode) {
       case 200:
       case 201:
       case 204:
         // Success - check for token expiration warnings in response
-        _checkForTokenExpirationWarning(response);
+        await _checkForTokenExpirationWarning(response);
         break;
       case 400:
         // Parse error response according to backend study guide format
@@ -147,23 +150,37 @@ class ApiService {
   }
 
   /// Check for token expiration warnings in successful responses
-  void _checkForTokenExpirationWarning(http.Response response) {
+  Future<void> _checkForTokenExpirationWarning(http.Response response) async {
     try {
       if (response.body.isNotEmpty) {
-        final responseData = json.decode(response.body) as Map<String, dynamic>;
+        final responseData = json.decode(response.body);
+
+        // Handle both Map and List response formats
+        Map<String, dynamic>? responseMap;
+        if (responseData is Map<String, dynamic>) {
+          responseMap = responseData;
+        } else if (responseData is List) {
+          // If response is a list, we can't check for token expiration warnings
+          return;
+        } else {
+          // Unknown response format, skip checking
+          return;
+        }
 
         // Check for various token expiration indicators
-        final data = responseData['data'] as Map<String, dynamic>?;
-        final message = responseData['message'] as String?;
+        final data = responseMap['data'];
+        final message = responseMap['message'] as String?;
 
         // Check if response indicates token expires soon
-        if (data != null &&
+        if (data is Map<String, dynamic> &&
             (data['tokenExpiresSoon'] == true ||
                 data['expiresSoon'] == true ||
                 data['tokenExpiryWarning'] == true)) {
           print('⚠️ API response indicates token expires soon');
-          // Trigger proactive refresh
-          _authService?.refreshIfNeeded();
+          // Trigger proactive refresh only if user is logged in
+          if (await _authService?.isLoggedIn() == true) {
+            _authService?.refreshIfNeeded();
+          }
         }
 
         // Check message for expiration warnings
@@ -172,8 +189,10 @@ class ApiService {
                 message.toLowerCase().contains('token expiring') ||
                 message.toLowerCase().contains('refresh recommended'))) {
           print('⚠️ API message indicates token expiration warning');
-          // Trigger proactive refresh
-          _authService?.refreshIfNeeded();
+          // Trigger proactive refresh only if user is logged in
+          if (await _authService?.isLoggedIn() == true) {
+            _authService?.refreshIfNeeded();
+          }
         }
       }
     } catch (e) {
@@ -222,7 +241,7 @@ class ApiService {
             Uri.parse(url),
             headers: newHeaders,
           );
-          _handleResponse(retryResponse);
+          await _handleResponse(retryResponse);
           return json.decode(retryResponse.body) as Map<String, dynamic>;
         } else {
           throw const UnauthorizedException(
@@ -231,7 +250,7 @@ class ApiService {
         }
       }
 
-      _handleResponse(response);
+      await _handleResponse(response);
       return json.decode(response.body) as Map<String, dynamic>;
     } on SocketException {
       throw const NetworkException('No internet connection');
@@ -280,7 +299,7 @@ class ApiService {
             headers: newHeaders,
             body: body != null ? json.encode(body) : null,
           );
-          _handleResponse(retryResponse);
+          await _handleResponse(retryResponse);
           return json.decode(retryResponse.body) as Map<String, dynamic>;
         } else {
           throw const UnauthorizedException(
@@ -289,7 +308,7 @@ class ApiService {
         }
       }
 
-      _handleResponse(response);
+      await _handleResponse(response);
       return json.decode(response.body) as Map<String, dynamic>;
     } on SocketException {
       throw const NetworkException('No internet connection');
@@ -335,7 +354,7 @@ class ApiService {
             Uri.parse(url),
             headers: newHeaders,
           );
-          _handleResponse(retryResponse);
+          await _handleResponse(retryResponse);
           return json.decode(retryResponse.body) as Map<String, dynamic>;
         } else {
           throw const UnauthorizedException(
@@ -344,7 +363,7 @@ class ApiService {
         }
       }
 
-      _handleResponse(response);
+      await _handleResponse(response);
       return json.decode(response.body) as Map<String, dynamic>;
     } on SocketException {
       throw const NetworkException('No internet connection');
@@ -394,7 +413,7 @@ class ApiService {
             headers: newHeaders,
             body: body != null ? json.encode(body) : null,
           );
-          _handleResponse(retryResponse);
+          await _handleResponse(retryResponse);
           return json.decode(retryResponse.body) as Map<String, dynamic>;
         } else {
           throw const UnauthorizedException(
@@ -403,7 +422,7 @@ class ApiService {
         }
       }
 
-      _handleResponse(response);
+      await _handleResponse(response);
       return json.decode(response.body) as Map<String, dynamic>;
     } on SocketException {
       throw const NetworkException('No internet connection');
@@ -453,7 +472,7 @@ class ApiService {
             headers: newHeaders,
             body: body != null ? json.encode(body) : null,
           );
-          _handleResponse(retryResponse);
+          await _handleResponse(retryResponse);
           return json.decode(retryResponse.body) as Map<String, dynamic>;
         } else {
           throw const UnauthorizedException(
@@ -462,7 +481,7 @@ class ApiService {
         }
       }
 
-      _handleResponse(response);
+      await _handleResponse(response);
 
       // Handle 204 No Content responses
       if (response.statusCode == 204) {
@@ -589,7 +608,7 @@ class ApiService {
           final retryResponse = await http.Response.fromStream(
             retryStreamedResponse,
           );
-          _handleResponse(retryResponse);
+          await _handleResponse(retryResponse);
           return json.decode(retryResponse.body) as Map<String, dynamic>;
         } else {
           throw const UnauthorizedException(
@@ -598,7 +617,7 @@ class ApiService {
         }
       }
 
-      _handleResponse(response);
+      await _handleResponse(response);
       return json.decode(response.body) as Map<String, dynamic>;
     } on SocketException {
       throw const NetworkException('No internet connection');
@@ -719,7 +738,7 @@ class ApiService {
           final retryResponse = await http.Response.fromStream(
             retryStreamedResponse,
           );
-          _handleResponse(retryResponse);
+          await _handleResponse(retryResponse);
           return json.decode(retryResponse.body) as Map<String, dynamic>;
         } else {
           throw const UnauthorizedException(
@@ -728,7 +747,7 @@ class ApiService {
         }
       }
 
-      _handleResponse(response);
+      await _handleResponse(response);
       return json.decode(response.body) as Map<String, dynamic>;
     } on SocketException {
       throw const NetworkException('No internet connection');

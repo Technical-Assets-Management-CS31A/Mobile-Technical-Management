@@ -189,6 +189,19 @@ class AuthService {
   /// Returns true if refresh was successful, false otherwise
   Future<bool> refresh() async {
     try {
+      // Don't refresh if user is not logged in
+      if (!(await isLoggedIn())) {
+        print('User not logged in, skipping token refresh');
+        return false;
+      }
+
+      // Don't refresh if token has already expired
+      if (await isTokenExpired()) {
+        print('Token has already expired, skipping refresh');
+        await _clearAuthData();
+        return false;
+      }
+
       final refreshToken = await _getStoredRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) {
         print('No refresh token available');
@@ -393,6 +406,19 @@ class AuthService {
   /// Request a proactive refresh token when current token expires soon
   Future<void> _requestProactiveRefresh() async {
     try {
+      // Don't refresh if user is not logged in
+      if (!(await isLoggedIn())) {
+        print('User not logged in, skipping proactive refresh');
+        return;
+      }
+
+      // Don't refresh if token has already expired
+      if (await isTokenExpired()) {
+        print('Token has already expired, skipping proactive refresh');
+        await _clearAuthData();
+        return;
+      }
+
       print('Requesting proactive refresh token...');
       final success = await refresh();
       if (success) {
@@ -452,9 +478,67 @@ class AuthService {
     }
   }
 
+  /// Check if the current token has already expired
+  /// Returns true if token has expired
+  Future<bool> isTokenExpired() async {
+    try {
+      final token = await getStoredToken();
+      if (token == null || token.isEmpty) {
+        return true; // No token means it's expired
+      }
+
+      // For JWT tokens, we can decode and check expiration
+      try {
+        // Basic JWT payload extraction (this is simplified)
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          // Decode the payload (base64url)
+          final payload = parts[1];
+          // Add padding if needed
+          final paddedPayload = payload + '=' * (4 - payload.length % 4);
+          final decoded = utf8.decode(base64Url.decode(paddedPayload));
+          final payloadMap = json.decode(decoded) as Map<String, dynamic>;
+
+          final exp = payloadMap['exp'] as int?;
+          if (exp != null) {
+            final expirationTime = DateTime.fromMillisecondsSinceEpoch(
+              exp * 1000,
+            );
+            final now = DateTime.now();
+
+            // Token is expired if current time is past expiration
+            return now.isAfter(expirationTime);
+          }
+        }
+      } catch (e) {
+        print('Error parsing token expiration: $e');
+        // If we can't parse the token, assume it's expired
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      print('Error checking if token is expired: $e');
+      return true; // Assume expired if we can't check
+    }
+  }
+
   /// Enhanced refresh method that checks for token expiration
   Future<bool> refreshIfNeeded() async {
     try {
+      // Don't refresh if user is not logged in
+      if (!(await isLoggedIn())) {
+        print('User not logged in, skipping token refresh');
+        return false;
+      }
+
+      // Don't refresh if token has already expired
+      if (await isTokenExpired()) {
+        print('Token has already expired, skipping refresh');
+        await _clearAuthData();
+        return false;
+      }
+
       // Check if token is expiring soon
       if (await isTokenExpiringSoon()) {
         print('Token is expiring soon, refreshing...');
