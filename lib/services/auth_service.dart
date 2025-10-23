@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
+import 'token_refresh_timer.dart';
 
 /// Custom exception for authentication errors
 class AuthException implements Exception {
@@ -20,6 +21,30 @@ class AuthService {
 
   ApiService? _apiService;
   bool _isInitialized = false;
+  TokenRefreshTimer? _refreshTimer;
+
+  /// Check if the service is initialized
+  bool get isInitialized => _isInitialized;
+
+  /// Get the refresh timer (initializes lazily)
+  TokenRefreshTimer get refreshTimer {
+    _refreshTimer ??= TokenRefreshTimer();
+    // Set the AuthService instance to avoid circular dependency
+    _refreshTimer!.setAuthService(this);
+    return _refreshTimer!;
+  }
+
+  /// Ensure the service is initialized before use
+  Future<void> _ensureInitialized() async {
+    if (!_isInitialized) {
+      try {
+        await initialize();
+      } catch (e) {
+        print('Failed to initialize AuthService: $e');
+        // Don't rethrow here, let the calling method handle it
+      }
+    }
+  }
 
   // Storage keys for SharedPreferences
   static const String _tokenKey = 'auth_token';
@@ -34,10 +59,20 @@ class AuthService {
       return;
     }
 
-    _apiService = ApiService();
-    // Don't call initialize() on ApiService here since it's already initialized in main.dart
-    _isInitialized = true;
-    print('AuthService initialized');
+    try {
+      // Only initialize ApiService if it's not already initialized
+      if (_apiService == null) {
+        _apiService = ApiService();
+        // Don't call initialize() on ApiService here since it's already initialized in main.dart
+      }
+      _isInitialized = true;
+      print('AuthService initialized');
+    } catch (e) {
+      print('Error initializing AuthService: $e');
+      // Reset initialization state on error
+      _isInitialized = false;
+      rethrow;
+    }
   }
 
   /// Get API base URL from environment variables
@@ -88,6 +123,8 @@ class AuthService {
     required String identifier,
     required String password,
   }) async {
+    await _ensureInitialized();
+
     try {
       final loginEndpoint =
           dotenv.env['AUTH_LOGIN_ENDPOINT'] ?? '/auth/login-mobile';
@@ -122,6 +159,10 @@ class AuthService {
 
         // Store tokens and user data
         await _storeAuthData(response['data']);
+
+        // Start the automatic refresh timer
+        await refreshTimer.start();
+
         return {
           'success': true,
           'data': response['data'],
@@ -149,6 +190,8 @@ class AuthService {
   ///
   /// Returns a Map with success status
   Future<Map<String, dynamic>> logout() async {
+    await _ensureInitialized();
+
     try {
       final logoutEndpoint =
           dotenv.env['AUTH_LOGOUT_ENDPOINT'] ?? '/auth/logout';
@@ -163,6 +206,9 @@ class AuthService {
         print('Logout endpoint call failed (this is usually fine): $e');
       }
 
+      // Stop the refresh timer
+      refreshTimer.stop();
+
       // Clear stored authentication data
       await _clearAuthData();
 
@@ -176,6 +222,7 @@ class AuthService {
       return {'success': true, 'message': 'Logout successful'};
     } catch (e) {
       // Even if logout fails, clear local data
+      refreshTimer.stop();
       await _clearAuthData();
       return {
         'success': true,
@@ -188,6 +235,8 @@ class AuthService {
   ///
   /// Returns true if refresh was successful, false otherwise
   Future<bool> refresh() async {
+    await _ensureInitialized();
+
     try {
       // Don't refresh if user is not logged in
       if (!(await isLoggedIn())) {
@@ -209,9 +258,9 @@ class AuthService {
       }
 
       final refreshEndpoint =
-          dotenv.env['AUTH_REFRESH_ENDPOINT'] ?? '/auth/refresh-token';
+          dotenv.env['AUTH_REFRESH_ENDPOINT'] ?? '/auth/refresh-token-mobile';
 
-      final requestBody = {'refresh_token': refreshToken};
+      final requestBody = {'refreshToken': refreshToken};
 
       _logApiCall(
         'POST',
@@ -237,18 +286,6 @@ class AuthService {
         await _storeAuthData(response['data']);
         print('Token refreshed successfully');
 
-        // Check if the response indicates the token is almost expired
-        if (response['data']['tokenExpiresSoon'] == true ||
-            response['data']['expiresSoon'] == true ||
-            response['message']?.toString().toLowerCase().contains(
-                  'expires soon',
-                ) ==
-                true) {
-          print('Token expires soon, requesting another refresh token...');
-          // Request another refresh token proactively
-          await _requestProactiveRefresh();
-        }
-
         return true;
       } else {
         print('Token refresh failed: ${response['message']}');
@@ -263,13 +300,58 @@ class AuthService {
     }
   }
 
-  /// Legacy method for backward compatibility
+  /// Mobile refresh token method using the backend-suggested endpoint
+  ///
+  /// [refreshToken] - The refresh token to use for authentication
+  /// Returns a Map with success status and new token data
   Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
-    final success = await refresh();
-    return {
-      'success': success,
-      'data': success ? await getStoredUserData() : null,
-    };
+    try {
+      final refreshEndpoint = '/auth/refresh-token-mobile';
+
+      final requestBody = {'refreshToken': refreshToken};
+
+      _logApiCall(
+        'POST',
+        '${_apiService?.baseUrl ?? baseUrl}$refreshEndpoint',
+        body: json.encode(requestBody),
+      );
+
+      final response = await _apiService!.post(
+        refreshEndpoint,
+        body: requestBody,
+      );
+
+      _logApiCall(
+        'POST',
+        '${_apiService?.baseUrl ?? baseUrl}$refreshEndpoint',
+        response: json.encode(response),
+        statusCode: 200,
+      );
+
+      // Handle response according to backend study guide format
+      if (response['success'] == true && response['data'] != null) {
+        // Store new tokens
+        await _storeAuthData(response['data']);
+        print('✅ Mobile refresh token successful');
+
+        return {
+          'success': true,
+          'data': response['data'],
+          'message': response['message'] ?? 'Token refreshed successfully',
+        };
+      } else {
+        print('❌ Mobile refresh token failed: ${response['message']}');
+        await _clearAuthData();
+        return {
+          'success': false,
+          'error': response['message'] ?? 'Token refresh failed',
+        };
+      }
+    } catch (e) {
+      print('❌ Mobile refresh token error: $e');
+      await _clearAuthData();
+      return {'success': false, 'error': 'Network error during token refresh'};
+    }
   }
 
   /// Get Swagger API documentation
@@ -403,34 +485,6 @@ class AuthService {
     }
   }
 
-  /// Request a proactive refresh token when current token expires soon
-  Future<void> _requestProactiveRefresh() async {
-    try {
-      // Don't refresh if user is not logged in
-      if (!(await isLoggedIn())) {
-        print('User not logged in, skipping proactive refresh');
-        return;
-      }
-
-      // Don't refresh if token has already expired
-      if (await isTokenExpired()) {
-        print('Token has already expired, skipping proactive refresh');
-        await _clearAuthData();
-        return;
-      }
-
-      print('Requesting proactive refresh token...');
-      final success = await refresh();
-      if (success) {
-        print('Proactive refresh token obtained successfully');
-      } else {
-        print('Failed to obtain proactive refresh token');
-      }
-    } catch (e) {
-      print('Error during proactive refresh: $e');
-    }
-  }
-
   /// Check if the current token is almost expired
   /// Returns true if token expires within the next 5 minutes
   Future<bool> isTokenExpiringSoon() async {
@@ -539,15 +593,49 @@ class AuthService {
         return false;
       }
 
-      // Check if token is expiring soon
-      if (await isTokenExpiringSoon()) {
-        print('Token is expiring soon, refreshing...');
-        return await refresh();
-      }
       return true; // Token is still valid
     } catch (e) {
       print('Error in refreshIfNeeded: $e');
       return false;
     }
+  }
+
+  // ==================== TIMER MANAGEMENT METHODS ====================
+
+  /// Start the automatic refresh token timer
+  Future<void> startRefreshTimer() async {
+    await refreshTimer.start();
+  }
+
+  /// Stop the automatic refresh token timer
+  void stopRefreshTimer() {
+    refreshTimer.stop();
+  }
+
+  /// Restart the automatic refresh token timer
+  Future<void> restartRefreshTimer() async {
+    await refreshTimer.restart();
+  }
+
+  /// Check if the refresh timer is running
+  bool isRefreshTimerRunning() {
+    return refreshTimer.isRunning;
+  }
+
+  /// Get the time until next automatic refresh
+  Duration? getTimeUntilNextRefresh() {
+    return refreshTimer.getTimeUntilNextRefresh();
+  }
+
+  /// Dispose of the refresh timer (call this when the app is being disposed)
+  void disposeRefreshTimer() {
+    refreshTimer.dispose();
+  }
+
+  /// Reset the service (useful for testing or error recovery)
+  void reset() {
+    _isInitialized = false;
+    _apiService = null;
+    refreshTimer.stop();
   }
 }

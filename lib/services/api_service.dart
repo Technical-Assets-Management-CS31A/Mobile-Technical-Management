@@ -109,8 +109,6 @@ class ApiService {
       case 200:
       case 201:
       case 204:
-        // Success - check for token expiration warnings in response
-        await _checkForTokenExpirationWarning(response);
         break;
       case 400:
         // Parse error response according to backend study guide format
@@ -146,58 +144,6 @@ class ApiService {
           'Request failed with status: ${response.statusCode}',
           statusCode: response.statusCode,
         );
-    }
-  }
-
-  /// Check for token expiration warnings in successful responses
-  Future<void> _checkForTokenExpirationWarning(http.Response response) async {
-    try {
-      if (response.body.isNotEmpty) {
-        final responseData = json.decode(response.body);
-
-        // Handle both Map and List response formats
-        Map<String, dynamic>? responseMap;
-        if (responseData is Map<String, dynamic>) {
-          responseMap = responseData;
-        } else if (responseData is List) {
-          // If response is a list, we can't check for token expiration warnings
-          return;
-        } else {
-          // Unknown response format, skip checking
-          return;
-        }
-
-        // Check for various token expiration indicators
-        final data = responseMap['data'];
-        final message = responseMap['message'] as String?;
-
-        // Check if response indicates token expires soon
-        if (data is Map<String, dynamic> &&
-            (data['tokenExpiresSoon'] == true ||
-                data['expiresSoon'] == true ||
-                data['tokenExpiryWarning'] == true)) {
-          print('⚠️ API response indicates token expires soon');
-          // Trigger proactive refresh only if user is logged in
-          if (await _authService?.isLoggedIn() == true) {
-            _authService?.refreshIfNeeded();
-          }
-        }
-
-        // Check message for expiration warnings
-        if (message != null &&
-            (message.toLowerCase().contains('expires soon') ||
-                message.toLowerCase().contains('token expiring') ||
-                message.toLowerCase().contains('refresh recommended'))) {
-          print('⚠️ API message indicates token expiration warning');
-          // Trigger proactive refresh only if user is logged in
-          if (await _authService?.isLoggedIn() == true) {
-            _authService?.refreshIfNeeded();
-          }
-        }
-      }
-    } catch (e) {
-      // Ignore parsing errors for this check
-      print('Error checking for token expiration warning: $e');
     }
   }
 

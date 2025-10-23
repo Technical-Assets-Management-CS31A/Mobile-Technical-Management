@@ -37,9 +37,8 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Get the already initialized AuthService instance
+      // Get the AuthService instance (it will auto-initialize if needed)
       _authService = AuthService();
-      // Don't call initialize() here since it's already initialized in main.dart
       _isInitialized = true;
 
       final prefs = await SharedPreferences.getInstance();
@@ -75,6 +74,11 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login(String identifier, String password) async {
     if (!_isInitialized) {
       await initializeAuth();
+    }
+
+    // Ensure AuthService is ready
+    if (!_authService.isInitialized) {
+      await _authService.initialize();
     }
 
     _isLoading = true;

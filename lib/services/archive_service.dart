@@ -213,7 +213,7 @@ class ArchiveService {
   /// Get archived user by ID
   Future<Staff?> getArchivedUserById(String id) async {
     try {
-      final response = await apiService.get('archivestaff/$id');
+      final response = await apiService.get('ArchiveUsers/$id');
       if (response['success'] == true && response['data'] != null) {
         return Staff.fromJson(response['data']);
       }
@@ -226,7 +226,7 @@ class ArchiveService {
   /// Restore an archived user (move it back to active users)
   Future<bool> restoreUser(String id) async {
     try {
-      final response = await apiService.delete('archivestaff/restore/$id');
+      final response = await apiService.delete('ArchiveUsers/restore/$id');
       return response['success'] == true;
     } catch (e) {
       throw Exception('Failed to restore user: $e');
@@ -236,7 +236,7 @@ class ArchiveService {
   /// Permanently delete an archived user
   Future<bool> permanentlyDeleteUser(String id) async {
     try {
-      final response = await apiService.delete('archivestaff/$id');
+      final response = await apiService.delete('ArchiveUsers/permanent-delete$id');
       return response['success'] == true;
     } catch (e) {
       throw Exception('Failed to permanently delete user: $e');
