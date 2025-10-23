@@ -399,6 +399,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     }
     switch (status.toLowerCase()) {
       case 'online':
+      case 'active':
         return const Color(0xFF10B981);
       case 'offline':
         return const Color(0xFF6B7280);
@@ -406,6 +407,10 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
         return const Color(0xFFF59E0B);
       case 'away':
         return const Color(0xFF3B82F6);
+      case 'inactive':
+        return const Color(0xFF6B7280);
+      case 'pending':
+        return const Color(0xFF8B5CF6);
       default:
         return const Color(0xFF718096);
     }

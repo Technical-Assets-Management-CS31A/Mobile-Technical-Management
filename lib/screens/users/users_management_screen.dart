@@ -56,7 +56,8 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     });
 
     try {
-      final staffList = await _staffService.getAllStaff();
+      // Try to get staff with real-time status first, fallback to regular getAllStaff
+      final staffList = await _staffService.getStaffWithStatus();
       if (mounted) {
         setState(() {
           _staffList = staffList;
@@ -73,6 +74,42 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           SnackBar(content: Text('Error loading staff: $e')),
         );
       }
+    }
+  }
+
+  // Refresh user status from server
+  Future<void> _refreshUserStatus() async {
+    try {
+      final staffList = await _staffService.getStaffWithStatus();
+      if (mounted) {
+        setState(() {
+          _staffList = staffList;
+          _filterStaff();
+        });
+        _scaffoldMessenger?.showSnackBar(
+          const SnackBar(content: Text('User status refreshed')),
+        );
+      }
+    } catch (e) {
+      _scaffoldMessenger?.showSnackBar(
+        SnackBar(content: Text('Failed to refresh status: $e')),
+      );
+    }
+  }
+
+  // Test status handling
+  Future<void> _testStatusHandling() async {
+    try {
+      await _staffService.testStatusHandling();
+      _scaffoldMessenger?.showSnackBar(
+        const SnackBar(
+          content: Text('Status test completed - check console for results'),
+        ),
+      );
+    } catch (e) {
+      _scaffoldMessenger?.showSnackBar(
+        SnackBar(content: Text('Status test failed: $e')),
+      );
     }
   }
 
@@ -399,6 +436,24 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
+      appBar: AppBar(
+        title: const Text('Users Management'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshUserStatus,
+            tooltip: 'Refresh Status',
+          ),
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: _testStatusHandling,
+            tooltip: 'Test Status',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadStaffData,
@@ -543,8 +598,8 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                 child: GestureDetector(
                   onTap: () => _onFilterChanged('All'),
                   child: _buildSummaryCard(
-                    'Active Users',
-                    '${_staffList.where((s) => (s.status ?? 'Offline') == 'Online').length}/${_staffList.length}',
+                    'Online Users',
+                    '${_staffList.where((s) => (s.status?.toLowerCase() ?? 'offline') == 'online' || (s.status?.toLowerCase() ?? 'offline') == 'active').length}/${_staffList.length}',
                     Icons.check_circle,
                     const Color(0xFF10B981),
                   ),
@@ -943,7 +998,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: _getStatusColor(
-                              staff.status ?? 'active',
+                              staff.status ?? 'online',
                             ).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -955,18 +1010,18 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                                 height: 6,
                                 decoration: BoxDecoration(
                                   color: _getStatusColor(
-                                    staff.status ?? 'active',
+                                    staff.status ?? 'online',
                                   ),
                                   shape: BoxShape.circle,
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                _getStatusText(staff.status ?? 'active'),
+                                _getStatusText(staff.status ?? 'online'),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: _getStatusColor(
-                                    staff.status ?? 'active',
+                                    staff.status ?? 'online',
                                   ),
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -1220,12 +1275,21 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
+      case 'online':
       case 'active':
         return const Color(0xFF10B981); // Green
       case 'offline':
         return Theme.of(
           context,
         ).colorScheme.onSurface.withOpacity(0.6); // Theme-aware gray
+      case 'busy':
+        return const Color(0xFFF59E0B); // Orange
+      case 'away':
+        return const Color(0xFF3B82F6); // Blue
+      case 'inactive':
+        return const Color(0xFF6B7280); // Gray
+      case 'pending':
+        return const Color(0xFF8B5CF6); // Purple
       default:
         return const Color(0xFF10B981); // Default to green
     }
@@ -1233,12 +1297,21 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
 
   String _getStatusText(String status) {
     switch (status.toLowerCase()) {
+      case 'online':
       case 'active':
-        return 'Active';
+        return 'Online';
       case 'offline':
         return 'Offline';
+      case 'busy':
+        return 'Busy';
+      case 'away':
+        return 'Away';
+      case 'inactive':
+        return 'Inactive';
+      case 'pending':
+        return 'Pending';
       default:
-        return 'Active';
+        return 'Online';
     }
   }
 }

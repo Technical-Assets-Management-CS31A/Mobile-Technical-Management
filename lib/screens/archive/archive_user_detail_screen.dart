@@ -329,9 +329,9 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
       case 'superadmin':
         return const Color(0xFFDC2626);
       case 'admin':
-        return const Color(0xFFE53E3E);
+        return const Color(0xFF3B82F6); // Blue for admin
       case 'staff':
-        return const Color(0xFF805AD5);
+        return const Color(0xFF10B981); // Green for staff
       default:
         return const Color(0xFF718096);
     }
