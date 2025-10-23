@@ -303,21 +303,35 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
     );
   }
 
-  Color _getPositionColor(String? position) {
-    if (position == null) {
+  Color _getStatusColor(String? status) {
+    if (status == null) {
       return const Color(0xFF718096);
     }
-    switch (position.toLowerCase()) {
+    switch (status.toLowerCase()) {
+      case 'online':
+        return const Color(0xFF10B981);
+      case 'offline':
+        return const Color(0xFF6B7280);
+      case 'busy':
+        return const Color(0xFFF59E0B);
+      case 'away':
+        return const Color(0xFF3B82F6);
+      default:
+        return const Color(0xFF718096);
+    }
+  }
+
+  Color _getUserRoleColor(String? userRole) {
+    if (userRole == null) {
+      return const Color(0xFF718096);
+    }
+    switch (userRole.toLowerCase()) {
+      case 'superadmin':
+        return const Color(0xFFDC2626);
       case 'admin':
         return const Color(0xFFE53E3E);
-      case 'manager':
-        return const Color(0xFF3182CE);
-      case 'supervisor':
-        return const Color(0xFF38A169);
       case 'staff':
         return const Color(0xFF805AD5);
-      case 'lab technician':
-        return const Color(0xFF10B981);
       default:
         return const Color(0xFF718096);
     }
@@ -364,128 +378,76 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Archive Status Banner
+            // Header Card
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.orange.withOpacity(0.1),
+                    Colors.orange.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.orange.withOpacity(0.3),
+                  color: Colors.orange.withOpacity(0.2),
                   width: 1,
                 ),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(Icons.archive, color: Colors.orange, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Archived User',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange.shade700,
-                          ),
-                        ),
-                        Text(
-                          'This user has been archived and cannot access the system',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.orange.shade600,
-                          ),
-                        ),
-                      ],
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: Icon(Icons.archive, color: Colors.orange, size: 48),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Archived User Details',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This user has been archived and cannot access the system',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.orange.shade600,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
 
-            // User Avatar and Basic Info
-            Center(
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: _getPositionColor(
-                    widget.staff.position,
-                  ).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(60),
-                  border: Border.all(
-                    color: _getPositionColor(
-                      widget.staff.position,
-                    ).withOpacity(0.3),
-                    width: 3,
-                  ),
-                ),
-                child: Icon(
-                  Icons.person,
-                  size: 60,
-                  color: _getPositionColor(widget.staff.position),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            Center(
-              child: Column(
-                children: [
-                  Text(
-                    widget.staff.name,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getPositionColor(
-                        widget.staff.position,
-                      ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _getPositionColor(
-                          widget.staff.position,
-                        ).withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      widget.staff.position ?? 'No Position',
-                      style: TextStyle(
-                        color: _getPositionColor(widget.staff.position),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
             // User Information Cards
             _buildInfoCard(
               title: 'Full Name',
               value: widget.staff.name,
               icon: Icons.person,
-              color: Colors.blue,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+
+            _buildInfoCard(
+              title: 'Username',
+              value: widget.staff.username,
+              icon: Icons.account_circle,
+              color: Theme.of(context).colorScheme.secondary,
             ),
             const SizedBox(height: 16),
 
@@ -496,50 +458,43 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
                     title: 'Email',
                     value: widget.staff.email,
                     icon: Icons.email,
-                    color: Colors.green,
+                    color: Theme.of(context).colorScheme.tertiary,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildInfoCard(
-                    title: 'Phone',
+                    title: 'Phone Number',
                     value: widget.staff.phoneNumber ?? 'No Phone',
                     icon: Icons.phone,
-                    color: Colors.purple,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
 
+            // Status and User Role Row
             Row(
               children: [
                 Expanded(
                   child: _buildInfoCard(
-                    title: 'Username',
-                    value: widget.staff.username,
-                    icon: Icons.account_circle,
-                    color: Colors.teal,
+                    title: 'Status',
+                    value: widget.staff.status ?? 'Unknown',
+                    icon: Icons.circle,
+                    color: _getStatusColor(widget.staff.status),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildInfoCard(
-                    title: 'User ID',
-                    value: widget.staff.id,
-                    icon: Icons.badge,
-                    color: Colors.indigo,
+                    title: 'User Role',
+                    value: widget.staff.userRole,
+                    icon: Icons.admin_panel_settings,
+                    color: _getUserRoleColor(widget.staff.userRole),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 16),
-
-            _buildInfoCard(
-              title: 'Status',
-              value: widget.staff.status ?? 'Unknown',
-              icon: Icons.info,
-              color: Colors.orange,
             ),
             const SizedBox(height: 16),
 

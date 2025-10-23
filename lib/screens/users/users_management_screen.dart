@@ -3,7 +3,7 @@ import '../../models/entities/staff.dart';
 import '../../services/staff_service.dart';
 import '../../widgets/skeleton.dart';
 import 'add_staff_screen.dart';
-import 'staff_detail_screen.dart';
+import 'users_detail_screen.dart';
 
 class StaffManagementScreen extends StatefulWidget {
   const StaffManagementScreen({super.key, this.isMobile = false});
