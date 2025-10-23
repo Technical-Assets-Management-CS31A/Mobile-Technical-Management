@@ -103,7 +103,8 @@ class StaffService {
       final activeStaff = userData.where((user) {
         final userRole = user['userRole'] as String?;
         final status = user['status'] as String?;
-        return (userRole == 'Staff' || userRole == 'Admin' || userRole == 'SuperAdmin') &&
+        return (userRole == 'Staff' ||
+                userRole == 'Admin') &&
             status?.toLowerCase() == 'online';
       }).toList();
 
