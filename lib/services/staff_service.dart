@@ -46,7 +46,7 @@ class StaffService {
       final response = await _apiService.get(_staffEndpoint);
       final List<dynamic> userData = response['data'] ?? response;
 
-      // Filter only staff and admin members from the mixed user types
+      // Filter only staff, admin, and superadmin members from the mixed user types
       final staffData = userData.where((user) {
         final userRole = user['userRole'] as String?;
         return userRole == 'Staff' || userRole == 'Admin';
@@ -79,7 +79,7 @@ class StaffService {
       );
       final List<dynamic> userData = response['data'] ?? response;
 
-      // Filter only staff and admin members with the specified position
+      // Filter only staff, admin, and superadmin members with the specified position
       final staffData = userData.where((user) {
         final userRole = user['userRole'] as String?;
         final userPosition = user['position'] as String?;
@@ -99,11 +99,11 @@ class StaffService {
       final response = await _apiService.get('$_staffEndpoint?status=Online');
       final List<dynamic> userData = response['data'] ?? response;
 
-      // Filter only active staff and admin members
+      // Filter only active staff, admin, and superadmin members
       final activeStaff = userData.where((user) {
         final userRole = user['userRole'] as String?;
         final status = user['status'] as String?;
-        return (userRole == 'Staff' || userRole == 'Admin') &&
+        return (userRole == 'Staff' || userRole == 'Admin' || userRole == 'SuperAdmin') &&
             status?.toLowerCase() == 'online';
       }).toList();
 
@@ -208,7 +208,7 @@ class StaffService {
       final response = await _apiService.get('$_staffEndpoint/search?q=$query');
       final List<dynamic> userData = response['data'] ?? response;
 
-      // Filter only staff and admin members from search results
+      // Filter only staff, admin, and superadmin members from search results
       final staffData = userData.where((user) {
         final userRole = user['userRole'] as String?;
         return userRole == 'Staff' || userRole == 'Admin';
@@ -230,7 +230,7 @@ class StaffService {
       final response = await _apiService.get('$_staffEndpoint?status=$status');
       final List<dynamic> userData = response['data'] ?? response;
 
-      // Filter only staff and admin members with the specified status
+      // Filter only staff, admin, and superadmin members with the specified status
       final staffData = userData.where((user) {
         final userRole = user['userRole'] as String?;
         final userStatus = user['status'] as String?;

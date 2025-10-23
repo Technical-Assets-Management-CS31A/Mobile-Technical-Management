@@ -27,7 +27,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
   String _userRole = 'Staff';
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
-  final List<String> _userRoleOptions = ['Staff', 'Admin'];
+  final List<String> _userRoleOptions = ['Staff', 'Admin', 'SuperAdmin'];
 
   @override
   void initState() {
@@ -382,34 +382,46 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       return Icons.person;
     }
     switch (role.toLowerCase()) {
+      case 'superadmin':
+        return Icons.security;
       case 'admin':
         return Icons.admin_panel_settings;
-      case 'technical':
-        return Icons.build;
-      case 'lab technician':
-        return Icons.build;
+      case 'staff':
+        return Icons.person;
       default:
         return Icons.person;
     }
   }
 
-  Color _getPositionColor(String? position) {
-    if (position == null) {
+  Color _getStatusColor(String? status) {
+    if (status == null) {
       return const Color(0xFF718096);
     }
-    switch (position.toLowerCase()) {
+    switch (status.toLowerCase()) {
+      case 'online':
+        return const Color(0xFF10B981);
+      case 'offline':
+        return const Color(0xFF6B7280);
+      case 'busy':
+        return const Color(0xFFF59E0B);
+      case 'away':
+        return const Color(0xFF3B82F6);
+      default:
+        return const Color(0xFF718096);
+    }
+  }
+
+  Color _getUserRoleColor(String? userRole) {
+    if (userRole == null) {
+      return const Color(0xFF718096);
+    }
+    switch (userRole.toLowerCase()) {
+      case 'superadmin':
+        return const Color(0xFFDC2626);
       case 'admin':
         return const Color(0xFFE53E3E);
-      case 'manager':
-        return const Color(0xFF3182CE);
-      case 'supervisor':
-        return const Color(0xFF38A169);
       case 'staff':
         return const Color(0xFF805AD5);
-      case 'technical':
-        return const Color(0xFF3182CE);
-      case 'lab technician':
-        return const Color(0xFF10B981);
       default:
         return const Color(0xFF718096);
     }
@@ -501,7 +513,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        _getRoleIcon(widget.staff.position),
+                        _getRoleIcon(widget.staff.userRole),
                         color: Theme.of(context).colorScheme.primary,
                         size: 48,
                       ),
@@ -632,110 +644,11 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInfoCard(
-                        title: 'Username',
-                        value: widget.staff.username,
-                        icon: Icons.account_circle,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceBright,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: _getPositionColor(
-                              widget.staff.position,
-                            ).withOpacity(0.2),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.shadow.withOpacity(0.1),
-                              spreadRadius: 1,
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: _getPositionColor(
-                                      widget.staff.position,
-                                    ).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    Icons.work,
-                                    color: _getPositionColor(
-                                      widget.staff.position,
-                                    ),
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Position',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.7),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getPositionColor(
-                                  widget.staff.position,
-                                ).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: _getPositionColor(
-                                    widget.staff.position,
-                                  ).withOpacity(0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                widget.staff.position ?? 'No Position',
-                                style: TextStyle(
-                                  color: _getPositionColor(
-                                    widget.staff.position,
-                                  ),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                _buildInfoCard(
+                  title: 'Username',
+                  value: widget.staff.username,
+                  icon: Icons.account_circle,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
                 const SizedBox(height: 16),
 
@@ -756,6 +669,30 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                         value: widget.staff.phoneNumber ?? 'No Phone',
                         icon: Icons.phone,
                         color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Status and User Role Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Status',
+                        value: widget.staff.status ?? 'Unknown',
+                        icon: Icons.circle,
+                        color: _getStatusColor(widget.staff.status),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'User Role',
+                        value: widget.staff.userRole,
+                        icon: Icons.admin_panel_settings,
+                        color: _getUserRoleColor(widget.staff.userRole),
                       ),
                     ),
                   ],
