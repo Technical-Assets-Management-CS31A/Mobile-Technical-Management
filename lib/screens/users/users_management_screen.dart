@@ -56,8 +56,8 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     });
 
     try {
-      // Try to get staff with real-time status first, fallback to regular getAllStaff
-      final staffList = await _staffService.getStaffWithStatus();
+      // Get all staff - the API already returns status information
+      final staffList = await _staffService.getAllStaff();
       if (mounted) {
         setState(() {
           _staffList = staffList;
@@ -74,42 +74,6 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           SnackBar(content: Text('Error loading staff: $e')),
         );
       }
-    }
-  }
-
-  // Refresh user status from server
-  Future<void> _refreshUserStatus() async {
-    try {
-      final staffList = await _staffService.getStaffWithStatus();
-      if (mounted) {
-        setState(() {
-          _staffList = staffList;
-          _filterStaff();
-        });
-        _scaffoldMessenger?.showSnackBar(
-          const SnackBar(content: Text('User status refreshed')),
-        );
-      }
-    } catch (e) {
-      _scaffoldMessenger?.showSnackBar(
-        SnackBar(content: Text('Failed to refresh status: $e')),
-      );
-    }
-  }
-
-  // Test status handling
-  Future<void> _testStatusHandling() async {
-    try {
-      await _staffService.testStatusHandling();
-      _scaffoldMessenger?.showSnackBar(
-        const SnackBar(
-          content: Text('Status test completed - check console for results'),
-        ),
-      );
-    } catch (e) {
-      _scaffoldMessenger?.showSnackBar(
-        SnackBar(content: Text('Status test failed: $e')),
-      );
     }
   }
 
@@ -435,24 +399,6 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         onPressed: _addNewStaff,
         backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Icons.add, color: Colors.white),
-      ),
-      appBar: AppBar(
-        title: const Text('Users Management'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshUserStatus,
-            tooltip: 'Refresh Status',
-          ),
-          IconButton(
-            icon: const Icon(Icons.bug_report),
-            onPressed: _testStatusHandling,
-            tooltip: 'Test Status',
-          ),
-        ],
       ),
       body: SafeArea(
         child: RefreshIndicator(

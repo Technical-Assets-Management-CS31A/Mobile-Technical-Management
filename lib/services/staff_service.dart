@@ -55,8 +55,6 @@ class StaffService {
       // Process each staff member to ensure status is properly handled
       return staffData.map((json) {
         final staff = Staff.fromJson(json);
-        // Debug logging for status
-        print('Staff ${staff.username}: Status = ${staff.status}');
         return staff;
       }).toList();
     } catch (e) {
@@ -102,15 +100,12 @@ class StaffService {
   // READ - Get active staff count
   Future<int> getActiveStaffCount() async {
     try {
-      final response = await _apiService.get('$_staffEndpoint?status=Online');
-      final List<dynamic> userData = response['data'] ?? response;
+      // Get all staff first (which already includes status)
+      final allStaff = await getAllStaff();
 
-      // Filter only active staff, admin, and superadmin members
-      final activeStaff = userData.where((user) {
-        final userRole = user['userRole'] as String?;
-        final status = user['status'] as String?;
-        return (userRole == 'Staff' || userRole == 'Admin') &&
-            status?.toLowerCase() == 'online';
+      // Filter locally for active staff instead of making a separate API call
+      final activeStaff = allStaff.where((staff) {
+        return staff.status?.toLowerCase() == 'online';
       }).toList();
 
       return activeStaff.length;
@@ -229,51 +224,19 @@ class StaffService {
   // Filter staff by status
   Future<List<Staff>> filterByStatus(String status) async {
     try {
+      // Get all staff first (which already includes status)
+      final allStaff = await getAllStaff();
+
       if (status.toLowerCase() == 'all') {
-        return await getAllStaff();
+        return allStaff;
       }
 
-      final response = await _apiService.get('$_staffEndpoint?status=$status');
-      final List<dynamic> userData = response['data'] ?? response;
-
-      // Filter only staff, admin, and superadmin members with the specified status
-      final staffData = userData.where((user) {
-        final userRole = user['userRole'] as String?;
-        final userStatus = user['status'] as String?;
-        return (userRole == 'Staff' || userRole == 'Admin') &&
-            userStatus?.toLowerCase() == status.toLowerCase();
+      // Filter locally by status instead of making a separate API call
+      return allStaff.where((staff) {
+        return staff.status?.toLowerCase() == status.toLowerCase();
       }).toList();
-
-      return staffData.map((json) => Staff.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Failed to filter staff by status: $e');
-    }
-  }
-
-  // Get staff with real-time status from server
-  Future<List<Staff>> getStaffWithStatus() async {
-    try {
-      final response = await _apiService.get('$_staffEndpoint/status');
-      final List<dynamic> userData = response['data'] ?? response;
-
-      // Filter only staff, admin, and superadmin members
-      final staffData = userData.where((user) {
-        final userRole = user['userRole'] as String?;
-        return userRole == 'Staff' || userRole == 'Admin';
-      }).toList();
-
-      return staffData.map((json) {
-        final staff = Staff.fromJson(json);
-        // Debug logging for real-time status
-        print(
-          'Real-time Status - Staff ${staff.username}: Status = ${staff.status}',
-        );
-        return staff;
-      }).toList();
-    } catch (e) {
-      // Fallback to regular getAllStaff if status endpoint doesn't exist
-      print('Status endpoint not available, falling back to getAllStaff: $e');
-      return await getAllStaff();
     }
   }
 
@@ -287,23 +250,6 @@ class StaffService {
       return response['success'] == true;
     } catch (e) {
       throw Exception('Failed to update user status: $e');
-    }
-  }
-
-  // Test method to verify status handling
-  Future<void> testStatusHandling() async {
-    try {
-      print('Testing status handling...');
-      final staffList = await getStaffWithStatus();
-      print('Retrieved ${staffList.length} staff members with status');
-
-      for (final staff in staffList) {
-        print(
-          'Staff: ${staff.username}, Status: ${staff.status}, Role: ${staff.userRole}',
-        );
-      }
-    } catch (e) {
-      print('Status test failed: $e');
     }
   }
 }
