@@ -193,18 +193,12 @@ class AuthService {
     await _ensureInitialized();
 
     try {
-      final logoutEndpoint =
-          dotenv.env['AUTH_LOGOUT_ENDPOINT'] ?? '/auth/logout';
+      final logoutEndpoint = '/auth/logout';
+      final fullUrl = '${_apiService?.baseUrl ?? baseUrl}$logoutEndpoint';
 
-      _logApiCall('POST', '${_apiService?.baseUrl ?? baseUrl}$logoutEndpoint');
+      print('POST Request: $fullUrl');
+      _logApiCall('POST', fullUrl);
 
-      // Attempt to call logout endpoint (optional - may fail if token is already invalid)
-      try {
-        await _apiService!.post(logoutEndpoint);
-      } catch (e) {
-        // Ignore logout endpoint errors - we still want to clear local data
-        print('Logout endpoint call failed (this is usually fine): $e');
-      }
 
       // Stop the refresh timer
       refreshTimer.stop();
@@ -219,11 +213,13 @@ class AuthService {
         statusCode: 200,
       );
 
+      print('✅ User logged out successfully');
       return {'success': true, 'message': 'Logout successful'};
     } catch (e) {
       // Even if logout fails, clear local data
       refreshTimer.stop();
       await _clearAuthData();
+      print('⚠️ Logout error (local data cleared): $e');
       return {
         'success': true,
         'message': 'Logout successful (local data cleared)',
