@@ -199,7 +199,6 @@ class AuthService {
       print('POST Request: $fullUrl');
       _logApiCall('POST', fullUrl);
 
-
       // Stop the refresh timer
       refreshTimer.stop();
 

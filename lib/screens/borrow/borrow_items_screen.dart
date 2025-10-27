@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/constants.dart';
+import 'borrow_new_item_screen.dart';
 
 class BorrowItemsScreen extends StatefulWidget {
   const BorrowItemsScreen({super.key, this.isMobile = true});
@@ -278,11 +279,9 @@ class _BorrowItemsScreenState extends State<BorrowItemsScreen> {
   }
 
   void _borrowNewItem() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Borrow new item functionality coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const BorrowNewItemScreen()),
     );
   }
 
