@@ -149,33 +149,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _loadBorrowedItems,
-      child: _isLoading
-          ? HistorySkeleton(isMobile: widget.isMobile)
-          : SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(widget.isMobile ? 16 : 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Text(
-                      'BORROWING HISTORY',
-                      style: TextStyle(
-                        fontSize: widget.isMobile ? 24 : 28,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: widget.isMobile ? 24 : 32),
-                  _buildSearchAndFilterSection(),
-                  SizedBox(height: widget.isMobile ? 24 : 32),
-                  _buildHistoryList(),
-                ],
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('Borrowing History'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        elevation: 0,
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadBorrowedItems,
+        child: _isLoading
+            ? HistorySkeleton(isMobile: widget.isMobile)
+            : SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.all(widget.isMobile ? 16 : 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSearchAndFilterSection(),
+                    SizedBox(height: widget.isMobile ? 24 : 32),
+                    _buildHistoryList(),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -439,8 +437,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     horizontal: 12,
                     vertical: 8,
                   ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceBright,
                 ),
                 items: _pageSizeOptions
                     .map(
