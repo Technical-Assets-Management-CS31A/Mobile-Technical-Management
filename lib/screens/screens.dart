@@ -3,6 +3,7 @@ export 'login/login_screen.dart';
 export 'dashboard/dashboard_screen.dart';
 export 'inventory/inventory_screen.dart';
 export 'inventory/item_detail_screen.dart';
+export 'inventory/item_selection_screen.dart';
 export 'inventory/category_items_screen.dart';
 export 'borrow/borrow_items_screen.dart';
 export 'borrow/borrow_new_item_screen.dart';

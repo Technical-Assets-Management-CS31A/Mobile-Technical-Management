@@ -4,6 +4,7 @@ import '../../models/entities/item.dart';
 import '../../models/entities/lend_item.dart';
 import '../../services/inventory_service.dart';
 import '../../services/lend_service.dart';
+import '../inventory/item_selection_screen.dart';
 
 class BorrowNewItemScreen extends StatefulWidget {
   const BorrowNewItemScreen({super.key, this.preSelectedItemId});
@@ -21,66 +22,50 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
 
   // Form controllers
   final _itemIdController = TextEditingController();
-  final _borrowerFirstNameController = TextEditingController();
-  final _borrowerLastNameController = TextEditingController();
-  final _teacherFirstNameController = TextEditingController();
-  final _teacherLastNameController = TextEditingController();
+  final _userIdController = TextEditingController();
+  final _teacherIdController = TextEditingController();
   final _roomController = TextEditingController();
   final _subjectTimeScheduleController = TextEditingController();
   final _remarksController = TextEditingController();
-  final _studentIdNumberController = TextEditingController();
 
   // Form state
   Item? _selectedItem;
-  String _borrowerRole = 'Student';
-  bool _isLoadingItem = false;
+  String? _status;
   bool _isSubmitting = false;
 
-  final List<String> _borrowerRoles = ['Student', 'Teacher', 'Staff', 'Guest'];
+  final List<String> _statusOptions = [
+    'Pending',
+    'Active',
+    'Returned',
+    'Overdue',
+  ];
 
   @override
   void initState() {
     super.initState();
-    // If preselected item ID, set it and fetch details
+    // If preselected item ID, fetch the item details
     if (widget.preSelectedItemId != null) {
       _itemIdController.text = widget.preSelectedItemId!;
-      _fetchItemDetails(widget.preSelectedItemId!);
+      _fetchItemByIdOnInit(widget.preSelectedItemId!);
     }
   }
 
-  Future<void> _fetchItemDetails(String itemId) async {
-    if (itemId.trim().isEmpty) {
-      setState(() => _selectedItem = null);
-      return;
-    }
+  Future<void> _fetchItemByIdOnInit(String itemId) async {
+    if (itemId.trim().isEmpty) return;
 
-    setState(() => _isLoadingItem = true);
     try {
       final item = await _inventoryService.getItemById(itemId.trim());
-      setState(() {
-        _selectedItem = item;
-        _isLoadingItem = false;
-      });
-
-      if (item == null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Item not found'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
-          ),
-        );
+      if (item != null && mounted) {
+        setState(() {
+          _selectedItem = item;
+        });
       }
     } catch (e) {
-      setState(() {
-        _selectedItem = null;
-        _isLoadingItem = false;
-      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading item: $e'),
-            backgroundColor: Colors.red,
+            content: Text('Error loading preselected item: $e'),
+            backgroundColor: Colors.orange,
           ),
         );
       }
@@ -90,14 +75,11 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
   @override
   void dispose() {
     _itemIdController.dispose();
-    _borrowerFirstNameController.dispose();
-    _borrowerLastNameController.dispose();
-    _teacherFirstNameController.dispose();
-    _teacherLastNameController.dispose();
+    _userIdController.dispose();
+    _teacherIdController.dispose();
     _roomController.dispose();
     _subjectTimeScheduleController.dispose();
     _remarksController.dispose();
-    _studentIdNumberController.dispose();
     super.dispose();
   }
 
@@ -123,9 +105,7 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
                 const SizedBox(height: 24),
                 _buildItemSelectionSection(),
                 const SizedBox(height: 24),
-                _buildBorrowerInfoSection(),
-                const SizedBox(height: 24),
-                _buildTeacherInfoSection(),
+                _buildUserInfoSection(),
                 const SizedBox(height: 24),
                 _buildLocationScheduleSection(),
                 const SizedBox(height: 24),
@@ -204,53 +184,92 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _itemIdController,
-            decoration:
-                _inputDecoration(
-                  label: 'Item ID *',
-                  prefixIcon: Icons.tag,
-                  hint: 'Enter the item ID',
-                ).copyWith(
-                  suffixIcon: _isLoadingItem
-                      ? const Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                      : _selectedItem != null
-                      ? const Icon(Icons.check_circle, color: Colors.green)
-                      : null,
+          // Select Item Button
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: OutlinedButton.icon(
+              onPressed: _openItemSelection,
+              icon: Icon(
+                _selectedItem == null ? Icons.add_circle_outline : Icons.edit,
+                color: Theme.of(context).colorScheme.primary,
+                size: 24,
+              ),
+              label: Text(
+                _selectedItem == null
+                    ? 'Select Item from Inventory'
+                    : 'Change Selected Item',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-            textCapitalization: TextCapitalization.none,
-            onChanged: (value) {
-              // Debounce the search
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (_itemIdController.text == value) {
-                  _fetchItemDetails(value);
-                }
-              });
-            },
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Please enter item ID';
-              }
-              if (_selectedItem == null && !_isLoadingItem) {
-                return 'Item not found';
-              }
-              return null;
-            },
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withOpacity(0.05),
+              ),
+            ),
           ),
           if (_selectedItem != null) ...[
             const SizedBox(height: 16),
             _buildSelectedItemCard(),
+          ] else ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Please select an item from the inventory',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ],
       ),
     );
+  }
+
+  Future<void> _openItemSelection() async {
+    final selectedItem = await Navigator.of(context).push<Item>(
+      MaterialPageRoute(builder: (context) => const ItemSelectionScreen()),
+    );
+
+    if (selectedItem != null) {
+      setState(() {
+        _selectedItem = selectedItem;
+        _itemIdController.text = selectedItem.id;
+      });
+    }
   }
 
   Widget _buildSelectedItemCard() {
@@ -269,18 +288,35 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                Icons.info_outline,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
+              Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Selected Item',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Item Details',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'ID: ${_selectedItem!.id}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ],
@@ -327,114 +363,52 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
     );
   }
 
-  Widget _buildBorrowerInfoSection() {
+  Widget _buildUserInfoSection() {
     return _buildSection(
-      title: 'Borrower Information',
-      icon: Icons.person_outline,
+      title: 'User & Teacher Information',
+      icon: Icons.people_outline,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
           TextFormField(
-            controller: _borrowerFirstNameController,
+            controller: _userIdController,
             decoration: _inputDecoration(
-              label: 'First Name *',
+              label: 'User ID',
               prefixIcon: Icons.person,
+              hint: 'Enter the user ID (optional)',
             ),
-            textCapitalization: TextCapitalization.words,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Please enter first name';
-              }
-              return null;
-            },
+            textCapitalization: TextCapitalization.none,
           ),
           const SizedBox(height: 16),
           TextFormField(
-            controller: _borrowerLastNameController,
+            controller: _teacherIdController,
             decoration: _inputDecoration(
-              label: 'Last Name *',
-              prefixIcon: Icons.person,
+              label: 'Teacher ID',
+              prefixIcon: Icons.school_outlined,
+              hint: 'Enter the teacher ID (optional)',
             ),
-            textCapitalization: TextCapitalization.words,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Please enter last name';
-              }
-              return null;
-            },
+            textCapitalization: TextCapitalization.none,
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: _borrowerRole,
+            value: _status,
             decoration: _inputDecoration(
-              label: 'Borrower Role *',
-              prefixIcon: Icons.badge_outlined,
+              label: 'Status',
+              prefixIcon: Icons.flag_outlined,
             ),
-            items: _borrowerRoles.map((role) {
-              return DropdownMenuItem<String>(value: role, child: Text(role));
+            hint: const Text('Select status (optional)'),
+            items: _statusOptions.map((status) {
+              return DropdownMenuItem<String>(
+                value: status,
+                child: Text(status),
+              );
             }).toList(),
             onChanged: (value) {
               setState(() {
-                _borrowerRole = value!;
-                // Clear student ID if not a student
-                if (_borrowerRole != 'Student') {
-                  _studentIdNumberController.clear();
-                }
+                _status = value;
               });
             },
-          ),
-          if (_borrowerRole == 'Student') ...[
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _studentIdNumberController,
-              decoration: _inputDecoration(
-                label: 'Student ID Number',
-                prefixIcon: Icons.numbers,
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTeacherInfoSection() {
-    return _buildSection(
-      title: 'Teacher/Supervisor Information',
-      icon: Icons.school_outlined,
-      isOptional: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          Text(
-            'If this item is being borrowed for a class or under supervision',
-            style: TextStyle(
-              fontSize: 13,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _teacherFirstNameController,
-            decoration: _inputDecoration(
-              label: 'Teacher First Name',
-              prefixIcon: Icons.person_outline,
-            ),
-            textCapitalization: TextCapitalization.words,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _teacherLastNameController,
-            decoration: _inputDecoration(
-              label: 'Teacher Last Name',
-              prefixIcon: Icons.person_outline,
-            ),
-            textCapitalization: TextCapitalization.words,
           ),
         ],
       ),
@@ -665,6 +639,16 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
   }
 
   Future<void> _submitForm() async {
+    if (_selectedItem == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an item from the inventory'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -675,53 +659,30 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
       return;
     }
 
-    // Wait for item validation to complete
-    if (_isLoadingItem) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please wait while we verify the item...'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    if (_selectedItem == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid item ID'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     setState(() => _isSubmitting = true);
 
     try {
-      // Create borrower full name
-      final borrowerFullName =
-          '${_borrowerFirstNameController.text.trim()} ${_borrowerLastNameController.text.trim()}';
-
-      // Create teacher full name (if provided)
-      String? teacherFullName;
-      if (_teacherFirstNameController.text.trim().isNotEmpty &&
-          _teacherLastNameController.text.trim().isNotEmpty) {
-        teacherFullName =
-            '${_teacherFirstNameController.text.trim()} ${_teacherLastNameController.text.trim()}';
-      }
-
-      // Create LendItem object
+      // Create LendItem object with new structure
       final lendItem = LendItem(
         item: _selectedItem,
-        borrowerFullName: borrowerFullName,
-        borrowerRole: _borrowerRole,
-        teacherFullName: teacherFullName,
-        room: _roomController.text.trim(),
-        subjectTimeSchedule: _subjectTimeScheduleController.text.trim(),
+        userId: _userIdController.text.trim().isEmpty
+            ? null
+            : _userIdController.text.trim(),
+        teacherId: _teacherIdController.text.trim().isEmpty
+            ? null
+            : _teacherIdController.text.trim(),
+        room: _roomController.text.trim().isEmpty
+            ? null
+            : _roomController.text.trim(),
+        subjectTimeSchedule: _subjectTimeScheduleController.text.trim().isEmpty
+            ? null
+            : _subjectTimeScheduleController.text.trim(),
         remarks: _remarksController.text.trim().isEmpty
             ? null
             : _remarksController.text.trim(),
+        status: _status,
+        borrowerFullName: '', // Required field but not used in API
+        borrowerRole: '', // Required field but not used in API
       );
 
       // Submit to API
@@ -770,19 +731,20 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Borrower: ${createdLendItem.borrowerFullName}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
                 if (createdLendItem.itemName != null)
                   Text(
                     'Item: ${createdLendItem.itemName}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                if (createdLendItem.status != null)
+                  Text(
+                    'Status: ${createdLendItem.status}',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,

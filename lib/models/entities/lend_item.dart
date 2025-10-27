@@ -8,8 +8,8 @@ class LendItem {
   final String borrowerFullName;
   final String borrowerRole;
   final String? teacherFullName;
-  final String room;
-  final String subjectTimeSchedule;
+  final String? room;
+  final String? subjectTimeSchedule;
   final DateTime? lentAt;
   final DateTime? returnedAt;
   final String? status;
@@ -26,8 +26,8 @@ class LendItem {
     required this.borrowerFullName,
     required this.borrowerRole,
     this.teacherFullName,
-    required this.room,
-    required this.subjectTimeSchedule,
+    this.room,
+    this.subjectTimeSchedule,
     this.lentAt,
     this.returnedAt,
     this.status,
@@ -46,8 +46,8 @@ class LendItem {
       borrowerFullName: json['borrowerFullName'] ?? '',
       borrowerRole: json['borrowerRole'] ?? '',
       teacherFullName: json['teacherFullName'],
-      room: json['room'] ?? '',
-      subjectTimeSchedule: json['subjectTimeSchedule'] ?? '',
+      room: json['room'],
+      subjectTimeSchedule: json['subjectTimeSchedule'],
       lentAt: json['lentAt'] != null ? DateTime.parse(json['lentAt']) : null,
       returnedAt: json['returnedAt'] != null
           ? DateTime.parse(json['returnedAt'])
@@ -84,14 +84,13 @@ class LendItem {
   // Helper method for creating lend items (without ID and nested objects)
   Map<String, dynamic> toCreateJson() {
     return {
-      if (item != null) 'itemId': item!.id,
-      'borrowerFullName': borrowerFullName,
-      'borrowerRole': borrowerRole,
-      'teacherFullName': teacherFullName ?? '',
+      'itemId': item?.id ?? '',
+      'userId': userId,
+      'teacherId': teacherId,
       'room': room,
       'subjectTimeSchedule': subjectTimeSchedule,
       'remarks': remarks,
-      'barcode': barcode,
+      'status': status,
     };
   }
 

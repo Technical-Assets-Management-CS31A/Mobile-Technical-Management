@@ -90,10 +90,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   _searchQuery.toLowerCase(),
                 ) ??
                 false) ||
-            item.room.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            item.subjectTimeSchedule.toLowerCase().contains(
-              _searchQuery.toLowerCase(),
-            ) ||
+            (item.room?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+                false) ||
+            (item.subjectTimeSchedule?.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ??
+                false) ||
             (item.itemId?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
                 false) ||
             (item.itemName?.toLowerCase().contains(
@@ -572,13 +574,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
               if (item.itemId != null)
                 _buildInfoRow(Icons.tag, 'Item ID', item.itemId!),
               if (item.itemId != null) const SizedBox(height: 8),
-              _buildInfoRow(Icons.room, 'Room', item.room),
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                Icons.schedule,
-                'Schedule',
-                item.subjectTimeSchedule,
-              ),
+              if (item.room != null)
+                _buildInfoRow(Icons.room, 'Room', item.room!),
+              if (item.room != null) const SizedBox(height: 8),
+              if (item.subjectTimeSchedule != null)
+                _buildInfoRow(
+                  Icons.schedule,
+                  'Schedule',
+                  item.subjectTimeSchedule!,
+                ),
+              if (item.subjectTimeSchedule != null) const SizedBox(height: 8),
               if (item.teacherFullName != null &&
                   item.teacherFullName!.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -686,8 +691,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 _buildDetailRow('Condition', item.item!.condition.displayName),
               ],
               const Divider(),
-              _buildDetailRow('Room', item.room),
-              _buildDetailRow('Schedule', item.subjectTimeSchedule),
+              if (item.room != null) _buildDetailRow('Room', item.room!),
+              if (item.subjectTimeSchedule != null)
+                _buildDetailRow('Schedule', item.subjectTimeSchedule!),
               if (item.remarks != null && item.remarks!.isNotEmpty)
                 _buildDetailRow('Remarks', item.remarks!),
               const Divider(),
