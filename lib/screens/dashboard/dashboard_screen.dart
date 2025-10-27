@@ -5,6 +5,7 @@ import '../../widgets/skeleton.dart';
 import '../users/users_management_screen.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../inventory/inventory_screen.dart';
+import '../borrow/borrow_items_screen.dart';
 import '../history/history_screen.dart';
 import '../../services/inventory_service.dart';
 import '../../services/borrowed_item_service.dart';
@@ -239,8 +240,8 @@ class _DashboardScreenState extends State<DashboardScreen>
       children: [
         _buildDashboardContent(),
         InventoryScreen(isMobile: true),
+        BorrowItemsScreen(isMobile: true),
         StaffManagementScreen(isMobile: true),
-        HistoryScreen(isMobile: true),
       ],
     );
   }
@@ -482,11 +483,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                         ),
                         child: TextButton.icon(
                           onPressed: () {
-                            setState(() {
-                              _previousIndex = _selectedIndex;
-                              _selectedIndex = 3; // Navigate to history screen
-                            });
-                            _pageController.jumpToPage(3);
+                            // Show menu for history access
+                            _showHistoryMenu(context);
                           },
                           icon: const Icon(
                             Icons.history,
@@ -556,11 +554,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       ),
                       child: TextButton.icon(
                         onPressed: () {
-                          setState(() {
-                            _previousIndex = _selectedIndex;
-                            _selectedIndex = 3; // Navigate to history screen
-                          });
-                          _pageController.jumpToPage(3);
+                          // Show menu for history access
+                          _showHistoryMenu(context);
                         },
                         icon: const Icon(
                           Icons.history,
@@ -877,6 +872,150 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  void _showHistoryMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Menu title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.history,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'History',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              // History option
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceBright,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).pop(); // Close the menu first
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const HistoryScreen(isMobile: true),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.history_outlined,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Borrowing History',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                      ),
+                                ),
+                                Text(
+                                  'View all borrowing transactions',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.7),
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _handleCardTap(String cardTitle) {
     int targetIndex;
     switch (cardTitle) {
@@ -884,11 +1023,12 @@ class _DashboardScreenState extends State<DashboardScreen>
         targetIndex = 1; // Navigate to inventory screen
         break;
       case 'Active Users':
-        targetIndex = 2; // Navigate to staff management screen
+        targetIndex = 3; // Navigate to staff management screen
         break;
       case 'Borrowed Items':
-        targetIndex = 3; // Navigate to history screen
-        break;
+        // Show menu for history access
+        _showHistoryMenu(context);
+        return;
       case 'Categories':
         targetIndex =
             1; // Navigate to inventory screen (categories are part of inventory)

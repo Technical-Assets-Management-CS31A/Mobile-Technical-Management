@@ -4,6 +4,7 @@ export 'dashboard/dashboard_screen.dart';
 export 'inventory/inventory_screen.dart';
 export 'inventory/item_detail_screen.dart';
 export 'inventory/category_items_screen.dart';
+export 'borrow/borrow_items_screen.dart';
 export 'users/users_management_screen.dart';
 export 'users/add_user_screen.dart';
 export 'users/users_detail_screen.dart';

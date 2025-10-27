@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../screens/login/login_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/archive/archive_screen.dart';
+import '../screens/history/history_screen.dart';
 
 class BottomBar extends StatelessWidget {
   final int selectedIndex;
@@ -53,16 +54,16 @@ class BottomBar extends StatelessWidget {
           _buildNavItem(
             context,
             2,
-            Icons.people_outline,
-            Icons.people,
-            'Users',
+            Icons.add_circle_outline,
+            Icons.add_circle,
+            'Borrow',
           ),
           _buildNavItem(
             context,
             3,
-            Icons.history_outlined,
-            Icons.history,
-            'History',
+            Icons.people_outline,
+            Icons.people,
+            'Users',
           ),
           _buildMenuNavItem(context),
         ],
@@ -317,6 +318,14 @@ class BottomBar extends StatelessWidget {
           const SizedBox(height: 12),
           _buildMenuItem(
             context,
+            icon: Icons.history_outlined,
+            title: 'History',
+            subtitle: 'View borrowing history',
+            onTap: () => _navigateToHistory(context),
+          ),
+          const SizedBox(height: 12),
+          _buildMenuItem(
+            context,
             icon: Icons.archive_outlined,
             title: 'Archive',
             subtitle: 'View archived items',
@@ -424,6 +433,16 @@ class BottomBar extends StatelessWidget {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const SettingsScreen()));
+  }
+
+  void _navigateToHistory(BuildContext context) {
+    Navigator.of(context).pop(); // Close the menu first
+    // Navigate to history screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const HistoryScreen(isMobile: true),
+      ),
+    );
   }
 
   void _navigateToArchive(BuildContext context) {
