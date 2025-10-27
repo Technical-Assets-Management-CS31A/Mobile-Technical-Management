@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../models/entities/borrowed_item.dart';
-import '../../services/borrowed_item_service.dart';
+import '../../models/entities/lend_item.dart';
+import '../../services/lend_service.dart';
 import '../../widgets/skeleton.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -13,13 +13,13 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  final BorrowedItemService _borrowedItemService = BorrowedItemService();
-  List<BorrowedItem> _borrowedItems = [];
-  List<BorrowedItem> _filteredItems = [];
+  final LendService _lendService = LendService();
+  List<LendItem> _lendItems = [];
+  List<LendItem> _filteredItems = [];
   bool _isLoading = true;
   String _searchQuery = '';
   String _selectedStatusFilter = 'All';
-  String _selectedConditionFilter = 'All';
+  String _selectedRoleFilter = 'All';
 
   // Pagination
   int _currentPage = 1;
@@ -29,16 +29,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final _searchController = TextEditingController();
   final List<String> _statusFilterOptions = [
     'All',
-    'In Use',
+    'Active',
+    'Borrowed',
     'Returned',
-    'Damaged',
-    'For Repair',
+    'Overdue',
   ];
-  final List<String> _conditionFilterOptions = [
+  final List<String> _roleFilterOptions = [
     'All',
-    'Excellent',
-    'Good',
-    'Fair',
+    'Student',
+    'Teacher',
+    'Staff',
+    'Guest',
   ];
 
   @override
@@ -56,10 +57,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _loadBorrowedItems() async {
     setState(() => _isLoading = true);
     try {
-      final items = await _borrowedItemService.getAllBorrowedItems();
+      final items = await _lendService.getAllLentItems(pageSize: 100);
       if (mounted) {
         setState(() {
-          _borrowedItems = items;
+          _lendItems = items;
           _filteredItems = items;
           _isLoading = false;
         });
@@ -69,7 +70,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading borrowed items: $e'),
+            content: Text('Error loading lent items: $e'),
             backgroundColor: const Color(0xFFEF4444),
           ),
         );
@@ -79,24 +80,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _filterItems() {
     setState(() {
-      _filteredItems = _borrowedItems.where((item) {
+      _filteredItems = _lendItems.where((item) {
         final matchesSearch =
             _searchQuery.isEmpty ||
-            item.itemName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            item.teacher.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            item.borrowerFullName.toLowerCase().contains(
+              _searchQuery.toLowerCase(),
+            ) ||
+            (item.teacherFullName?.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ??
+                false) ||
             item.room.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            item.occupied.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            item.borrowedId.toLowerCase().contains(_searchQuery.toLowerCase());
+            item.subjectTimeSchedule.toLowerCase().contains(
+              _searchQuery.toLowerCase(),
+            ) ||
+            (item.itemId?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+                false) ||
+            (item.itemName?.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ??
+                false);
 
         final matchesStatusFilter =
             _selectedStatusFilter == 'All' ||
+            (item.status == null && _selectedStatusFilter == 'Active') ||
             item.status == _selectedStatusFilter;
 
-        final matchesConditionFilter =
-            _selectedConditionFilter == 'All' ||
-            item.condition == _selectedConditionFilter;
+        final matchesRoleFilter =
+            _selectedRoleFilter == 'All' ||
+            item.borrowerRole == _selectedRoleFilter;
 
-        return matchesSearch && matchesStatusFilter && matchesConditionFilter;
+        return matchesSearch && matchesStatusFilter && matchesRoleFilter;
       }).toList();
       _currentPage = 1;
     });
@@ -116,9 +130,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _filterItems();
   }
 
-  void _onConditionFilterChanged(String filter) {
+  void _onRoleFilterChanged(String filter) {
     setState(() {
-      _selectedConditionFilter = filter;
+      _selectedRoleFilter = filter;
     });
     _filterItems();
   }
@@ -188,7 +202,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               controller: _searchController,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Search by item, teacher, room, or ID...',
+                hintText: 'Search by borrower, item, teacher, room...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -238,11 +252,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
               },
             ),
             const SizedBox(height: 12),
-            // Condition Filter
+            // Role Filter
             DropdownButtonFormField<String>(
-              value: _selectedConditionFilter,
+              value: _selectedRoleFilter,
               decoration: InputDecoration(
-                labelText: 'Filter by Condition',
+                labelText: 'Filter by Role',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -251,7 +265,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   vertical: 12,
                 ),
               ),
-              items: _conditionFilterOptions.map((String filter) {
+              items: _roleFilterOptions.map((String filter) {
                 return DropdownMenuItem<String>(
                   value: filter,
                   child: Text(filter),
@@ -259,7 +273,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               }).toList(),
               onChanged: (String? newValue) {
                 if (newValue != null) {
-                  _onConditionFilterChanged(newValue);
+                  _onRoleFilterChanged(newValue);
                 }
               },
             ),
@@ -278,7 +292,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 controller: _searchController,
                 onChanged: _onSearchChanged,
                 decoration: InputDecoration(
-                  hintText: 'Search by item, teacher, room, or ID...',
+                  hintText: 'Search by borrower, item, teacher, room...',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -331,12 +345,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            // Condition Filter
+            // Role Filter
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: _selectedConditionFilter,
+                value: _selectedRoleFilter,
                 decoration: InputDecoration(
-                  labelText: 'Filter by Condition',
+                  labelText: 'Filter by Role',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -345,7 +359,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     vertical: 12,
                   ),
                 ),
-                items: _conditionFilterOptions.map((String filter) {
+                items: _roleFilterOptions.map((String filter) {
                   return DropdownMenuItem<String>(
                     value: filter,
                     child: Text(filter),
@@ -353,7 +367,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 }).toList(),
                 onChanged: (String? newValue) {
                   if (newValue != null) {
-                    _onConditionFilterChanged(newValue);
+                    _onRoleFilterChanged(newValue);
                   }
                 },
               ),
@@ -378,9 +392,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
             Text(
               _searchQuery.isNotEmpty ||
                       _selectedStatusFilter != 'All' ||
-                      _selectedConditionFilter != 'All'
+                      _selectedRoleFilter != 'All'
                   ? 'No items found matching your criteria'
-                  : 'No borrowed items yet',
+                  : 'No lent items yet',
               style: TextStyle(
                 fontSize: 16,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -388,13 +402,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
             if (_searchQuery.isNotEmpty ||
                 _selectedStatusFilter != 'All' ||
-                _selectedConditionFilter != 'All')
+                _selectedRoleFilter != 'All')
               TextButton(
                 onPressed: () {
                   _searchController.clear();
                   _onSearchChanged('');
                   _onStatusFilterChanged('All');
-                  _onConditionFilterChanged('All');
+                  _onRoleFilterChanged('All');
                 },
                 child: const Text('Clear filters'),
               ),
@@ -489,7 +503,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildMobileCard(BorrowedItem item) {
+  Widget _buildMobileCard(LendItem item) {
+    final status = item.status ?? 'Active';
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -513,7 +528,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      item.itemName,
+                      item.borrowerFullName,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -530,34 +545,61 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(item.status).withOpacity(0.1),
+                      color: _getStatusColor(status).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: _getStatusColor(item.status).withOpacity(0.3),
+                        color: _getStatusColor(status).withOpacity(0.3),
                         width: 1,
                       ),
                     ),
                     child: Text(
-                      item.status,
+                      status,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: _getStatusColor(item.status),
+                        color: _getStatusColor(status),
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              _buildInfoRow(Icons.person, 'Teacher', item.teacher),
+              _buildInfoRow(Icons.badge, 'Role', item.borrowerRole),
               const SizedBox(height: 8),
+              if (item.itemName != null)
+                _buildInfoRow(Icons.inventory_2, 'Item', item.itemName!),
+              if (item.itemName != null) const SizedBox(height: 8),
+              if (item.itemId != null)
+                _buildInfoRow(Icons.tag, 'Item ID', item.itemId!),
+              if (item.itemId != null) const SizedBox(height: 8),
               _buildInfoRow(Icons.room, 'Room', item.room),
               const SizedBox(height: 8),
-              _buildInfoRow(Icons.person_outline, 'Occupied', item.occupied),
-              const SizedBox(height: 8),
-              _buildInfoRow(Icons.check_circle, 'Condition', item.condition),
-              const SizedBox(height: 8),
-              _buildInfoRow(Icons.calendar_today, 'Date', item.eventDate),
+              _buildInfoRow(
+                Icons.schedule,
+                'Schedule',
+                item.subjectTimeSchedule,
+              ),
+              if (item.teacherFullName != null &&
+                  item.teacherFullName!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _buildInfoRow(Icons.person, 'Teacher', item.teacherFullName!),
+              ],
+              if (item.lentAt != null) ...[
+                const SizedBox(height: 8),
+                _buildInfoRow(
+                  Icons.calendar_today,
+                  'Lent Date',
+                  _formatDate(item.lentAt!),
+                ),
+              ],
+              if (item.returnedAt != null) ...[
+                const SizedBox(height: 8),
+                _buildInfoRow(
+                  Icons.event_available,
+                  'Returned',
+                  _formatDate(item.returnedAt!),
+                ),
+              ],
             ],
           ),
         ),
@@ -597,16 +639,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'returned':
         return const Color(0xFF10B981); // Green
-      case 'in use':
+      case 'active':
+      case 'borrowed':
         return Theme.of(context).colorScheme.primary; // Primary color
-      case 'damaged':
+      case 'overdue':
         return const Color(0xFFEF4444); // Red
-      case 'for repair':
-        return const Color(0xFFF59E0B); // Orange
       default:
         return Theme.of(
           context,
@@ -614,29 +659,43 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  void _showItemDetails(BorrowedItem item) {
+  void _showItemDetails(LendItem item) {
+    final status = item.status ?? 'Active';
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Borrowed Item Details'),
+        title: const Text('Lent Item Details'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDetailRow('ID', item.id.toString()),
-              _buildDetailRow('Borrowed ID', item.borrowedId),
-              _buildDetailRow('Item Name', item.itemName),
-              _buildDetailRow('Teacher', item.teacher),
+              if (item.id != null) _buildDetailRow('ID', item.id!),
+              _buildDetailRow('Borrower', item.borrowerFullName),
+              _buildDetailRow('Role', item.borrowerRole),
+              if (item.teacherFullName != null &&
+                  item.teacherFullName!.isNotEmpty)
+                _buildDetailRow('Teacher', item.teacherFullName!),
+              const Divider(),
+              if (item.itemName != null)
+                _buildDetailRow('Item Name', item.itemName!),
+              if (item.itemId != null) _buildDetailRow('Item ID', item.itemId!),
+              if (item.item != null) ...[
+                _buildDetailRow('Serial Number', item.item!.serialNumber),
+                _buildDetailRow('Category', item.item!.category.displayName),
+                _buildDetailRow('Condition', item.item!.condition.displayName),
+              ],
+              const Divider(),
               _buildDetailRow('Room', item.room),
-              _buildDetailRow('Occupied By', item.occupied),
-              _buildDetailRow('Condition', item.condition),
-              _buildDetailRow('Event Date', item.eventDate),
-              _buildDetailRow(
-                'Status',
-                item.status,
-                color: _getStatusColor(item.status),
-              ),
+              _buildDetailRow('Schedule', item.subjectTimeSchedule),
+              if (item.remarks != null && item.remarks!.isNotEmpty)
+                _buildDetailRow('Remarks', item.remarks!),
+              const Divider(),
+              if (item.lentAt != null)
+                _buildDetailRow('Lent Date', _formatDate(item.lentAt!)),
+              if (item.returnedAt != null)
+                _buildDetailRow('Returned Date', _formatDate(item.returnedAt!)),
+              _buildDetailRow('Status', status, color: _getStatusColor(status)),
             ],
           ),
         ),

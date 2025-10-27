@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/entities/item.dart';
+import '../../models/entities/lend_item.dart';
 import '../../services/inventory_service.dart';
+import '../../services/lend_service.dart';
 
 class BorrowNewItemScreen extends StatefulWidget {
   const BorrowNewItemScreen({super.key, this.preSelectedItemId});
@@ -15,6 +17,7 @@ class BorrowNewItemScreen extends StatefulWidget {
 class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
   final _formKey = GlobalKey<FormState>();
   final _inventoryService = InventoryService();
+  final _lendService = LendService();
 
   // Form controllers
   final _itemIdController = TextEditingController();
@@ -672,45 +675,63 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
       return;
     }
 
+    // Wait for item validation to complete
+    if (_isLoadingItem) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please wait while we verify the item...'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedItem == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid item ID'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     try {
-      // Prepare borrow request data
-      final borrowData = {
-        'itemId': _itemIdController.text.trim(),
-        'borrowerFirstName': _borrowerFirstNameController.text.trim(),
-        'borrowerLastName': _borrowerLastNameController.text.trim(),
-        'borrowerRole': _borrowerRole,
-        'teacherFirstName': _teacherFirstNameController.text.trim().isEmpty
-            ? null
-            : _teacherFirstNameController.text.trim(),
-        'teacherLastName': _teacherLastNameController.text.trim().isEmpty
-            ? null
-            : _teacherLastNameController.text.trim(),
-        'room': _roomController.text.trim(),
-        'subjectTimeSchedule': _subjectTimeScheduleController.text.trim(),
-        'remarks': _remarksController.text.trim().isEmpty
+      // Create borrower full name
+      final borrowerFullName =
+          '${_borrowerFirstNameController.text.trim()} ${_borrowerLastNameController.text.trim()}';
+
+      // Create teacher full name (if provided)
+      String? teacherFullName;
+      if (_teacherFirstNameController.text.trim().isNotEmpty &&
+          _teacherLastNameController.text.trim().isNotEmpty) {
+        teacherFullName =
+            '${_teacherFirstNameController.text.trim()} ${_teacherLastNameController.text.trim()}';
+      }
+
+      // Create LendItem object
+      final lendItem = LendItem(
+        item: _selectedItem,
+        borrowerFullName: borrowerFullName,
+        borrowerRole: _borrowerRole,
+        teacherFullName: teacherFullName,
+        room: _roomController.text.trim(),
+        subjectTimeSchedule: _subjectTimeScheduleController.text.trim(),
+        remarks: _remarksController.text.trim().isEmpty
             ? null
             : _remarksController.text.trim(),
-        'status': null,
-        'studentIdNumber': _studentIdNumberController.text.trim().isEmpty
-            ? null
-            : _studentIdNumberController.text.trim(),
-      };
+      );
 
-      // TODO: Integrate with API service to submit borrow request
-      // await borrowService.createBorrowRequest(borrowData);
-      // For now, we log the data that would be sent
-      debugPrint('Borrow request data prepared: $borrowData');
-
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      // Submit to API
+      final createdLendItem = await _lendService.createLendItem(lendItem);
 
       setState(() => _isSubmitting = false);
 
       if (mounted) {
         // Show success dialog
-        showDialog(
+        await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
@@ -739,7 +760,7 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Borrow request submitted successfully',
+                  'Item borrowed successfully',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -748,13 +769,37 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
                     ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Borrower: ${createdLendItem.borrowerFullName}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+                if (createdLendItem.itemName != null)
+                  Text(
+                    'Item: ${createdLendItem.itemName}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Close dialog
-                  Navigator.of(context).pop(); // Return to previous screen
+                  Navigator.of(
+                    context,
+                  ).pop(true); // Return to previous screen with success
                 },
                 child: const Text('OK'),
               ),
@@ -766,10 +811,22 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
       setState(() => _isSubmitting = false);
 
       if (mounted) {
+        // Parse error message
+        String errorMessage = 'Error submitting request';
+        if (e.toString().contains('Failed to create lend item:')) {
+          errorMessage = e.toString().replaceFirst(
+            'Exception: Failed to create lend item: ',
+            '',
+          );
+        } else {
+          errorMessage = e.toString().replaceFirst('Exception: ', '');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error submitting request: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
