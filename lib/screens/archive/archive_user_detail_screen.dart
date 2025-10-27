@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/entities/staff.dart';
+import '../../models/entities/user.dart';
 import '../../services/archive_service.dart';
 
 class ArchiveUserDetailScreen extends StatefulWidget {

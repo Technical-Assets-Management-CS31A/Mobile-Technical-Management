@@ -1,5 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../models/entities/staff.dart';
+import '../models/entities/user.dart';
 import 'api_service.dart';
 
 class StaffService {

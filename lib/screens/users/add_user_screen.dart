@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/entities/staff.dart';
+import '../../models/entities/user.dart';
 import '../../utils/constants.dart';
 
 class AddStaffScreen extends StatefulWidget {

@@ -1,11 +1,11 @@
 // Screen exports for easier imports
-export 'auth/login_screen.dart';
+export 'login/login_screen.dart';
 export 'dashboard/dashboard_screen.dart';
 export 'inventory/inventory_screen.dart';
 export 'inventory/item_detail_screen.dart';
 export 'inventory/category_items_screen.dart';
 export 'users/users_management_screen.dart';
-export 'users/add_staff_screen.dart';
+export 'users/add_user_screen.dart';
 export 'users/users_detail_screen.dart';
 export 'history/history_screen.dart';
 export 'settings/settings_screen.dart';

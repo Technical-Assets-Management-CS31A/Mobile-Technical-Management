@@ -1,5 +1,5 @@
 import '../models/entities/item.dart';
-import '../models/entities/staff.dart';
+import '../models/entities/user.dart';
 import '../models/responses/responses.dart';
 import 'api_service.dart';
 

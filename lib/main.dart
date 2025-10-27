@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'widgets/auth_wrapper.dart';
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
-import 'services/staff_service.dart';
+import 'services/user_service.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/entities/staff.dart';
-import '../../services/staff_service.dart';
+import '../../models/entities/user.dart';
+import '../../services/user_service.dart';
 import '../../widgets/skeleton.dart';
-import 'add_staff_screen.dart';
+import 'add_user_screen.dart';
 import 'users_detail_screen.dart';
 
 class StaffManagementScreen extends StatefulWidget {

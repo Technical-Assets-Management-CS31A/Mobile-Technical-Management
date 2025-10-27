@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../auth/login_screen.dart';
+import '../login/login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
