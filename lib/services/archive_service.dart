@@ -1,6 +1,8 @@
 import '../models/entities/item.dart';
 import '../models/entities/user.dart';
+import '../models/entities/lend_item.dart';
 import '../models/responses/responses.dart';
+import '../models/responses/lend_item_response.dart';
 import 'api_service.dart';
 
 class ArchiveService {
@@ -257,6 +259,90 @@ class ArchiveService {
               false) ||
           user.username.toLowerCase().contains(query.toLowerCase());
     }).toList();
+  }
+
+  // ========== ARCHIVED LENT ITEMS ==========
+
+  /// Get all archived lent items
+  Future<List<LendItem>> getArchivedLentItems({
+    int page = 1,
+    int pageSize = 50,
+    String? search,
+    String? status,
+    String? borrowerRole,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
+
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+      if (borrowerRole != null && borrowerRole.isNotEmpty) {
+        queryParams['borrowerRole'] = borrowerRole;
+      }
+
+      final response = await apiService.get(
+        'archivelentitems',
+        queryParams: queryParams,
+      );
+
+      if (response['success'] == true && response['data'] != null) {
+        final lendItemListResponse = LendItemListResponse.fromJson(response);
+        return lendItemListResponse.data ?? [];
+      } else {
+        throw Exception(
+          response['message'] ?? 'Failed to fetch archived lent items',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch archived lent items: $e');
+    }
+  }
+
+  /// Get archived lent item by ID
+  Future<LendItem?> getArchivedLentItemById(String id) async {
+    try {
+      final response = await apiService.get('archivelentitems/$id');
+      if (response['success'] == true && response['data'] != null) {
+        final lendItemResponse = LendItemResponse.fromJson(response);
+        return lendItemResponse.data;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Restore an archived lent item (move it back to active lent items)
+  Future<bool> restoreLentItem(String id) async {
+    try {
+      final response = await apiService.delete('archivelentitems/restore/$id');
+      return response['success'] == true;
+    } catch (e) {
+      throw Exception('Failed to restore lent item: $e');
+    }
+  }
+
+  /// Permanently delete an archived lent item
+  Future<bool> permanentlyDeleteLentItem(String id) async {
+    try {
+      final response = await apiService.delete('archivelentitems/$id');
+      return response['success'] == true;
+    } catch (e) {
+      throw Exception('Failed to permanently delete lent item: $e');
+    }
+  }
+
+  /// Search archived lent items
+  Future<List<LendItem>> searchArchivedLentItems(String query) async {
+    if (query.isEmpty) return getArchivedLentItems();
+    return getArchivedLentItems(search: query);
   }
 
   // ========== ARCHIVE STATISTICS ==========

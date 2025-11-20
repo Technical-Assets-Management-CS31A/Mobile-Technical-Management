@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'items_archive_screen.dart';
 import 'users_archive_screen.dart';
+import 'lent_items_archive_screen.dart';
 
 class ArchiveScreen extends StatefulWidget {
   const ArchiveScreen({super.key});
@@ -16,7 +17,7 @@ class _ArchiveScreenState extends State<ArchiveScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -56,12 +57,21 @@ class _ArchiveScreenState extends State<ArchiveScreen>
               icon: Icon(Icons.people_outline, size: 20),
               text: 'Users',
             ),
+            Tab(
+              height: 48,
+              icon: Icon(Icons.history_outlined, size: 20),
+              text: 'Lent Items',
+            ),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [ItemsArchiveScreen(), UsersArchiveScreen()],
+        children: const [
+          ItemsArchiveScreen(),
+          UsersArchiveScreen(),
+          LentItemsArchiveScreen(),
+        ],
       ),
     );
   }
