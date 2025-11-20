@@ -310,6 +310,9 @@ class BottomBar extends StatelessWidget {
   }
 
   Widget _buildMenuItemsSection(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isStaff = authProvider.userRole == 'Staff';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -329,14 +332,16 @@ class BottomBar extends StatelessWidget {
             subtitle: 'View borrowing history',
             onTap: () => _navigateToHistory(context),
           ),
-          const SizedBox(height: 12),
-          _buildMenuItem(
-            context,
-            icon: Icons.archive_outlined,
-            title: 'Archive',
-            subtitle: 'View archived items',
-            onTap: () => _navigateToArchive(context),
-          ),
+          if (!isStaff) ...[
+            const SizedBox(height: 12),
+            _buildMenuItem(
+              context,
+              icon: Icons.archive_outlined,
+              title: 'Archive',
+              subtitle: 'View archived items',
+              onTap: () => _navigateToArchive(context),
+            ),
+          ],
           const SizedBox(height: 12),
           _buildMenuItem(
             context,
