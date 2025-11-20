@@ -181,7 +181,7 @@ class InventoryService {
   // DELETE - Archive an item (soft delete)
   Future<bool> deleteItem(String id) async {
     try {
-      final response = await apiService.delete('items/archive$id');
+      final response = await apiService.delete('items/archive/$id');
       final itemResponse = ItemResponse.fromJson(response);
       return itemResponse.success;
     } catch (e) {
