@@ -272,6 +272,8 @@ class _BorrowNewItemScreenState extends State<BorrowNewItemScreen> {
     }
   }
 
+
+
   Widget _buildSelectedItemCard() {
     if (_selectedItem == null) return const SizedBox.shrink();
 

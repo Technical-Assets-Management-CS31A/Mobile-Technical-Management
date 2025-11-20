@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utils/constants.dart';
 import 'borrow_new_item_screen.dart';
+import 'scanner_screen.dart';
 
 class BorrowItemsScreen extends StatefulWidget {
   const BorrowItemsScreen({super.key, this.isMobile = true});
@@ -285,13 +286,21 @@ class _BorrowItemsScreenState extends State<BorrowItemsScreen> {
     );
   }
 
-  void _scanBarcode() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Barcode scanner functionality coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
+  Future<void> _scanBarcode() async {
+    final scannedCode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (context) => const ScannerScreen()),
     );
+
+    if (scannedCode != null && scannedCode.isNotEmpty && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) =>
+                  BorrowNewItemScreen(preSelectedItemId: scannedCode),
+        ),
+      );
+    }
   }
 
   void _returnItem() {
