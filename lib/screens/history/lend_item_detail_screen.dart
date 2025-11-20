@@ -395,36 +395,21 @@ class _LendItemDetailScreenState extends State<LendItemDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    widget.lendItem.borrowerFullName,
+                    'Lent Item Details',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                  Text(
+                    'View details of this lending transaction',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
                     ),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _getStatusColor(status).withOpacity(0.3),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Text(
-                      status,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: _getStatusColor(status),
-                      ),
-                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),

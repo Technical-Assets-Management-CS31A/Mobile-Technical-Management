@@ -253,7 +253,6 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
@@ -389,15 +388,17 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.orange.withOpacity(0.1),
-                    Colors.orange.withOpacity(0.05),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.05),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.orange.withOpacity(0.2),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withOpacity(0.2),
                   width: 1,
                 ),
               ),
@@ -406,10 +407,16 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.archive, color: Colors.orange, size: 48),
+                    child: Icon(
+                      Icons.archive,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 48,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -417,7 +424,7 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.orange.shade700,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -425,7 +432,7 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
                     'This user has been archived and cannot access the system',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.orange.shade600,
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
                     ),
                     textAlign: TextAlign.center,
                   ),

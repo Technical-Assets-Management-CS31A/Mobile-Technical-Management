@@ -278,7 +278,6 @@ class _ArchiveItemDetailScreenState extends State<ArchiveItemDetailScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
@@ -384,43 +383,60 @@ class _ArchiveItemDetailScreenState extends State<ArchiveItemDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Archive Status Banner
+            // Header Card
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.orange.withOpacity(0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withOpacity(0.2),
                   width: 1,
                 ),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(Icons.archive, color: Colors.orange, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Archived Item',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange.shade700,
-                          ),
-                        ),
-                        Text(
-                          'This item has been archived and is not available for use',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.orange.shade600,
-                          ),
-                        ),
-                      ],
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: Icon(
+                      Icons.archive,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 48,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Archived Item Details',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This item has been archived and is not available for use',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -539,12 +555,6 @@ class _ArchiveItemDetailScreenState extends State<ArchiveItemDetailScreen> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surfaceBright,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _getConditionColor(
-                          widget.item.condition,
-                        ).withOpacity(0.2),
-                        width: 1,
-                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Theme.of(
