@@ -178,7 +178,7 @@ class LendService {
   // DELETE - Delete a lent item record
   Future<bool> deleteLentItem(String id) async {
     try {
-      final response = await apiService.delete('lentItems/$id');
+      final response = await apiService.delete('lentItems/archive/$id');
       final lendItemResponse = LendItemResponse.fromJson(response);
       return lendItemResponse.success;
     } catch (e) {

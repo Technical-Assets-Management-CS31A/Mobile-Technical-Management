@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/entities/lend_item.dart';
 import '../../services/lend_service.dart';
 import '../../widgets/skeleton.dart';
+import 'lend_item_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key, this.isMobile = true});
@@ -664,86 +665,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  void _showItemDetails(LendItem item) {
-    final status = item.status ?? 'Active';
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Lent Item Details'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (item.id != null) _buildDetailRow('ID', item.id!),
-              _buildDetailRow('Borrower', item.borrowerFullName),
-              _buildDetailRow('Role', item.borrowerRole),
-              if (item.teacherFullName != null &&
-                  item.teacherFullName!.isNotEmpty)
-                _buildDetailRow('Teacher', item.teacherFullName!),
-              const Divider(),
-              if (item.itemName != null)
-                _buildDetailRow('Item Name', item.itemName!),
-              if (item.itemId != null) _buildDetailRow('Item ID', item.itemId!),
-              if (item.item != null) ...[
-                _buildDetailRow('Serial Number', item.item!.serialNumber),
-                _buildDetailRow('Category', item.item!.category.displayName),
-                _buildDetailRow('Condition', item.item!.condition.displayName),
-              ],
-              const Divider(),
-              if (item.room != null) _buildDetailRow('Room', item.room!),
-              if (item.subjectTimeSchedule != null)
-                _buildDetailRow('Schedule', item.subjectTimeSchedule!),
-              if (item.remarks != null && item.remarks!.isNotEmpty)
-                _buildDetailRow('Remarks', item.remarks!),
-              const Divider(),
-              if (item.lentAt != null)
-                _buildDetailRow('Lent Date', _formatDate(item.lentAt!)),
-              if (item.returnedAt != null)
-                _buildDetailRow('Returned Date', _formatDate(item.returnedAt!)),
-              _buildDetailRow('Status', status, color: _getStatusColor(status)),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
+  void _showItemDetails(LendItem item) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LendItemDetailScreen(lendItem: item),
       ),
     );
-  }
 
-  Widget _buildDetailRow(String label, String value, {Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color:
-                    color ??
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    // If the item was deleted or modified, refresh the list
+    if (result == true) {
+      _loadBorrowedItems();
+    }
   }
 }
