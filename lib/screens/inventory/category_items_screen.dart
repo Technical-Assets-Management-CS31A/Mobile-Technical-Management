@@ -4,6 +4,7 @@ import '../../services/inventory_service.dart';
 import '../../widgets/barcode_widget.dart';
 import 'item_detail_screen.dart';
 import 'add_item_screen.dart';
+import 'stock_view_screen.dart';
 
 class CategoryItemsScreen extends StatefulWidget {
   final String category;
@@ -245,6 +246,19 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
           elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.analytics_outlined),
+              tooltip: 'View Stocks',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => StockViewScreen(category: widget.category),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -274,6 +288,19 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
           elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.analytics_outlined),
+              tooltip: 'View Stocks',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => StockViewScreen(category: widget.category),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: _addNewItem,

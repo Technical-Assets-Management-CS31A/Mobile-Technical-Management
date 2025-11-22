@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/entities/item.dart';
 import '../../services/inventory_service.dart';
+import 'stock_view_screen.dart';
 
 class ItemSelectionScreen extends StatefulWidget {
   final bool isMobile;
@@ -185,6 +186,19 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.analytics_outlined),
+            tooltip: 'View Stocks',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const StockViewScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: _isLoading
