@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -52,7 +53,16 @@ class ApiService {
       return;
     }
 
-    _baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5278/api/v1';
+    String url = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5278/api/v1';
+
+    // Fix for Android emulator accessing localhost
+    // Platform.isAndroid throws on Web, so we must check !kIsWeb first
+    if (!kIsWeb && Platform.isAndroid && (url.contains('localhost') || url.contains('127.0.0.1'))) {
+      url = url.replaceFirst('localhost', '10.0.2.2').replaceFirst('127.0.0.1', '10.0.2.2');
+      print('Adjusted API URL for Android: $url');
+    }
+
+    _baseUrl = url;
     _authService = AuthService();
     _client = http.Client();
     _isInitialized = true;
@@ -79,6 +89,9 @@ class ApiService {
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      // Add Origin header to satisfy some backends (like Cloudflare Workers)
+      // that might block requests without it or with an unknown origin.
+      'Origin': 'http://localhost', 
     };
 
     // Add Bearer token for mobile app authentication
@@ -181,6 +194,9 @@ class ApiService {
     Map<String, String>? headers,
   }) async {
     try {
+      // Ensure initialized if not already
+      if (!_isInitialized) await initialize();
+      
       String url = _getFullUrl(endpoint);
 
       // Add query parameters if provided
@@ -221,6 +237,8 @@ class ApiService {
       return json.decode(response.body) as Map<String, dynamic>;
     } on SocketException {
       throw const NetworkException('No internet connection');
+    } on http.ClientException catch (e) {
+      throw NetworkException('Connection failed: ${e.message}');
     } on FormatException {
       throw const ApiException('Invalid response format');
     } catch (e) {
