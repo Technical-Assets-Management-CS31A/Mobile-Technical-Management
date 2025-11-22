@@ -11,13 +11,6 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        // Show loading screen while checking authentication
-        if (authProvider.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
         // Show login screen if not authenticated
         if (!authProvider.isAuthenticated) {
           return const LoginScreen();

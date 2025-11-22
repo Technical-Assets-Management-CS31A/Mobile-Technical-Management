@@ -138,7 +138,28 @@ class ApiService {
       case 422:
         throw const ApiException('Validation error', statusCode: 422);
       case 500:
-        throw const ApiException('Internal server error', statusCode: 500);
+        // Try to parse error message from backend
+        try {
+          final errorData = json.decode(response.body) as Map<String, dynamic>;
+          String message = 'Server error occurred';
+          
+          // Handle both lowercase and capitalized keys (backend might return PascalCase)
+          final errors = (errorData['errors'] ?? errorData['Errors']) as List<dynamic>?;
+          final msg = errorData['message'] ?? errorData['Message'];
+          
+          // Check Errors array first
+          if (errors != null && errors.isNotEmpty) {
+            message = errors.first.toString();
+          } else if (msg != null) {
+            message = msg.toString();
+          }
+          
+          // Store errors array in data field for access by calling code
+          throw ApiException(message, statusCode: 500, data: errors);
+        } catch (e) {
+          if (e is ApiException) rethrow;
+          throw const ApiException('Server error occurred', statusCode: 500);
+        }
       default:
         throw ApiException(
           'Request failed with status: ${response.statusCode}',

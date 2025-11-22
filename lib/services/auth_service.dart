@@ -169,19 +169,61 @@ class AuthService {
           'message': response['message'] ?? 'Login successful',
         };
       } else {
+        // Extract error message from response
+        // Priority: Errors array > Message field > default message
+        String errorMsg = 'Login failed';
+        
+        if (response['errors'] != null && response['errors'] is List) {
+          final errors = response['errors'] as List;
+          if (errors.isNotEmpty) {
+            errorMsg = errors.first.toString();
+          }
+        } else if (response['message'] != null) {
+          errorMsg = response['message'];
+        }
+        
         return {
           'success': false,
-          'error': response['message'] ?? 'Login failed',
+          'error': errorMsg,
         };
       }
     } on UnauthorizedException {
-      return {'success': false, 'error': 'Invalid credentials'};
+      return {'success': false, 'error': 'Invalid username or password'};
     } on ApiException catch (e) {
+      // Handle specific API errors with better messages
+      print('🔍 ApiException caught - Status: ${e.statusCode}, Message: ${e.message}');
+
+      // Check if we have a list of errors from the backend
+      if (e.data is List && (e.data as List).isNotEmpty) {
+        final errors = e.data as List;
+        // Format as bullet points
+        final formattedError = errors.map((err) => '$err').join('\n');
+        return {'success': false, 'error': formattedError};
+      }
+
+      
+      if (e.statusCode == 401) {
+        return {'success': false, 'error': 'Invalid username or password'};
+      } else if (e.statusCode == 404) {
+        return {'success': false, 'error': 'Account not found'};
+      } else if (e.statusCode == 403) {
+        return {'success': false, 'error': 'Account is inactive or suspended'};
+      } else if (e.statusCode == 500) {
+        // For 500 errors, use the message extracted from Errors array
+        print('🔍 500 Error - Returning message: ${e.message}');
+        return {'success': false, 'error': e.message};
+      } else if (e.message.toLowerCase().contains('inactive')) {
+        return {'success': false, 'error': 'Account is inactive'};
+      } else if (e.message.toLowerCase().contains('suspended')) {
+        return {'success': false, 'error': 'Account has been suspended'};
+      } else if (e.message.toLowerCase().contains('not found')) {
+        return {'success': false, 'error': 'Account not found'};
+      }
       return {'success': false, 'error': e.message};
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error. Please check your connection.',
+        'error': 'Unable to connect. Please check your network.',
       };
     }
   }

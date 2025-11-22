@@ -76,7 +76,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/icons/aclcLOGO.png
+    - assets/icons/dwa
     - assets/icons/logoACLC.png
     - .env
 
