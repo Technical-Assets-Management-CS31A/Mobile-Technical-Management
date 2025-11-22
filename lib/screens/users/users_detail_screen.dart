@@ -114,16 +114,16 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(30),
                 ),
-                child: const Icon(Icons.warning, color: Colors.red, size: 30),
+                child: const Icon(Icons.warning, color: Colors.orange, size: 30),
               ),
               const SizedBox(height: 20),
 
               // Title
               Text(
-                'Delete User',
+                'Archive User',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -136,7 +136,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
 
               // Message
               Text(
-                'Are you sure you want to delete ${widget.staff.name}?',
+                'Are you sure you want to archive ${widget.staff.name}?',
                 style: TextStyle(
                   fontSize: 16,
                   color: Theme.of(
@@ -187,14 +187,14 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                         Navigator.of(context).pop({'deleted': widget.staff.id});
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Delete'),
+                      child: const Text('Archive'),
                     ),
                   ),
                 ],
@@ -472,9 +472,9 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
               tooltip: 'Edit',
             ),
             IconButton(
-              icon: const Icon(Icons.delete),
+              icon: const Icon(Icons.archive),
               onPressed: _delete,
-              tooltip: 'Delete',
+              tooltip: 'Archive',
             ),
           ],
         ],

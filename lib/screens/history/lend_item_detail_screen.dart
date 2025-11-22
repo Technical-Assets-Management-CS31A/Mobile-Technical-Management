@@ -55,16 +55,16 @@ class _LendItemDetailScreenState extends State<LendItemDetailScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(30),
                 ),
-                child: const Icon(Icons.warning, color: Colors.red, size: 30),
+                child: const Icon(Icons.warning, color: Colors.orange, size: 30),
               ),
               const SizedBox(height: 20),
 
               // Title
               Text(
-                'Delete Lent Item',
+                'Archive Lent Item',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -77,7 +77,7 @@ class _LendItemDetailScreenState extends State<LendItemDetailScreen> {
 
               // Message
               Text(
-                'Are you sure you want to delete this lent item record for ${widget.lendItem.borrowerFullName}?',
+                'Are you sure you want to archive this lent item record for ${widget.lendItem.borrowerFullName}?',
                 style: TextStyle(
                   fontSize: 16,
                   color: Theme.of(
@@ -128,14 +128,14 @@ class _LendItemDetailScreenState extends State<LendItemDetailScreen> {
                         _deleteItem();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Delete'),
+                      child: const Text('Archive'),
                     ),
                   ),
                 ],
@@ -345,9 +345,9 @@ class _LendItemDetailScreenState extends State<LendItemDetailScreen> {
             )
           else
             IconButton(
-              icon: const Icon(Icons.delete),
+              icon: const Icon(Icons.archive),
               onPressed: _showDeleteConfirmation,
-              tooltip: 'Delete',
+              tooltip: 'Archive',
             ),
         ],
       ),
