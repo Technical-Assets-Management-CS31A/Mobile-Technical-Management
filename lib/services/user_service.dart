@@ -105,7 +105,8 @@ class StaffService {
 
       // Filter locally for active staff instead of making a separate API call
       final activeStaff = allStaff.where((staff) {
-        return staff.status?.toLowerCase() == 'online';
+        final status = staff.status?.toLowerCase() ?? 'offline';
+        return status == 'online' || status == 'active';
       }).toList();
 
       return activeStaff.length;
@@ -135,7 +136,7 @@ class StaffService {
         for (final staff in allStaff) {
           // Count by status
           final status = staff.status?.toLowerCase() ?? '';
-          if (status == 'online') {
+          if (status == 'online' || status == 'active') {
             stats['active'] = (stats['active'] ?? 0) + 1;
           } else if (status == 'offline') {
             stats['offline'] = (stats['offline'] ?? 0) + 1;

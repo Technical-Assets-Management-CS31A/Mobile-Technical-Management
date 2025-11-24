@@ -9,6 +9,7 @@ import '../borrow/borrow_items_screen.dart';
 import '../history/history_screen.dart';
 import '../../services/inventory_service.dart';
 import '../../services/borrowed_item_service.dart';
+import '../../services/user_service.dart';
 import '../../providers/auth_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -55,9 +56,19 @@ class _DashboardScreenState extends State<DashboardScreen>
     try {
       final inventoryService = InventoryService();
       final borrowedItemService = BorrowedItemService();
+      final staffService = StaffService();
 
       // Fetch dashboard summary from API
       final summaryData = await inventoryService.getDashboardSummary();
+
+      // Fetch staff list to calculate active users locally
+      final staffList = await staffService.getAllStaff();
+      
+      // Calculate active users using the same logic as User Management screen
+      final activeUsersCount = staffList.where((staff) {
+        final status = staff.status?.toLowerCase() ?? 'offline';
+        return status == 'online' || status == 'active';
+      }).length;
 
       // Fetch recent borrowed items (last 3 items) - still using local service for now
       final allBorrowedItems = await borrowedItemService.getAllBorrowedItems();
@@ -80,7 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           _totalItems = summaryData.totalItems ?? 0;
           _borrowedItems = summaryData.totalLentItems ?? 0;
           _categoryCount = summaryData.totalItemsCategories ?? 0;
-          _activeStaff = summaryData.totalActiveUsers ?? 0;
+          _activeStaff = activeUsersCount; // Use locally calculated count
           _recentBorrowedItems = recentItems;
           _isLoading = false;
         });

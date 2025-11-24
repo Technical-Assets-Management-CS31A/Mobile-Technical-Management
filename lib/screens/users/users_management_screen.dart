@@ -485,7 +485,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                   onTap: () => _onFilterChanged('All'),
                   child: _buildSummaryCard(
                     'Active Users',
-                    '${_staffList.where((s) => (s.status ?? 'Offline') == 'Online').length}/${_staffList.length}',
+                    '${_staffList.where((s) => (s.status?.toLowerCase() ?? 'offline') == 'online' || (s.status?.toLowerCase() ?? 'offline') == 'active').length}/${_staffList.length}',
                     Icons.check_circle,
                     const Color(0xFF10B981),
                   ),
