@@ -4,6 +4,7 @@ import '../../utils/constants.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../login/login_screen.dart';
+import 'profile_options_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -332,11 +333,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _editProfile() {
-    // TODO: Implement profile editing
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profile editing coming soon!'),
-        duration: Duration(seconds: 2),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProfileOptionsScreen(),
       ),
     );
   }

@@ -189,6 +189,77 @@ class StaffService {
     }
   }
 
+  // UPDATE - Update user profile (for personal details editing)
+  Future<Map<String, dynamic>> updateUserProfile({
+    required String userId,
+    required String firstName,
+    required String lastName,
+    String? middleName,
+    required String username,
+    required String email,
+    required String phoneNumber,
+    String? position,
+  }) async {
+    try {
+      final updateData = {
+        'firstName': firstName,
+        'lastName': lastName,
+        'middleName': middleName,
+        'username': username,
+        'email': email,
+        'phoneNumber': phoneNumber,
+        'position': position,
+      };
+
+      final response = await _apiService.patch(
+        '/users/admin-or-staff/profile/$userId',
+        body: updateData,
+      );
+
+      if (response['success'] == true) {
+        return {
+          'success': true,
+          'data': response['data'],
+          'message': response['message'] ?? 'Profile updated successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['message'] ?? 'Failed to update profile',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Failed to update profile: $e',
+      };
+    }
+  }
+
+  // READ - Get user profile using /auth/me endpoint
+  Future<Map<String, dynamic>> getUserProfile() async {
+    try {
+      final response = await _apiService.get('/auth/me');
+      
+      if (response['success'] == true || response['data'] != null) {
+        return {
+          'success': true,
+          'data': response['data'] ?? response,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['message'] ?? 'Failed to fetch profile',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Failed to fetch profile: $e',
+      };
+    }
+  }
+
   // DELETE - Delete a staff member
   Future<bool> deleteStaff(String id) async {
     try {

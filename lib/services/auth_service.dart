@@ -391,6 +391,72 @@ class AuthService {
     }
   }
 
+  /// Change password method
+  ///
+  /// [userId] - The user's ID
+  /// [currentPassword] - The user's current password
+  /// [newPassword] - The new password
+  /// [confirmPassword] - Confirmation of the new password
+  /// Returns a Map with success status and message
+  Future<Map<String, dynamic>> changePassword({
+    required String userId,
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    await _ensureInitialized();
+
+    try {
+      final changePasswordEndpoint = '/auth/change-password/$userId';
+
+      final requestBody = {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      };
+
+      _logApiCall(
+        'PATCH',
+        '${_apiService?.baseUrl ?? baseUrl}$changePasswordEndpoint',
+        body: json.encode(requestBody),
+      );
+
+      final response = await _apiService!.patch(
+        changePasswordEndpoint,
+        body: requestBody,
+      );
+
+      _logApiCall(
+        'PATCH',
+        '${_apiService?.baseUrl ?? baseUrl}$changePasswordEndpoint',
+        response: json.encode(response),
+        statusCode: 200,
+      );
+
+      if (response['success'] == true) {
+        print('✅ Password changed successfully');
+        return {
+          'success': true,
+          'message': response['message'] ?? 'Password changed successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['message'] ?? 'Failed to change password',
+        };
+      }
+    } on ApiException catch (e) {
+      print('🔍 ApiException during password change: ${e.message}');
+      return {'success': false, 'error': e.message};
+    } catch (e) {
+      print('❌ Password change error: $e');
+      return {
+        'success': false,
+        'error': 'Unable to change password. Please try again.',
+      };
+    }
+  }
+
   /// Get Swagger API documentation
   Future<Map<String, dynamic>> getSwaggerDocs() async {
     try {
