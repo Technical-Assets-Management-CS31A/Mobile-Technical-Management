@@ -332,6 +332,14 @@ class BottomBar extends StatelessWidget {
             subtitle: 'View borrowing history',
             onTap: () => _navigateToHistory(context),
           ),
+          const SizedBox(height: 12),
+          _buildMenuItem(
+            context,
+            icon: Icons.school_outlined,
+            title: 'Registered Modules',
+            subtitle: 'View all registered modules',
+            onTap: () => _navigateToModules(context),
+          ),
           if (!isStaff) ...[
             const SizedBox(height: 12),
             _buildMenuItem(
@@ -452,6 +460,17 @@ class BottomBar extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const HistoryScreen(isMobile: true),
+      ),
+    );
+  }
+
+  void _navigateToModules(BuildContext context) {
+    Navigator.of(context).pop(); // Close the menu first
+    // Show placeholder message for now
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Registered Modules feature coming soon!'),
+        duration: Duration(seconds: 2),
       ),
     );
   }
