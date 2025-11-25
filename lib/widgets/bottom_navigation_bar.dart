@@ -5,6 +5,7 @@ import '../screens/login/login_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/archive/archive_screen.dart';
 import '../screens/history/history_screen.dart';
+import '../screens/modules/registered_modules_screen.dart';
 
 class BottomBar extends StatelessWidget {
   final int selectedIndex;
@@ -466,11 +467,10 @@ class BottomBar extends StatelessWidget {
 
   void _navigateToModules(BuildContext context) {
     Navigator.of(context).pop(); // Close the menu first
-    // Show placeholder message for now
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Registered Modules feature coming soon!'),
-        duration: Duration(seconds: 2),
+    // Navigate to registered modules screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const RegisteredModulesScreen(isMobile: true),
       ),
     );
   }
