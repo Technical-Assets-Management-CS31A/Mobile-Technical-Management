@@ -62,6 +62,28 @@ class StaffService {
     }
   }
 
+  // READ - Get all teachers and students (for Registered Modules)
+  Future<List<Staff>> getAllTeachersAndStudents() async {
+    try {
+      final response = await _apiService.get(_staffEndpoint);
+      final List<dynamic> userData = response['data'] ?? response;
+
+      // Filter only Teacher and Student members from the mixed user types
+      final teacherStudentData = userData.where((user) {
+        final userRole = user['userRole'] as String?;
+        return userRole == 'Teacher' || userRole == 'Student';
+      }).toList();
+
+      // Process each user to ensure all fields are properly handled
+      return teacherStudentData.map((json) {
+        final user = Staff.fromJson(json);
+        return user;
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch teachers and students: $e');
+    }
+  }
+
   // READ - Get staff by ID
   Future<Staff?> getStaffById(String id) async {
     try {

@@ -14,6 +14,21 @@ class Staff {
   final String? type; // $type field from API
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  
+  // Student-specific fields
+  final String? frontStudentIdPicture;
+  final String? backStudentIdPicture;
+  final String? studentIdNumber;
+  final String? course;
+  final String? section;
+  final String? year;
+  final String? profilePicture;
+  
+  // Address fields (for both Teacher and Student)
+  final String? street;
+  final String? cityMunicipality;
+  final String? province;
+  final String? postalCode;
 
   // Computed property for full name
   String get name {
@@ -39,6 +54,19 @@ class Staff {
     this.type,
     this.createdAt,
     this.updatedAt,
+    // Student-specific fields
+    this.frontStudentIdPicture,
+    this.backStudentIdPicture,
+    this.studentIdNumber,
+    this.course,
+    this.section,
+    this.year,
+    this.profilePicture,
+    // Address fields
+    this.street,
+    this.cityMunicipality,
+    this.province,
+    this.postalCode,
   });
 
   Staff copyWith({
@@ -57,6 +85,17 @@ class Staff {
     String? type,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? frontStudentIdPicture,
+    String? backStudentIdPicture,
+    String? studentIdNumber,
+    String? course,
+    String? section,
+    String? year,
+    String? profilePicture,
+    String? street,
+    String? cityMunicipality,
+    String? province,
+    String? postalCode,
   }) {
     return Staff(
       id: id ?? this.id,
@@ -74,6 +113,17 @@ class Staff {
       type: type ?? this.type,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      frontStudentIdPicture: frontStudentIdPicture ?? this.frontStudentIdPicture,
+      backStudentIdPicture: backStudentIdPicture ?? this.backStudentIdPicture,
+      studentIdNumber: studentIdNumber ?? this.studentIdNumber,
+      course: course ?? this.course,
+      section: section ?? this.section,
+      year: year ?? this.year,
+      profilePicture: profilePicture ?? this.profilePicture,
+      street: street ?? this.street,
+      cityMunicipality: cityMunicipality ?? this.cityMunicipality,
+      province: province ?? this.province,
+      postalCode: postalCode ?? this.postalCode,
     );
   }
 
@@ -87,9 +137,8 @@ class Staff {
       email: json['email'] ?? '',
       phoneNumber: json['phoneNumber'],
       username: json['username'] ?? '',
-      password: json['password'], // Password is typically not returned from API
-      confirmPassword:
-          json['confirmPassword'], // Confirm password is typically not returned from API
+      password: json['password'],
+      confirmPassword: json['confirmPassword'],
       userRole: json['userRole'] ?? '',
       status: json['status'],
       type: json['\$type'],
@@ -99,11 +148,24 @@ class Staff {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : null,
+      // Student-specific fields
+      frontStudentIdPicture: json['frontStudentIdPicture'],
+      backStudentIdPicture: json['backStudentIdPicture'],
+      studentIdNumber: json['studentIdNumber'],
+      course: json['course'],
+      section: json['section'],
+      year: json['year'],
+      profilePicture: json['profilePicture'],
+      // Address fields
+      street: json['street'],
+      cityMunicipality: json['cityMunicipality'],
+      province: json['province'],
+      postalCode: json['postalCode'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = {
       'id': id,
       'firstName': firstName,
       'lastName': lastName,
@@ -112,15 +174,31 @@ class Staff {
       'email': email,
       'phoneNumber': phoneNumber,
       'username': username,
-      'password': password, // Include password in JSON for user creation
-      'confirmPassword':
-          confirmPassword, // Include confirm password in JSON for user creation
+      'password': password,
+      'confirmPassword': confirmPassword,
       'userRole': userRole,
       'status': status,
       '\$type': type,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
+    
+    // Add student-specific fields if present
+    if (frontStudentIdPicture != null) json['frontStudentIdPicture'] = frontStudentIdPicture;
+    if (backStudentIdPicture != null) json['backStudentIdPicture'] = backStudentIdPicture;
+    if (studentIdNumber != null) json['studentIdNumber'] = studentIdNumber;
+    if (course != null) json['course'] = course;
+    if (section != null) json['section'] = section;
+    if (year != null) json['year'] = year;
+    if (profilePicture != null) json['profilePicture'] = profilePicture;
+    
+    // Add address fields if present
+    if (street != null) json['street'] = street;
+    if (cityMunicipality != null) json['cityMunicipality'] = cityMunicipality;
+    if (province != null) json['province'] = province;
+    if (postalCode != null) json['postalCode'] = postalCode;
+    
+    return json;
   }
 
   // Helper method for registration endpoint - matches curl command structure exactly
@@ -171,7 +249,7 @@ class Staff {
       'Email': email,
       'PhoneNumber': phoneNumber ?? '',
       'Username': username,
-      'Password': password ?? '', // Include password in form data
+      'Password': password ?? '',
       'UserRole': userRole,
       'Status': status ?? '',
     };
@@ -188,7 +266,7 @@ class Staff {
       'email': email,
       'phoneNumber': phoneNumber,
       'username': username,
-      'password': password, // Include password in update JSON
+      'password': password,
       'userRole': userRole,
       'status': status,
       '\$type': type,
