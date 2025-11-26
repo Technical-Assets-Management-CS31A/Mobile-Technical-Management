@@ -52,7 +52,12 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.dispose();
   }
 
-  Future<void> _loadDashboardData() async {
+  Future<void> _loadDashboardData({bool useSkeleton = true}) async {
+    if (useSkeleton) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
     try {
       final inventoryService = InventoryService();
       final lendService = LendService();
@@ -131,12 +136,12 @@ class _DashboardScreenState extends State<DashboardScreen>
               _selectedIndex = index;
             });
             // Refresh dashboard data when returning to dashboard from other screens
-            if (index == 0 && _previousIndex != 0) {
-              setState(() {
-                _isLoading = true;
-              });
-              _loadDashboardData();
-            }
+            // if (index == 0 && _previousIndex != 0) {
+            //   setState(() {
+            //     _isLoading = true;
+            //   });
+            //   _loadDashboardData();
+            // }
             _pageController.jumpToPage(index);
           }
         },
@@ -240,9 +245,9 @@ class _DashboardScreenState extends State<DashboardScreen>
             _selectedIndex = index;
           });
           // Refresh dashboard data when returning to dashboard from other screens
-          if (index == 0 && _previousIndex != 0) {
-            _loadDashboardData();
-          }
+          // if (index == 0 && _previousIndex != 0) {
+          //   _loadDashboardData(useSkeleton: false);
+          // }
         }
       },
       children: [
@@ -255,7 +260,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildDashboardContent() {
     return RefreshIndicator(
-      onRefresh: _loadDashboardData,
+      onRefresh: () => _loadDashboardData(useSkeleton: false),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         physics: const AlwaysScrollableScrollPhysics(),
