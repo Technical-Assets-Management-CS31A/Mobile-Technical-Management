@@ -193,11 +193,16 @@ class StaffService {
       
       if (updatedStaff.userRole == 'Teacher') {
         endpoint = '/users/teachers/profile/${updatedStaff.id}';
-        final formData = updatedStaff.toTeacherFormData();
+        final jsonData = {
+          'firstName': updatedStaff.firstName,
+          'lastName': updatedStaff.lastName,
+          'middleName': updatedStaff.middleName,
+          'phoneNumber': updatedStaff.phoneNumber,
+        };
         
-        response = await _apiService.patchMultipart(
+        response = await _apiService.patch(
           endpoint,
-          fields: formData,
+          body: jsonData,
         );
       } else if (updatedStaff.userRole == 'Student') {
         endpoint = '/users/students/profile/${updatedStaff.id}';

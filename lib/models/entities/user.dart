@@ -302,16 +302,7 @@ class Staff {
       'FirstName': firstName,
       'LastName': lastName,
       'MiddleName': middleName ?? '',
-      'Email': email,
       'PhoneNumber': phoneNumber ?? '',
-      'Street': street ?? '',
-      'CityMunicipality': cityMunicipality ?? '',
-      'Province': province ?? '',
-      'PostalCode': postalCode ?? '',
-      // Optional picture fields - sending empty string if null as per curl example
-      'ProfilePicture': profilePicture ?? '',
-      'FrontStudentIdPicture': frontStudentIdPicture ?? '',
-      'BackStudentIdPicture': backStudentIdPicture ?? '',
     };
   }
 }

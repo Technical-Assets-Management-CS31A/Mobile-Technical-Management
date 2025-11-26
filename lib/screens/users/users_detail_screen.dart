@@ -24,10 +24,23 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
+  // Student‑specific controllers (only shown when role is Student)
+  late TextEditingController _studentIdController;
+  late TextEditingController _courseController;
+  late TextEditingController _sectionController;
+  late TextEditingController _yearController;
+  late TextEditingController _streetController;
+  late TextEditingController _cityController;
+  late TextEditingController _provinceController;
+  late TextEditingController _postalCodeController;
+  // Picture path controllers (optional – treat as string paths for now)
+  late TextEditingController _profilePicController;
+  late TextEditingController _frontIdPicController;
+  late TextEditingController _backIdPicController;
   String _userRole = 'Staff';
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
-  final List<String> _userRoleOptions = ['Staff', 'Admin', 'SuperAdmin'];
+  late List<String> _userRoleOptions;
 
   @override
   void initState() {
@@ -44,6 +57,24 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       text: widget.staff.phoneNumber ?? '',
     );
     _userRole = widget.staff.userRole;
+    // Initialise student‑specific controllers
+    _studentIdController = TextEditingController(text: widget.staff.studentIdNumber ?? '');
+    _courseController = TextEditingController(text: widget.staff.course ?? '');
+    _sectionController = TextEditingController(text: widget.staff.section ?? '');
+    _yearController = TextEditingController(text: widget.staff.year ?? '');
+    _streetController = TextEditingController(text: widget.staff.street ?? '');
+    _cityController = TextEditingController(text: widget.staff.cityMunicipality ?? '');
+    _provinceController = TextEditingController(text: widget.staff.province ?? '');
+    _postalCodeController = TextEditingController(text: widget.staff.postalCode ?? '');
+    _profilePicController = TextEditingController(text: widget.staff.profilePicture ?? '');
+    _frontIdPicController = TextEditingController(text: widget.staff.frontStudentIdPicture ?? '');
+    _backIdPicController = TextEditingController(text: widget.staff.backStudentIdPicture ?? '');
+    
+    // Initialize role options - include current role if not in default list
+    _userRoleOptions = ['Staff', 'Admin', 'SuperAdmin', 'Student', 'Teacher'];
+    if (!_userRoleOptions.contains(_userRole)) {
+      _userRoleOptions.add(_userRole);
+    }
   }
 
   @override
@@ -54,6 +85,18 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     _usernameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    // Dispose student‑specific controllers
+    _studentIdController.dispose();
+    _courseController.dispose();
+    _sectionController.dispose();
+    _yearController.dispose();
+    _streetController.dispose();
+    _cityController.dispose();
+    _provinceController.dispose();
+    _postalCodeController.dispose();
+    _profilePicController.dispose();
+    _frontIdPicController.dispose();
+    _backIdPicController.dispose();
     super.dispose();
   }
 
@@ -61,6 +104,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     setState(() {
       _isEditing = !_isEditing;
       if (!_isEditing) {
+        // Reset core fields
         _firstNameController.text = widget.staff.firstName;
         _lastNameController.text = widget.staff.lastName;
         _middleNameController.text = widget.staff.middleName ?? '';
@@ -68,6 +112,18 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
         _emailController.text = widget.staff.email;
         _phoneController.text = widget.staff.phoneNumber ?? '';
         _userRole = widget.staff.userRole;
+        // Reset student‑specific fields
+        _studentIdController.text = widget.staff.studentIdNumber ?? '';
+        _courseController.text = widget.staff.course ?? '';
+        _sectionController.text = widget.staff.section ?? '';
+        _yearController.text = widget.staff.year ?? '';
+        _streetController.text = widget.staff.street ?? '';
+        _cityController.text = widget.staff.cityMunicipality ?? '';
+        _provinceController.text = widget.staff.province ?? '';
+        _postalCodeController.text = widget.staff.postalCode ?? '';
+        _profilePicController.text = widget.staff.profilePicture ?? '';
+        _frontIdPicController.text = widget.staff.frontStudentIdPicture ?? '';
+        _backIdPicController.text = widget.staff.backStudentIdPicture ?? '';
       }
     });
   }
@@ -89,6 +145,40 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
           ? null
           : _phoneController.text.trim(),
       userRole: _userRole,
+      // Student‑specific fields (only saved when role is Student)
+      studentIdNumber: _userRole == 'Student' && _studentIdController.text.trim().isNotEmpty
+          ? _studentIdController.text.trim()
+          : null,
+      course: _userRole == 'Student' && _courseController.text.trim().isNotEmpty
+          ? _courseController.text.trim()
+          : null,
+      section: _userRole == 'Student' && _sectionController.text.trim().isNotEmpty
+          ? _sectionController.text.trim()
+          : null,
+      year: _userRole == 'Student' && _yearController.text.trim().isNotEmpty
+          ? _yearController.text.trim()
+          : null,
+      street: _userRole == 'Student' && _streetController.text.trim().isNotEmpty
+          ? _streetController.text.trim()
+          : null,
+      cityMunicipality: _userRole == 'Student' && _cityController.text.trim().isNotEmpty
+          ? _cityController.text.trim()
+          : null,
+      province: _userRole == 'Student' && _provinceController.text.trim().isNotEmpty
+          ? _provinceController.text.trim()
+          : null,
+      postalCode: _userRole == 'Student' && _postalCodeController.text.trim().isNotEmpty
+          ? _postalCodeController.text.trim()
+          : null,
+      profilePicture: _userRole == 'Student' && _profilePicController.text.trim().isNotEmpty
+          ? _profilePicController.text.trim()
+          : null,
+      frontStudentIdPicture: _userRole == 'Student' && _frontIdPicController.text.trim().isNotEmpty
+          ? _frontIdPicController.text.trim()
+          : null,
+      backStudentIdPicture: _userRole == 'Student' && _backIdPicController.text.trim().isNotEmpty
+          ? _backIdPicController.text.trim()
+          : null,
     );
     if (mounted) {
       Navigator.of(context).pop({'updated': updated});
@@ -587,38 +677,6 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Username
-                _buildFormField(
-                  label: 'Username',
-                  controller: _usernameController,
-                  icon: Icons.account_circle,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a username';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Email
-                _buildFormField(
-                  label: 'Email',
-                  controller: _emailController,
-                  icon: Icons.email,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter an email';
-                    }
-                    if (!value.contains('@') || !value.contains('.')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
                 // Phone Number
                 _buildFormField(
                   label: 'Phone Number',
@@ -628,17 +686,77 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                   validator: AppConstants.validatePhoneNumber,
                 ),
                 const SizedBox(height: 20),
-
-                // Role
-                _buildDropdownField(
-                  label: 'Role',
-                  icon: Icons.work,
-                  value: _userRole,
-                  items: _userRoleOptions,
-                  onChanged: (val) {
-                    if (val != null) setState(() => _userRole = val);
-                  },
-                ),
+                // Show student‑specific fields only when role is Student
+                if (_userRole == 'Student') ...[
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    label: 'Student ID Number',
+                    controller: _studentIdController,
+                    icon: Icons.confirmation_number,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    label: 'Course',
+                    controller: _courseController,
+                    icon: Icons.book,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    label: 'Section',
+                    controller: _sectionController,
+                    icon: Icons.group,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    label: 'Year',
+                    controller: _yearController,
+                    icon: Icons.calendar_today,
+                  ),
+                  const SizedBox(height: 20),
+                  // Address fields
+                  _buildFormField(
+                    label: 'Street',
+                    controller: _streetController,
+                    icon: Icons.location_on,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    label: 'City / Municipality',
+                    controller: _cityController,
+                    icon: Icons.location_city,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    label: 'Province',
+                    controller: _provinceController,
+                    icon: Icons.map,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    label: 'Postal Code',
+                    controller: _postalCodeController,
+                    icon: Icons.markunread_mailbox,
+                  ),
+                  const SizedBox(height: 20),
+                  // Optional picture URLs (for demo purposes)
+                  _buildFormField(
+                    label: 'Profile Picture URL',
+                    controller: _profilePicController,
+                    icon: Icons.image,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    label: 'Front ID Picture URL',
+                    controller: _frontIdPicController,
+                    icon: Icons.image,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    label: 'Back ID Picture URL',
+                    controller: _backIdPicController,
+                    icon: Icons.image,
+                  ),
+                ],
               ] else ...[
                 // Read-only View
                 _buildInfoCard(
