@@ -93,6 +93,9 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
     });
 
     try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userRole = authProvider.userRole;
+
       final result = await _staffService.updateUserProfile(
         userId: widget.userId,
         firstName: _firstNameController.text.trim(),
@@ -106,6 +109,7 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
         position: _positionController.text.trim().isEmpty 
             ? null 
             : _positionController.text.trim(),
+        userRole: userRole,
       );
 
       if (result['success'] == true) {
@@ -116,7 +120,7 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } else {
         throw Exception(result['error'] ?? 'Failed to update profile');

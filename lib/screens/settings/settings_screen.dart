@@ -332,13 +332,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _editProfile() {
-    Navigator.push(
+  void _editProfile() async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const ProfileOptionsScreen(),
       ),
     );
+
+    // If result is true, it means profile was updated, so refresh auth data
+    if (result == true && mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+      
+      // Fetch latest user data from API
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.refreshUserData();
+      
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _showLogoutDialog() {

@@ -89,13 +89,18 @@ class ProfileOptionsScreen extends StatelessWidget {
                 icon: Icons.person_outline,
                 title: 'Personal Details',
                 subtitle: 'Edit your name, username, email, phone, and position',
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => EditPersonalDetailsScreen(userId: userId),
                     ),
                   );
+                  
+                  // If profile was updated, return true to previous screen
+                  if (result == true && context.mounted) {
+                    Navigator.pop(context, true);
+                  }
                 },
               ),
               const SizedBox(height: 16),

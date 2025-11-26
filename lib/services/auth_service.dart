@@ -391,6 +391,34 @@ class AuthService {
     }
   }
 
+  /// Refresh user profile data from API
+  Future<Map<String, dynamic>> refreshUserProfile() async {
+    await _ensureInitialized();
+
+    try {
+      final response = await _apiService!.get('/auth/me');
+
+      if (response['success'] == true && response['data'] != null) {
+        // Store updated user data
+        await _storeAuthData(response['data']);
+        return {
+          'success': true,
+          'data': response['data'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['message'] ?? 'Failed to fetch profile',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Failed to fetch profile: $e',
+      };
+    }
+  }
+
   /// Change password method
   ///
   /// [userId] - The user's ID

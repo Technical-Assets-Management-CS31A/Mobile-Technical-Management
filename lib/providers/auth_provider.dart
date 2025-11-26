@@ -224,6 +224,40 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // Refresh user data from API
+  Future<void> refreshUserData() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final result = await _authService.refreshUserProfile();
+
+      if (result['success'] == true) {
+        final userData = result['data'];
+        
+        // Update local state
+        _username = userData['username'];
+        _userEmail = userData['email'];
+        _userRole = userData['userRole'] ?? userData['role'];
+        _userId = userData['id'];
+        _userStatus = userData['status'];
+
+        // Update persistent storage (individual keys used by AuthProvider)
+        final prefs = await SharedPreferences.getInstance();
+        if (_username != null) await prefs.setString('username', _username!);
+        if (_userEmail != null) await prefs.setString('user_email', _userEmail!);
+        if (_userRole != null) await prefs.setString('user_role', _userRole!);
+        if (_userId != null) await prefs.setString('user_id', _userId!);
+        if (_userStatus != null) await prefs.setString('user_status', _userStatus!);
+      }
+    } catch (e) {
+      print('Failed to refresh user data: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Clear error message
   void clearError() {
     _errorMessage = null;
