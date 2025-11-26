@@ -14,7 +14,8 @@ class StaffManagementScreen extends StatefulWidget {
   State<StaffManagementScreen> createState() => _StaffManagementScreenState();
 }
 
-class _StaffManagementScreenState extends State<StaffManagementScreen> {
+class _StaffManagementScreenState extends State<StaffManagementScreen>
+    with AutomaticKeepAliveClientMixin {
   final StaffService _staffService = StaffService();
   bool _isLoading = true;
   List<Staff> _staffList = [];
@@ -50,10 +51,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     _scaffoldMessenger = _scaffoldMessenger;
   }
 
-  Future<void> _loadStaffData() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loadStaffData({bool useSkeleton = true}) async {
+    if (useSkeleton) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       // Get all staff - the API already returns status information
@@ -160,7 +163,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         final newStaff = await _staffService.createStaff(
           result['created'] as Staff,
         );
-        await _loadStaffData(); // Reload data from service
+        await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
           _scaffoldMessenger?.showSnackBar(
             SnackBar(
@@ -190,7 +193,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       try {
         final updated = result['updated'] as Staff;
         await _staffService.updateStaff(updated);
-        await _loadStaffData(); // Reload data from service
+        await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
           _scaffoldMessenger?.showSnackBar(
             SnackBar(
@@ -210,7 +213,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       try {
         final id = result['deleted'] as String;
         await _staffService.deleteStaff(id);
-        await _loadStaffData(); // Reload data from service
+        await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
           _scaffoldMessenger?.showSnackBar(
             const SnackBar(
@@ -240,7 +243,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       try {
         final updated = result['updated'] as Staff;
         await _staffService.updateStaff(updated);
-        await _loadStaffData(); // Reload data from service
+        await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
           _scaffoldMessenger?.showSnackBar(
             SnackBar(
@@ -350,7 +353,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                         Navigator.pop(context);
                         try {
                           await _staffService.deleteStaff(staff.id);
-                          await _loadStaffData(); // Reload data from service
+                          await _loadStaffData(useSkeleton: false); // Reload data from service
                           if (mounted) {
                             _scaffoldMessenger?.showSnackBar(
                               SnackBar(
@@ -392,7 +395,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       floatingActionButton: FloatingActionButton(
@@ -402,7 +409,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadStaffData,
+          onRefresh: () => _loadStaffData(useSkeleton: false),
           child: _isLoading
               ? StaffSkeleton(isMobile: widget.isMobile)
               : SingleChildScrollView(

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/skeleton.dart';
+import '../../widgets/keep_alive_wrapper.dart';
 import '../users/users_management_screen.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../inventory/inventory_screen.dart';
-import '../borrow/borrow_items_screen.dart';
 import '../history/history_screen.dart';
 import '../../services/inventory_service.dart';
-import '../../services/borrowed_item_service.dart';
+import '../../services/lend_service.dart';
 import '../../services/user_service.dart';
 import '../../providers/auth_provider.dart';
 
@@ -55,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _loadDashboardData() async {
     try {
       final inventoryService = InventoryService();
-      final borrowedItemService = BorrowedItemService();
+      final lendService = LendService();
       final staffService = StaffService();
 
       // Fetch dashboard summary from API
@@ -71,17 +71,17 @@ class _DashboardScreenState extends State<DashboardScreen>
       }).length;
 
       // Fetch recent borrowed items (last 3 items) - still using local service for now
-      final allBorrowedItems = await borrowedItemService.getAllBorrowedItems();
-      final recentItems = allBorrowedItems
+      final allLentItems = await lendService.getAllLentItems();
+      final recentItems = allLentItems
           .take(3)
           .map(
             (item) => {
-              'dateTime': item.eventDate,
-              'teacher': item.teacher,
-              'room': item.room,
-              'item': item.itemName,
-              'occupiedBy': item.occupied,
-              'remarks': item.status,
+              'dateTime': item.lentAt?.toString().split('.')[0] ?? '',
+              'teacher': item.teacherFullName ?? 'N/A',
+              'room': item.room ?? 'N/A',
+              'item': item.itemName ?? 'N/A',
+              'occupiedBy': item.borrowerFullName,
+              'remarks': item.status ?? 'Unknown',
             },
           )
           .toList();
@@ -241,17 +241,13 @@ class _DashboardScreenState extends State<DashboardScreen>
           });
           // Refresh dashboard data when returning to dashboard from other screens
           if (index == 0 && _previousIndex != 0) {
-            setState(() {
-              _isLoading = true;
-            });
             _loadDashboardData();
           }
         }
       },
       children: [
-        _buildDashboardContent(),
+        KeepAliveWrapper(child: _buildDashboardContent()),
         InventoryScreen(isMobile: true),
-        BorrowItemsScreen(isMobile: true),
         StaffManagementScreen(isMobile: true),
       ],
     );
@@ -1034,7 +1030,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         targetIndex = 1; // Navigate to inventory screen
         break;
       case 'Active Users':
-        targetIndex = 3; // Navigate to staff management screen
+        targetIndex = 2; // Navigate to staff management screen
         break;
       case 'Borrowed Items':
         // Show menu for history access

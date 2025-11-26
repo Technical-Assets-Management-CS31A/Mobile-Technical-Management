@@ -14,7 +14,8 @@ class InventoryScreen extends StatefulWidget {
   State<InventoryScreen> createState() => _InventoryScreenState();
 }
 
-class _InventoryScreenState extends State<InventoryScreen> {
+class _InventoryScreenState extends State<InventoryScreen>
+    with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _statusFilter = 'All';
@@ -47,10 +48,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loadData({bool useSkeleton = true}) async {
+    if (useSkeleton) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       // Only get category stats - this already fetches all items internally
@@ -71,7 +74,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Future<void> _refreshData() async {
-    await _loadData();
+    await _loadData(useSkeleton: false);
   }
 
   void _navigateToAddItem() async {
@@ -457,7 +460,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
