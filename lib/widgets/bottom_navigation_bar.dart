@@ -55,13 +55,6 @@ class BottomBar extends StatelessWidget {
           _buildNavItem(
             context,
             2,
-            Icons.add_circle_outline,
-            Icons.add_circle,
-            'Borrow',
-          ),
-          _buildNavItem(
-            context,
-            3,
             Icons.people_outline,
             Icons.people,
             'Users',
