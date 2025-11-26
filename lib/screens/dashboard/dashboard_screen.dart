@@ -67,7 +67,20 @@ class _DashboardScreenState extends State<DashboardScreen>
       final summaryData = await inventoryService.getDashboardSummary();
 
       // Fetch recent borrowed items (last 3 items) - still using local service for now
-      final allLentItems = await lendService.getAllLentItems();
+      // Fetch recent borrowed items (last 3 items) using the new endpoint
+      // We pass the current date and time in format yyyy-MM-dd HH:mm
+      final now = DateTime.now();
+      final formattedDate =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+      final allLentItems = await lendService.getLentItemsByDate(formattedDate);
+      // Sort items by lentAt date in descending order (newest first)
+      allLentItems.sort((a, b) {
+        if (a.lentAt == null) return 1;
+        if (b.lentAt == null) return -1;
+        return b.lentAt!.compareTo(a.lentAt!);
+      });
+
       final recentItems = allLentItems
           .take(3)
           .map(

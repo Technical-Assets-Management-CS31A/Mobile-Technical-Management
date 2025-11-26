@@ -270,4 +270,18 @@ class LendService {
       return [];
     }
   }
+  // READ - Get lent items by date
+  Future<List<LendItem>> getLentItemsByDate(String dateTime) async {
+    try {
+      final response = await apiService.get('lentItems/date/${Uri.encodeComponent(dateTime)}');
+      final lendItemListResponse = LendItemListResponse.fromJson(response);
+      if (lendItemListResponse.success && lendItemListResponse.data != null) {
+        return lendItemListResponse.data!;
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
 }

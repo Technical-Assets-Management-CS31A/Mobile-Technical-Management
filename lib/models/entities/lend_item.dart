@@ -48,9 +48,13 @@ class LendItem {
       teacherFullName: json['teacherFullName'],
       room: json['room'],
       subjectTimeSchedule: json['subjectTimeSchedule'],
-      lentAt: json['lentAt'] != null ? DateTime.parse(json['lentAt']) : null,
+      lentAt: json['lentAt'] != null
+          ? DateTime.tryParse(json['lentAt']) ??
+              DateTime.tryParse(json['lentAt'].toString().replaceAll(' ', 'T'))
+          : null,
       returnedAt: json['returnedAt'] != null
-          ? DateTime.parse(json['returnedAt'])
+          ? DateTime.tryParse(json['returnedAt']) ??
+              DateTime.tryParse(json['returnedAt'].toString().replaceAll(' ', 'T'))
           : null,
       status: json['status'],
       remarks: json['remarks'],

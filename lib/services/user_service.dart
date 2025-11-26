@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import '../models/entities/user.dart';
@@ -22,7 +23,9 @@ class StaffService {
         dotenv.env['REGISTRATION_ENDPOINT'] ?? '/auth/register';
     _deleteEndpoint = dotenv.env['DELETE_ENDPOINT'] ?? '/users/archive';
     ;
-    print('StaffService initialized with endpoint: $_staffEndpoint');
+    if (kDebugMode) {
+      print('StaffService initialized with endpoint: $_staffEndpoint');
+    }
   }
 
   // CREATE - Add a new staff member
@@ -228,7 +231,9 @@ class StaffService {
                 // Remove from formData as we're sending it as a file
                 formData.remove(fieldName);
               } catch (e) {
-                print('Warning: Could not decode base64 image for $fieldName: $e');
+                if (kDebugMode) {
+                  print('Warning: Could not decode base64 image for $fieldName: $e');
+                }
               }
             }
           }

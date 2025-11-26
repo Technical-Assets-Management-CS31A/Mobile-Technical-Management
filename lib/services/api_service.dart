@@ -49,17 +49,21 @@ class ApiService {
   /// Initialize the API service with base URL and dependencies
   Future<void> initialize() async {
     if (_isInitialized) {
+    if (kDebugMode) {
       print('ApiService already initialized, skipping...');
+    }
       return;
     }
 
-    String url = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5278/api/v1';
+    String url = dotenv.env['API_BASE_URL'] ?? '';
 
     // Fix for Android emulator accessing localhost
     // Platform.isAndroid throws on Web, so we must check !kIsWeb first
     if (!kIsWeb && Platform.isAndroid && (url.contains('localhost') || url.contains('127.0.0.1'))) {
       url = url.replaceFirst('localhost', '10.0.2.2').replaceFirst('127.0.0.1', '10.0.2.2');
-      print('Adjusted API URL for Android: $url');
+      if (kDebugMode) {
+        print('Adjusted API URL for Android: $url');
+      }
     }
 
     _baseUrl = url;
@@ -67,11 +71,13 @@ class ApiService {
     _client = http.Client();
     _isInitialized = true;
 
-    print('ApiService initialized with base URL: $_baseUrl');
+    if (kDebugMode) {
+      print('ApiService initialized with base URL: $_baseUrl');
+    }
   }
 
   /// Get the base URL for API requests
-  String get baseUrl => _baseUrl ?? 'http://localhost:5278/api/v1';
+  String get baseUrl => _baseUrl ?? '';
 
   /// Get the full URL by combining base URL with endpoint
   String _getFullUrl(String endpoint) {
@@ -79,7 +85,7 @@ class ApiService {
     final cleanEndpoint = endpoint.startsWith('/')
         ? endpoint.substring(1)
         : endpoint;
-    return '${_baseUrl ?? 'http://localhost:5278/api/v1'}/$cleanEndpoint';
+    return '${_baseUrl ?? ''}/$cleanEndpoint';
   }
 
   /// Get headers with authorization token
@@ -206,7 +212,9 @@ class ApiService {
         url = newUri.toString();
       }
 
-      print('GET Request: $url');
+      if (kDebugMode) {
+        print('GET Request: $url');
+      }
 
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
       final response = await _client!.get(
@@ -321,7 +329,9 @@ class ApiService {
   }) async {
     try {
       final url = _getFullUrl(endpoint);
-      print('DELETE Request: $url');
+      if (kDebugMode) {
+        print('DELETE Request: $url');
+      }
 
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
       final response = await _client!.delete(
@@ -378,7 +388,9 @@ class ApiService {
   }) async {
     try {
       final url = _getFullUrl(endpoint);
-      print('PUT Request: $url');
+      if (kDebugMode) {
+        print('PUT Request: $url');
+      }
 
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
       final response = await _client!.put(
@@ -437,7 +449,9 @@ class ApiService {
   }) async {
     try {
       final url = _getFullUrl(endpoint);
-      print('PATCH Request: $url');
+      if (kDebugMode) {
+        print('PATCH Request: $url');
+      }
 
       final requestHeaders = await _getHeaders(additionalHeaders: headers);
       final response = await _client!.patch(
@@ -504,7 +518,9 @@ class ApiService {
   }) async {
     try {
       final url = _getFullUrl(endpoint);
-      print('POST Multipart Request: $url');
+      if (kDebugMode) {
+        print('POST Multipart Request: $url');
+      }
 
       // Create multipart request
       final request = http.MultipartRequest('POST', Uri.parse(url));
@@ -634,7 +650,9 @@ class ApiService {
   }) async {
     try {
       final url = _getFullUrl(endpoint);
-      print('PATCH Multipart Request: $url');
+      if (kDebugMode) {
+        print('PATCH Multipart Request: $url');
+      }
 
       // Create multipart request
       final request = http.MultipartRequest('PATCH', Uri.parse(url));

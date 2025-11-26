@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
@@ -40,7 +41,9 @@ class AuthService {
       try {
         await initialize();
       } catch (e) {
-        print('Failed to initialize AuthService: $e');
+        if (kDebugMode) {
+          print('Failed to initialize AuthService: $e');
+        }
         // Don't rethrow here, let the calling method handle it
       }
     }
@@ -55,7 +58,9 @@ class AuthService {
   /// Initialize the AuthService with ApiService dependency
   Future<void> initialize() async {
     if (_isInitialized) {
-      print('AuthService already initialized, skipping...');
+      if (kDebugMode) {
+        print('AuthService already initialized, skipping...');
+      }
       return;
     }
 
@@ -66,9 +71,13 @@ class AuthService {
         // Don't call initialize() on ApiService here since it's already initialized in main.dart
       }
       _isInitialized = true;
-      print('AuthService initialized');
+      if (kDebugMode) {
+        print('AuthService initialized');
+      }
     } catch (e) {
-      print('Error initializing AuthService: $e');
+      if (kDebugMode) {
+        print('Error initializing AuthService: $e');
+      }
       // Reset initialization state on error
       _isInitialized = false;
       rethrow;
@@ -103,7 +112,7 @@ class AuthService {
     String? response,
     int? statusCode,
   }) {
-    if (enableSwaggerLogging) {
+    if (enableSwaggerLogging && kDebugMode) {
       print('=== AUTH API CALL ===');
       print('$method $url');
       if (body != null) print('Request Body: $body');
@@ -153,9 +162,11 @@ class AuthService {
       // Handle response according to backend study guide format
       if (response['success'] == true && response['data'] != null) {
         // Debug: User login successful
-        print(
-          '✅ Login successful for: ${response['data']['user']['username'] ?? response['data']['user']['email'] ?? 'User'}',
-        );
+        if (kDebugMode) {
+          print(
+            '✅ Login successful for: ${response['data']['user']['username'] ?? response['data']['user']['email'] ?? 'User'}',
+          );
+        }
 
         // Store tokens and user data
         await _storeAuthData(response['data']);
@@ -191,7 +202,9 @@ class AuthService {
       return {'success': false, 'error': 'Invalid username or password'};
     } on ApiException catch (e) {
       // Handle specific API errors with better messages
-      print('🔍 ApiException caught - Status: ${e.statusCode}, Message: ${e.message}');
+      if (kDebugMode) {
+        print('🔍 ApiException caught - Status: ${e.statusCode}, Message: ${e.message}');
+      }
 
       // Check if we have a list of errors from the backend
       if (e.data is List && (e.data as List).isNotEmpty) {
@@ -210,7 +223,9 @@ class AuthService {
         return {'success': false, 'error': 'Account is inactive or suspended'};
       } else if (e.statusCode == 500) {
         // For 500 errors, use the message extracted from Errors array
-        print('🔍 500 Error - Returning message: ${e.message}');
+        if (kDebugMode) {
+          print('🔍 500 Error - Returning message: ${e.message}');
+        }
         return {'success': false, 'error': e.message};
       } else if (e.message.toLowerCase().contains('inactive')) {
         return {'success': false, 'error': 'Account is inactive'};
@@ -238,7 +253,9 @@ class AuthService {
       final logoutEndpoint = '/auth/logout';
       final fullUrl = '${_apiService?.baseUrl ?? baseUrl}$logoutEndpoint';
 
-      print('POST Request: $fullUrl');
+      if (kDebugMode) {
+        print('POST Request: $fullUrl');
+      }
       _logApiCall('POST', fullUrl);
 
       // Stop the refresh timer
@@ -254,13 +271,17 @@ class AuthService {
         statusCode: 200,
       );
 
-      print('✅ User logged out successfully');
+      if (kDebugMode) {
+        print('✅ User logged out successfully');
+      }
       return {'success': true, 'message': 'Logout successful'};
     } catch (e) {
       // Even if logout fails, clear local data
       refreshTimer.stop();
       await _clearAuthData();
-      print('⚠️ Logout error (local data cleared): $e');
+      if (kDebugMode) {
+        print('⚠️ Logout error (local data cleared): $e');
+      }
       return {
         'success': true,
         'message': 'Logout successful (local data cleared)',
@@ -277,20 +298,26 @@ class AuthService {
     try {
       // Don't refresh if user is not logged in
       if (!(await isLoggedIn())) {
-        print('User not logged in, skipping token refresh');
+        if (kDebugMode) {
+          print('User not logged in, skipping token refresh');
+        }
         return false;
       }
 
       // Don't refresh if token has already expired
       if (await isTokenExpired()) {
-        print('Token has already expired, skipping refresh');
+        if (kDebugMode) {
+          print('Token has already expired, skipping refresh');
+        }
         await _clearAuthData();
         return false;
       }
 
       final refreshToken = await _getStoredRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) {
-        print('No refresh token available');
+        if (kDebugMode) {
+          print('No refresh token available');
+        }
         return false;
       }
 
@@ -321,16 +348,22 @@ class AuthService {
       if (response['success'] == true && response['data'] != null) {
         // Store new tokens
         await _storeAuthData(response['data']);
-        print('Token refreshed successfully');
+        if (kDebugMode) {
+          print('Token refreshed successfully');
+        }
 
         return true;
       } else {
-        print('Token refresh failed: ${response['message']}');
+        if (kDebugMode) {
+          print('Token refresh failed: ${response['message']}');
+        }
         await _clearAuthData();
         return false;
       }
     } catch (e) {
-      print('Token refresh failed: $e');
+      if (kDebugMode) {
+        print('Token refresh failed: $e');
+      }
       // Clear auth data if refresh fails
       await _clearAuthData();
       return false;
@@ -369,7 +402,9 @@ class AuthService {
       if (response['success'] == true && response['data'] != null) {
         // Store new tokens
         await _storeAuthData(response['data']);
-        print('✅ Mobile refresh token successful');
+        if (kDebugMode) {
+          print('✅ Mobile refresh token successful');
+        }
 
         return {
           'success': true,
@@ -377,7 +412,9 @@ class AuthService {
           'message': response['message'] ?? 'Token refreshed successfully',
         };
       } else {
-        print('❌ Mobile refresh token failed: ${response['message']}');
+        if (kDebugMode) {
+          print('❌ Mobile refresh token failed: ${response['message']}');
+        }
         await _clearAuthData();
         return {
           'success': false,
@@ -385,7 +422,9 @@ class AuthService {
         };
       }
     } catch (e) {
-      print('❌ Mobile refresh token error: $e');
+      if (kDebugMode) {
+        print('❌ Mobile refresh token error: $e');
+      }
       await _clearAuthData();
       return {'success': false, 'error': 'Network error during token refresh'};
     }
@@ -462,7 +501,9 @@ class AuthService {
       );
 
       if (response['success'] == true) {
-        print('✅ Password changed successfully');
+        if (kDebugMode) {
+          print('✅ Password changed successfully');
+        }
         return {
           'success': true,
           'message': response['message'] ?? 'Password changed successfully',
@@ -474,10 +515,14 @@ class AuthService {
         };
       }
     } on ApiException catch (e) {
-      print('🔍 ApiException during password change: ${e.message}');
+      if (kDebugMode) {
+        print('🔍 ApiException during password change: ${e.message}');
+      }
       return {'success': false, 'error': e.message};
     } catch (e) {
-      print('❌ Password change error: $e');
+      if (kDebugMode) {
+        print('❌ Password change error: $e');
+      }
       return {
         'success': false,
         'error': 'Unable to change password. Please try again.',
@@ -530,24 +575,32 @@ class AuthService {
       // Store tokens for Bearer authentication
       if (token != null) {
         await prefs.setString(_tokenKey, token);
-        print(
-          '✅ Access token stored successfully: ${token.substring(0, 20)}...',
-        );
+        if (kDebugMode) {
+          print(
+            '✅ Access token stored successfully: ${token.substring(0, 20)}...',
+          );
+        }
       }
 
       if (refreshToken != null) {
         await prefs.setString(_refreshTokenKey, refreshToken);
-        print(
-          '✅ Refresh token stored successfully: ${refreshToken.substring(0, 20)}...',
-        );
+        if (kDebugMode) {
+          print(
+            '✅ Refresh token stored successfully: ${refreshToken.substring(0, 20)}...',
+          );
+        }
       }
 
       // Store user data from login response
       await prefs.setString(_userDataKey, json.encode(userData));
       await prefs.setBool(_isLoggedInKey, true);
-      print('User data stored successfully');
+      if (kDebugMode) {
+        print('User data stored successfully');
+      }
     } catch (e) {
-      print('Error storing auth data: $e');
+      if (kDebugMode) {
+        print('Error storing auth data: $e');
+      }
     }
   }
 
@@ -559,9 +612,13 @@ class AuthService {
       await prefs.remove(_refreshTokenKey);
       await prefs.remove(_userDataKey);
       await prefs.setBool(_isLoggedInKey, false);
-      print('Auth data cleared successfully');
+      if (kDebugMode) {
+        print('Auth data cleared successfully');
+      }
     } catch (e) {
-      print('Error clearing auth data: $e');
+      if (kDebugMode) {
+        print('Error clearing auth data: $e');
+      }
     }
   }
 
@@ -575,7 +632,9 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print('Error getting stored user data: $e');
+      if (kDebugMode) {
+        print('Error getting stored user data: $e');
+      }
       return null;
     }
   }
@@ -589,7 +648,9 @@ class AuthService {
       // Check if user is logged in and has a valid token
       return isLoggedIn && token != null && token.isNotEmpty;
     } catch (e) {
-      print('Error checking login status: $e');
+      if (kDebugMode) {
+        print('Error checking login status: $e');
+      }
       return false;
     }
   }
@@ -600,7 +661,9 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_tokenKey);
     } catch (e) {
-      print('Error getting stored token: $e');
+      if (kDebugMode) {
+        print('Error getting stored token: $e');
+      }
       return null;
     }
   }
@@ -611,7 +674,9 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_refreshTokenKey);
     } catch (e) {
-      print('Error getting stored refresh token: $e');
+      if (kDebugMode) {
+        print('Error getting stored refresh token: $e');
+      }
       return null;
     }
   }
@@ -652,14 +717,18 @@ class AuthService {
           }
         }
       } catch (e) {
-        print('Error parsing token expiration: $e');
+        if (kDebugMode) {
+          print('Error parsing token expiration: $e');
+        }
         // If we can't parse the token, assume it might be expired
         return true;
       }
 
       return false;
     } catch (e) {
-      print('Error checking token expiration: $e');
+      if (kDebugMode) {
+        print('Error checking token expiration: $e');
+      }
       return true; // Assume expired if we can't check
     }
   }
@@ -698,14 +767,18 @@ class AuthService {
           }
         }
       } catch (e) {
-        print('Error parsing token expiration: $e');
+        if (kDebugMode) {
+          print('Error parsing token expiration: $e');
+        }
         // If we can't parse the token, assume it's expired
         return true;
       }
 
       return false;
     } catch (e) {
-      print('Error checking if token is expired: $e');
+      if (kDebugMode) {
+        print('Error checking if token is expired: $e');
+      }
       return true; // Assume expired if we can't check
     }
   }
@@ -715,20 +788,26 @@ class AuthService {
     try {
       // Don't refresh if user is not logged in
       if (!(await isLoggedIn())) {
-        print('User not logged in, skipping token refresh');
+        if (kDebugMode) {
+          print('User not logged in, skipping token refresh');
+        }
         return false;
       }
 
       // Don't refresh if token has already expired
       if (await isTokenExpired()) {
-        print('Token has already expired, skipping refresh');
+        if (kDebugMode) {
+          print('Token has already expired, skipping refresh');
+        }
         await _clearAuthData();
         return false;
       }
 
       return true; // Token is still valid
     } catch (e) {
-      print('Error in refreshIfNeeded: $e');
+      if (kDebugMode) {
+        print('Error in refreshIfNeeded: $e');
+      }
       return false;
     }
   }

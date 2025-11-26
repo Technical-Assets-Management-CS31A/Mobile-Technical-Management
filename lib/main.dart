@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -41,9 +42,13 @@ Future<void> _initializeServices() async {
     // Initialize Staff service
     await StaffService().initialize();
 
-    print('All services initialized successfully');
+    if (kDebugMode) {
+      print('All services initialized successfully');
+    }
   } catch (e) {
-    print('Error initializing services: $e');
+    if (kDebugMode) {
+      print('Error initializing services: $e');
+    }
     // Continue app startup even if services fail to initialize
     // This allows the app to show error messages instead of crashing
   }
