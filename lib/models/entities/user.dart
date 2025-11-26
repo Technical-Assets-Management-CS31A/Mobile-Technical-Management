@@ -272,4 +272,46 @@ class Staff {
       '\$type': type,
     };
   }
+
+  // Helper method for updating student as form data (for multipart requests)
+  Map<String, String> toStudentFormData() {
+    return {
+      'FirstName': firstName,
+      'LastName': lastName,
+      'MiddleName': middleName ?? '',
+      'Email': email,
+      'PhoneNumber': phoneNumber ?? '',
+      'StudentIdNumber': studentIdNumber ?? '',
+      'Course': course ?? '',
+      'Section': section ?? '',
+      'Year': year ?? '',
+      'Street': street ?? '',
+      'CityMunicipality': cityMunicipality ?? '',
+      'Province': province ?? '',
+      'PostalCode': postalCode ?? '',
+      // Optional picture fields for multipart upload
+      'ProfilePicture': profilePicture ?? '',
+      'FrontStudentIdPicture': frontStudentIdPicture ?? '',
+      'BackStudentIdPicture': backStudentIdPicture ?? '',
+    };
+  }
+
+  // Helper method for updating teacher as form data (for multipart requests)
+  Map<String, String> toTeacherFormData() {
+    return {
+      'FirstName': firstName,
+      'LastName': lastName,
+      'MiddleName': middleName ?? '',
+      'Email': email,
+      'PhoneNumber': phoneNumber ?? '',
+      'Street': street ?? '',
+      'CityMunicipality': cityMunicipality ?? '',
+      'Province': province ?? '',
+      'PostalCode': postalCode ?? '',
+      // Optional picture fields - sending empty string if null as per curl example
+      'ProfilePicture': profilePicture ?? '',
+      'FrontStudentIdPicture': frontStudentIdPicture ?? '',
+      'BackStudentIdPicture': backStudentIdPicture ?? '',
+    };
+  }
 }

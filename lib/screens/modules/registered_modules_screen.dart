@@ -41,7 +41,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Store reference to ScaffoldMessenger to avoid disposal issues
-    _scaffoldMessenger = _scaffoldMessenger;
+    _scaffoldMessenger = ScaffoldMessenger.of(context);
   }
 
   Future<void> _loadStaffData() async {
@@ -166,6 +166,168 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
         }
       }
     }
+  }
+
+  Future<void> _editStaff(Staff staff) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            StaffDetailScreen(staff: staff, startInEdit: true),
+      ),
+    );
+    if (result is Map && result['updated'] is Staff) {
+      try {
+        final updated = result['updated'] as Staff;
+        await _staffService.updateStaff(updated);
+        await _loadStaffData(); // Reload data from service
+        if (mounted) {
+          _scaffoldMessenger?.showSnackBar(
+            SnackBar(
+              content: Text('${updated.name} updated successfully!'),
+              backgroundColor: const Color(0xFF10B981),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error updating user: $e')));
+        }
+      }
+    }
+  }
+
+  void _deleteStaff(Staff staff) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: Theme.of(context).colorScheme.surfaceBright,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Warning icon
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: const Icon(Icons.warning, color: Colors.orange, size: 30),
+              ),
+              const SizedBox(height: 20),
+
+              // Title
+              Text(
+                'Archive User',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.9),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Message
+              Text(
+                'Are you sure you want to archive ${staff.name}?',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This action cannot be undone.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        try {
+                          await _staffService.deleteStaff(staff.id);
+                          await _loadStaffData(); // Reload data from service
+                          if (mounted) {
+                            _scaffoldMessenger?.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${staff.name} archived successfully!',
+                                ),
+                                backgroundColor: const Color(0xFFF59E0B),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            _scaffoldMessenger?.showSnackBar(
+                              SnackBar(
+                                content: Text('Error archiving user: $e'),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Archive'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -782,15 +944,72 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
                   ],
                 ),
               ),
-              // View button
-              IconButton(
+              // Triple burger dot menu
+              PopupMenuButton<String>(
                 icon: Icon(
-                  Icons.visibility,
-                  color: Theme.of(context).colorScheme.primary,
+                  Icons.more_vert,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
                   size: 24,
                 ),
-                onPressed: () => _viewStaff(staff),
-                tooltip: 'View Details',
+                onSelected: (String value) {
+                  switch (value) {
+                    case 'view':
+                      _viewStaff(staff);
+                      break;
+                    case 'edit':
+                      _editStaff(staff);
+                      break;
+                    case 'delete':
+                      _deleteStaff(staff);
+                      break;
+                  }
+                },
+                itemBuilder: (BuildContext context) => [
+                  PopupMenuItem<String>(
+                    value: 'view',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.visibility,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('View Details'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.edit,
+                          color: Color(0xFFF59E0B),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.archive,
+                          color: Colors.orange,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Archive'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

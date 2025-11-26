@@ -187,13 +187,36 @@ class StaffService {
   // UPDATE - Update an existing staff member
   Future<Staff?> updateStaff(Staff updatedStaff) async {
     try {
-      // Prepare JSON data for PATCH request
-      final jsonData = updatedStaff.toUpdateJson();
-
-      final response = await _apiService.patch(
-        'users/admin-or-staff/profile${updatedStaff.id}',
-        body: jsonData,
-      );
+      // Determine the endpoint based on user role
+      String endpoint;
+      dynamic response;
+      
+      if (updatedStaff.userRole == 'Teacher') {
+        endpoint = '/users/teachers/profile/${updatedStaff.id}';
+        final formData = updatedStaff.toTeacherFormData();
+        
+        response = await _apiService.patchMultipart(
+          endpoint,
+          fields: formData,
+        );
+      } else if (updatedStaff.userRole == 'Student') {
+        endpoint = '/users/students/profile/${updatedStaff.id}';
+        final formData = updatedStaff.toStudentFormData();
+        
+        response = await _apiService.patchMultipart(
+          endpoint,
+          fields: formData,
+        );
+      } else {
+        // For Staff, Admin, SuperAdmin, etc. - use JSON
+        endpoint = '/users/admin-or-staff/profile/${updatedStaff.id}';
+        final jsonData = updatedStaff.toUpdateJson();
+        
+        response = await _apiService.patch(
+          endpoint,
+          body: jsonData,
+        );
+      }
 
       // Parse response similar to items
       if (response['success'] == true) {
@@ -222,22 +245,62 @@ class StaffService {
     required String email,
     required String phoneNumber,
     String? position,
+    String? userRole, // Add userRole parameter
   }) async {
     try {
-      final updateData = {
-        'firstName': firstName,
-        'lastName': lastName,
-        'middleName': middleName,
-        'username': username,
-        'email': email,
-        'phoneNumber': phoneNumber,
-        'position': position,
-      };
+      dynamic response;
+      String endpoint;
 
-      final response = await _apiService.patch(
-        '/users/admin-or-staff/profile/$userId',
-        body: updateData,
-      );
+      if (userRole == 'Teacher') {
+        endpoint = '/users/teachers/profile/$userId';
+        final formData = {
+          'FirstName': firstName,
+          'LastName': lastName,
+          'MiddleName': middleName ?? '',
+          'Email': email,
+          'PhoneNumber': phoneNumber,
+          'Username': username,
+          // Add other fields if available/needed, but these are the ones passed to this method
+        };
+        
+        response = await _apiService.patchMultipart(
+          endpoint,
+          fields: formData,
+        );
+      } else if (userRole == 'Student') {
+        endpoint = '/users/students/profile/$userId';
+        final formData = {
+          'FirstName': firstName,
+          'LastName': lastName,
+          'MiddleName': middleName ?? '',
+          'Email': email,
+          'PhoneNumber': phoneNumber,
+          'Username': username,
+          // Add other fields if available/needed
+        };
+        
+        response = await _apiService.patchMultipart(
+          endpoint,
+          fields: formData,
+        );
+      } else {
+        // For Staff, Admin, SuperAdmin, etc.
+        endpoint = '/users/admin-or-staff/profile/$userId';
+        final updateData = {
+          'firstName': firstName,
+          'lastName': lastName,
+          'middleName': middleName,
+          'username': username,
+          'email': email,
+          'phoneNumber': phoneNumber,
+          'position': position,
+        };
+        
+        response = await _apiService.patch(
+          endpoint,
+          body: updateData,
+        );
+      }
 
       if (response['success'] == true) {
         return {
