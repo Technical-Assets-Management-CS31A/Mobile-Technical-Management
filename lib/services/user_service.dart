@@ -1,4 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
 import '../models/entities/user.dart';
 import 'api_service.dart';
 
@@ -198,6 +199,7 @@ class StaffService {
           'lastName': updatedStaff.lastName,
           'middleName': updatedStaff.middleName,
           'phoneNumber': updatedStaff.phoneNumber,
+          'department': updatedStaff.department,
         };
         
         response = await _apiService.patch(
@@ -207,10 +209,40 @@ class StaffService {
       } else if (updatedStaff.userRole == 'Student') {
         endpoint = '/users/students/profile/${updatedStaff.id}';
         final formData = updatedStaff.toStudentFormData();
+        Map<String, List<int>>? files;
+
+        // Helper function to process image fields
+        void processImageField(String fieldName, String? base64Image) {
+          if (base64Image != null && base64Image.isNotEmpty) {
+            // Check if it's a base64 string (long string, no http)
+            if (base64Image.length > 100 && !base64Image.contains('http')) {
+              try {
+                final base64String = base64Image.contains(',')
+                    ? base64Image.split(',')[1]
+                    : base64Image;
+                final bytes = base64.decode(base64String);
+                
+                files ??= {};
+                files![fieldName] = bytes;
+                
+                // Remove from formData as we're sending it as a file
+                formData.remove(fieldName);
+              } catch (e) {
+                print('Warning: Could not decode base64 image for $fieldName: $e');
+              }
+            }
+          }
+        }
+
+        // Process all three image fields
+        processImageField('ProfilePicture', updatedStaff.profilePicture);
+        processImageField('FrontStudentIdPicture', updatedStaff.frontStudentIdPicture);
+        processImageField('BackStudentIdPicture', updatedStaff.backStudentIdPicture);
         
         response = await _apiService.patchMultipart(
           endpoint,
           fields: formData,
+          files: files,
         );
       } else {
         // For Staff, Admin, SuperAdmin, etc. - use JSON

@@ -24,6 +24,9 @@ class Staff {
   final String? year;
   final String? profilePicture;
   
+  // Teacher-specific fields
+  final String? department;
+  
   // Address fields (for both Teacher and Student)
   final String? street;
   final String? cityMunicipality;
@@ -62,6 +65,8 @@ class Staff {
     this.section,
     this.year,
     this.profilePicture,
+    // Teacher-specific fields
+    this.department,
     // Address fields
     this.street,
     this.cityMunicipality,
@@ -92,6 +97,7 @@ class Staff {
     String? section,
     String? year,
     String? profilePicture,
+    String? department,
     String? street,
     String? cityMunicipality,
     String? province,
@@ -120,6 +126,7 @@ class Staff {
       section: section ?? this.section,
       year: year ?? this.year,
       profilePicture: profilePicture ?? this.profilePicture,
+      department: department ?? this.department,
       street: street ?? this.street,
       cityMunicipality: cityMunicipality ?? this.cityMunicipality,
       province: province ?? this.province,
@@ -156,6 +163,8 @@ class Staff {
       section: json['section'],
       year: json['year'],
       profilePicture: json['profilePicture'],
+      // Teacher-specific fields
+      department: json['department'],
       // Address fields
       street: json['street'],
       cityMunicipality: json['cityMunicipality'],

@@ -165,6 +165,26 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
           ).showSnackBar(SnackBar(content: Text('Error updating user: $e')));
         }
       }
+    } else if (result is Map && result['deleted'] is String) {
+      try {
+        final id = result['deleted'] as String;
+        await _staffService.deleteStaff(id);
+        await _loadStaffData(); // Reload data from service
+        if (mounted) {
+          _scaffoldMessenger?.showSnackBar(
+            const SnackBar(
+              content: Text('User archived successfully!'),
+              backgroundColor: Color(0xFFF59E0B),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error archiving user: $e')));
+        }
+      }
     }
   }
 
@@ -193,6 +213,26 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('Error updating user: $e')));
+        }
+      }
+    } else if (result is Map && result['deleted'] is String) {
+      try {
+        final id = result['deleted'] as String;
+        await _staffService.deleteStaff(id);
+        await _loadStaffData(); // Reload data from service
+        if (mounted) {
+          _scaffoldMessenger?.showSnackBar(
+            const SnackBar(
+              content: Text('User archived successfully!'),
+              backgroundColor: Color(0xFFF59E0B),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error archiving user: $e')));
         }
       }
     }

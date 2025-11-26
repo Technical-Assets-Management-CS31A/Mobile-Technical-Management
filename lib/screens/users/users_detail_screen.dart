@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/entities/user.dart';
 import '../../utils/constants.dart';
 
@@ -24,6 +28,8 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
+  // Teacher-specific controllers
+  late TextEditingController _departmentController;
   // Student‑specific controllers (only shown when role is Student)
   late TextEditingController _studentIdController;
   late TextEditingController _courseController;
@@ -41,6 +47,15 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
   late List<String> _userRoleOptions;
+  
+  // Image picker for student images
+  final ImagePicker _imagePicker = ImagePicker();
+  XFile? _selectedProfilePic;
+  XFile? _selectedFrontIdPic;
+  XFile? _selectedBackIdPic;
+  bool _profilePicRemoved = false;
+  bool _frontIdPicRemoved = false;
+  bool _backIdPicRemoved = false;
 
   @override
   void initState() {
@@ -57,6 +72,8 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       text: widget.staff.phoneNumber ?? '',
     );
     _userRole = widget.staff.userRole;
+    // Initialize teacher-specific controllers
+    _departmentController = TextEditingController(text: widget.staff.department ?? '');
     // Initialise student‑specific controllers
     _studentIdController = TextEditingController(text: widget.staff.studentIdNumber ?? '');
     _courseController = TextEditingController(text: widget.staff.course ?? '');
@@ -85,6 +102,8 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     _usernameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    // Dispose teacher-specific controllers
+    _departmentController.dispose();
     // Dispose student‑specific controllers
     _studentIdController.dispose();
     _courseController.dispose();
@@ -112,6 +131,8 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
         _emailController.text = widget.staff.email;
         _phoneController.text = widget.staff.phoneNumber ?? '';
         _userRole = widget.staff.userRole;
+        // Reset teacher-specific fields
+        _departmentController.text = widget.staff.department ?? '';
         // Reset student‑specific fields
         _studentIdController.text = widget.staff.studentIdNumber ?? '';
         _courseController.text = widget.staff.course ?? '';
@@ -124,64 +145,205 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
         _profilePicController.text = widget.staff.profilePicture ?? '';
         _frontIdPicController.text = widget.staff.frontStudentIdPicture ?? '';
         _backIdPicController.text = widget.staff.backStudentIdPicture ?? '';
+        // Reset image selections
+        _selectedProfilePic = null;
+        _selectedFrontIdPic = null;
+        _selectedBackIdPic = null;
+        _profilePicRemoved = false;
+        _frontIdPicRemoved = false;
+        _backIdPicRemoved = false;
       }
     });
   }
+
+  Future<void> _pickProfilePicture() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        setState(() {
+          _selectedProfilePic = image;
+          _profilePicRemoved = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickFrontIdPicture() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        setState(() {
+          _selectedFrontIdPic = image;
+          _frontIdPicRemoved = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickBackIdPicture() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        setState(() {
+          _selectedBackIdPic = image;
+          _backIdPicRemoved = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isSaving = true;
     });
-    final updated = widget.staff.copyWith(
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      middleName: _middleNameController.text.trim().isEmpty
-          ? null
-          : _middleNameController.text.trim(),
-      username: _usernameController.text.trim(),
-      email: _emailController.text.trim(),
-      phoneNumber: _phoneController.text.trim().isEmpty
-          ? null
-          : _phoneController.text.trim(),
-      userRole: _userRole,
-      // Student‑specific fields (only saved when role is Student)
-      studentIdNumber: _userRole == 'Student' && _studentIdController.text.trim().isNotEmpty
-          ? _studentIdController.text.trim()
-          : null,
-      course: _userRole == 'Student' && _courseController.text.trim().isNotEmpty
-          ? _courseController.text.trim()
-          : null,
-      section: _userRole == 'Student' && _sectionController.text.trim().isNotEmpty
-          ? _sectionController.text.trim()
-          : null,
-      year: _userRole == 'Student' && _yearController.text.trim().isNotEmpty
-          ? _yearController.text.trim()
-          : null,
-      street: _userRole == 'Student' && _streetController.text.trim().isNotEmpty
-          ? _streetController.text.trim()
-          : null,
-      cityMunicipality: _userRole == 'Student' && _cityController.text.trim().isNotEmpty
-          ? _cityController.text.trim()
-          : null,
-      province: _userRole == 'Student' && _provinceController.text.trim().isNotEmpty
-          ? _provinceController.text.trim()
-          : null,
-      postalCode: _userRole == 'Student' && _postalCodeController.text.trim().isNotEmpty
-          ? _postalCodeController.text.trim()
-          : null,
-      profilePicture: _userRole == 'Student' && _profilePicController.text.trim().isNotEmpty
-          ? _profilePicController.text.trim()
-          : null,
-      frontStudentIdPicture: _userRole == 'Student' && _frontIdPicController.text.trim().isNotEmpty
-          ? _frontIdPicController.text.trim()
-          : null,
-      backStudentIdPicture: _userRole == 'Student' && _backIdPicController.text.trim().isNotEmpty
-          ? _backIdPicController.text.trim()
-          : null,
-    );
-    if (mounted) {
-      Navigator.of(context).pop({'updated': updated});
+
+    try {
+      // Handle image updates for students
+      String? profilePictureBase64;
+      String? frontIdPictureBase64;
+      String? backIdPictureBase64;
+
+      if (_userRole == 'Student') {
+        // Profile Picture
+        if (_selectedProfilePic != null) {
+          // User selected a new image - convert to base64
+          final bytes = await _selectedProfilePic!.readAsBytes();
+          profilePictureBase64 = base64Encode(bytes);
+        } else if (_profilePicRemoved) {
+          // User explicitly removed the image
+          profilePictureBase64 = null;
+        } else {
+          // No changes to image - keep existing image
+          profilePictureBase64 = widget.staff.profilePicture;
+        }
+
+        // Front ID Picture
+        if (_selectedFrontIdPic != null) {
+          final bytes = await _selectedFrontIdPic!.readAsBytes();
+          frontIdPictureBase64 = base64Encode(bytes);
+        } else if (_frontIdPicRemoved) {
+          frontIdPictureBase64 = null;
+        } else {
+          frontIdPictureBase64 = widget.staff.frontStudentIdPicture;
+        }
+
+        // Back ID Picture
+        if (_selectedBackIdPic != null) {
+          final bytes = await _selectedBackIdPic!.readAsBytes();
+          backIdPictureBase64 = base64Encode(bytes);
+        } else if (_backIdPicRemoved) {
+          backIdPictureBase64 = null;
+        } else {
+          backIdPictureBase64 = widget.staff.backStudentIdPicture;
+        }
+      }
+
+      final updated = widget.staff.copyWith(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        middleName: _middleNameController.text.trim().isEmpty
+            ? null
+            : _middleNameController.text.trim(),
+        username: _usernameController.text.trim(),
+        email: _emailController.text.trim(),
+        phoneNumber: _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
+        userRole: _userRole,
+        // Teacher-specific fields (only saved when role is Teacher)
+        department: _userRole == 'Teacher' && _departmentController.text.trim().isNotEmpty
+            ? _departmentController.text.trim()
+            : null,
+        // Student‑specific fields (only saved when role is Student)
+        studentIdNumber: _userRole == 'Student' && _studentIdController.text.trim().isNotEmpty
+            ? _studentIdController.text.trim()
+            : null,
+        course: _userRole == 'Student' && _courseController.text.trim().isNotEmpty
+            ? _courseController.text.trim()
+            : null,
+        section: _userRole == 'Student' && _sectionController.text.trim().isNotEmpty
+            ? _sectionController.text.trim()
+            : null,
+        year: _userRole == 'Student' && _yearController.text.trim().isNotEmpty
+            ? _yearController.text.trim()
+            : null,
+        street: _userRole == 'Student' && _streetController.text.trim().isNotEmpty
+            ? _streetController.text.trim()
+            : null,
+        cityMunicipality: _userRole == 'Student' && _cityController.text.trim().isNotEmpty
+            ? _cityController.text.trim()
+            : null,
+        province: _userRole == 'Student' && _provinceController.text.trim().isNotEmpty
+            ? _provinceController.text.trim()
+            : null,
+        postalCode: _userRole == 'Student' && _postalCodeController.text.trim().isNotEmpty
+            ? _postalCodeController.text.trim()
+            : null,
+        // Use the base64 encoded images or null if removed
+        profilePicture: _userRole == 'Student' ? profilePictureBase64 : null,
+        frontStudentIdPicture: _userRole == 'Student' ? frontIdPictureBase64 : null,
+        backStudentIdPicture: _userRole == 'Student' ? backIdPictureBase64 : null,
+      );
+      
+      if (mounted) {
+        Navigator.of(context).pop({'updated': updated});
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error preparing update: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -467,6 +629,225 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
     );
   }
 
+  Widget _buildImageCard({
+    required String title,
+    required String imageUrl,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceBright,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              imageUrl,
+              width: double.infinity,
+              height: 200,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: double.infinity,
+                  height: 200,
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.broken_image,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Image not available',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  width: double.infinity,
+                  height: 200,
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditableImageCard({
+    required String title,
+    String? imageUrl,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceBright,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: onTap,
+                icon: Icon(
+                  imageUrl != null && imageUrl.isNotEmpty ? Icons.edit : Icons.add_photo_alternate,
+                  size: 18,
+                ),
+                label: Text(imageUrl != null && imageUrl.isNotEmpty ? 'Change' : 'Add'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (imageUrl != null && imageUrl.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                imageUrl,
+                width: double.infinity,
+                height: 150,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: double.infinity,
+                    height: 150,
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          size: 40,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Image not available',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: double.infinity,
+                    height: 150,
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              height: 150,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_photo_alternate,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No image',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   IconData _getRoleIcon(String? role) {
     if (role == null) {
       return Icons.person;
@@ -686,6 +1067,15 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                   validator: AppConstants.validatePhoneNumber,
                 ),
                 const SizedBox(height: 20),
+                // Show teacher-specific fields only when role is Teacher
+                if (_userRole == 'Teacher') ...[
+                  _buildFormField(
+                    label: 'Department',
+                    controller: _departmentController,
+                    icon: Icons.business,
+                  ),
+                  const SizedBox(height: 20),
+                ],
                 // Show student‑specific fields only when role is Student
                 if (_userRole == 'Student') ...[
                   const SizedBox(height: 20),
@@ -738,23 +1128,486 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                     icon: Icons.markunread_mailbox,
                   ),
                   const SizedBox(height: 20),
-                  // Optional picture URLs (for demo purposes)
-                  _buildFormField(
-                    label: 'Profile Picture URL',
-                    controller: _profilePicController,
-                    icon: Icons.image,
+                  
+                  // Student Images Section
+                  Text(
+                    'Student Images',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                  _buildFormField(
-                    label: 'Front ID Picture URL',
-                    controller: _frontIdPicController,
-                    icon: Icons.image,
+                  const SizedBox(height: 16),
+                  
+                  // Profile Picture
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceBright,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.account_circle,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Profile Picture',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (_selectedProfilePic != null || (widget.staff.profilePicture != null && widget.staff.profilePicture!.isNotEmpty)) ...[
+                          Container(
+                            width: double.infinity,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                                width: 2,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: _selectedProfilePic != null
+                                  ? FutureBuilder<Uint8List>(
+                                      future: _selectedProfilePic!.readAsBytes(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasData) {
+                                          return Image.memory(
+                                            snapshot.data!,
+                                            fit: BoxFit.cover,
+                                          );
+                                        }
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      },
+                                    )
+                                  : (widget.staff.profilePicture != null && widget.staff.profilePicture!.isNotEmpty)
+                                      ? Image.network(
+                                          widget.staff.profilePicture!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Center(
+                                              child: Icon(
+                                                Icons.broken_image,
+                                                size: 48,
+                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                              ),
+                                            );
+                                          },
+                                        )
+                                      : const SizedBox(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _pickProfilePicture,
+                                icon: Icon(
+                                  _selectedProfilePic == null && (widget.staff.profilePicture == null || widget.staff.profilePicture!.isEmpty)
+                                      ? Icons.add_photo_alternate
+                                      : Icons.edit,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                label: Text(
+                                  _selectedProfilePic == null && (widget.staff.profilePicture == null || widget.staff.profilePicture!.isEmpty)
+                                      ? 'Select Image'
+                                      : 'Change Image',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    width: 2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
+                            if (_selectedProfilePic != null || (widget.staff.profilePicture != null && widget.staff.profilePicture!.isNotEmpty)) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedProfilePic = null;
+                                      _profilePicRemoved = true;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    Icons.delete_outline,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  label: Text(
+                                    'Remove',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.error,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: Theme.of(context).colorScheme.error,
+                                      width: 2,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                  _buildFormField(
-                    label: 'Back ID Picture URL',
-                    controller: _backIdPicController,
-                    icon: Icons.image,
+                  const SizedBox(height: 16),
+                  
+                  // Front ID Picture
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceBright,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.badge,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Front ID Picture',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (_selectedFrontIdPic != null || (widget.staff.frontStudentIdPicture != null && widget.staff.frontStudentIdPicture!.isNotEmpty)) ...[
+                          Container(
+                            width: double.infinity,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                                width: 2,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: _selectedFrontIdPic != null
+                                  ? FutureBuilder<Uint8List>(
+                                      future: _selectedFrontIdPic!.readAsBytes(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasData) {
+                                          return Image.memory(
+                                            snapshot.data!,
+                                            fit: BoxFit.cover,
+                                          );
+                                        }
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      },
+                                    )
+                                  : (widget.staff.frontStudentIdPicture != null && widget.staff.frontStudentIdPicture!.isNotEmpty)
+                                      ? Image.network(
+                                          widget.staff.frontStudentIdPicture!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Center(
+                                              child: Icon(
+                                                Icons.broken_image,
+                                                size: 48,
+                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                              ),
+                                            );
+                                          },
+                                        )
+                                      : const SizedBox(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _pickFrontIdPicture,
+                                icon: Icon(
+                                  _selectedFrontIdPic == null && (widget.staff.frontStudentIdPicture == null || widget.staff.frontStudentIdPicture!.isEmpty)
+                                      ? Icons.add_photo_alternate
+                                      : Icons.edit,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                label: Text(
+                                  _selectedFrontIdPic == null && (widget.staff.frontStudentIdPicture == null || widget.staff.frontStudentIdPicture!.isEmpty)
+                                      ? 'Select Image'
+                                      : 'Change Image',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    width: 2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
+                            if (_selectedFrontIdPic != null || (widget.staff.frontStudentIdPicture != null && widget.staff.frontStudentIdPicture!.isNotEmpty)) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedFrontIdPic = null;
+                                      _frontIdPicRemoved = true;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    Icons.delete_outline,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  label: Text(
+                                    'Remove',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.error,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: Theme.of(context).colorScheme.error,
+                                      width: 2,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Back ID Picture
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceBright,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.badge,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Back ID Picture',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (_selectedBackIdPic != null || (widget.staff.backStudentIdPicture != null && widget.staff.backStudentIdPicture!.isNotEmpty)) ...[
+                          Container(
+                            width: double.infinity,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                                width: 2,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: _selectedBackIdPic != null
+                                  ? FutureBuilder<Uint8List>(
+                                      future: _selectedBackIdPic!.readAsBytes(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasData) {
+                                          return Image.memory(
+                                            snapshot.data!,
+                                            fit: BoxFit.cover,
+                                          );
+                                        }
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      },
+                                    )
+                                  : (widget.staff.backStudentIdPicture != null && widget.staff.backStudentIdPicture!.isNotEmpty)
+                                      ? Image.network(
+                                          widget.staff.backStudentIdPicture!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Center(
+                                              child: Icon(
+                                                Icons.broken_image,
+                                                size: 48,
+                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                              ),
+                                            );
+                                          },
+                                        )
+                                      : const SizedBox(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _pickBackIdPicture,
+                                icon: Icon(
+                                  _selectedBackIdPic == null && (widget.staff.backStudentIdPicture == null || widget.staff.backStudentIdPicture!.isEmpty)
+                                      ? Icons.add_photo_alternate
+                                      : Icons.edit,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                label: Text(
+                                  _selectedBackIdPic == null && (widget.staff.backStudentIdPicture == null || widget.staff.backStudentIdPicture!.isEmpty)
+                                      ? 'Select Image'
+                                      : 'Change Image',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    width: 2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
+                            if (_selectedBackIdPic != null || (widget.staff.backStudentIdPicture != null && widget.staff.backStudentIdPicture!.isNotEmpty)) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedBackIdPic = null;
+                                      _backIdPicRemoved = true;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    Icons.delete_outline,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  label: Text(
+                                    'Remove',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.error,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: Theme.of(context).colorScheme.error,
+                                      width: 2,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ] else ...[
@@ -820,6 +1673,47 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                     ),
                   ],
                 ),
+                
+                // Student Images Section (only show for students)
+                if (widget.staff.userRole == 'Student') ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Student Images',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Profile Picture
+                  if (widget.staff.profilePicture != null && widget.staff.profilePicture!.isNotEmpty) ...[
+                    _buildImageCard(
+                      title: 'Profile Picture',
+                      imageUrl: widget.staff.profilePicture!,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  // Student ID Pictures Column
+                  Column(
+                    children: [
+                      if (widget.staff.frontStudentIdPicture != null && widget.staff.frontStudentIdPicture!.isNotEmpty) ...[
+                        _buildImageCard(
+                          title: 'Front ID',
+                          imageUrl: widget.staff.frontStudentIdPicture!,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (widget.staff.backStudentIdPicture != null && widget.staff.backStudentIdPicture!.isNotEmpty)
+                        _buildImageCard(
+                          title: 'Back ID',
+                          imageUrl: widget.staff.backStudentIdPicture!,
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ],
           ),
