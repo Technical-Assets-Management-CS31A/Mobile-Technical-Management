@@ -68,13 +68,9 @@ class _DashboardScreenState extends State<DashboardScreen>
       final summaryData = await inventoryService.getDashboardSummary();
 
       // Fetch recent borrowed items (last 3 items) - still using local service for now
-      // Fetch recent borrowed items (last 3 items) using the new endpoint
-      // We pass the current date and time in format yyyy-MM-dd HH:mm
-      final now = DateTime.now();
-      final formattedDate =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
-      final allLentItems = await lendService.getLentItemsByDate(formattedDate);
+      // Fetch recent borrowed items (last 3 items) - client side sorting
+      final allLentItems = await lendService.getAllLentItems(pageSize: 50);
+      
       // Sort items by lentAt date in descending order (newest first)
       allLentItems.sort((a, b) {
         if (a.lentAt == null) return 1;
@@ -92,6 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               'item': item.itemName ?? 'N/A',
               'occupiedBy': item.borrowerFullName,
               'remarks': item.status ?? 'Unknown',
+              'borrowerRole': item.borrowerRole,
             },
           )
           .toList();
@@ -673,15 +670,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ],
               ),
               const SizedBox(height: 12),
-              _buildInfoRow(Icons.person, 'Teacher', item['teacher']),
-              const SizedBox(height: 8),
-              _buildInfoRow(Icons.room, 'Room', item['room']),
-              const SizedBox(height: 8),
               _buildInfoRow(
-                Icons.person_outline,
-                'Occupied',
+                item['borrowerRole'] == 'Student' ? Icons.school : Icons.person,
+                item['borrowerRole'] == 'Teacher'
+                    ? 'Teacher'
+                    : (item['borrowerRole'] ?? 'Borrower'),
                 item['occupiedBy'],
               ),
+              const SizedBox(height: 8),
+              _buildInfoRow(Icons.room, 'Room', item['room']),
               const SizedBox(height: 8),
               _buildInfoRow(Icons.calendar_today, 'Date', item['dateTime']),
             ],
