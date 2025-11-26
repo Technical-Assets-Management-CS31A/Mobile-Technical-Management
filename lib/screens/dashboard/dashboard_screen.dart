@@ -61,19 +61,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     try {
       final inventoryService = InventoryService();
       final lendService = LendService();
-      final staffService = StaffService();
+      // final staffService = StaffService(); // Not needed anymore
 
       // Fetch dashboard summary from API
       final summaryData = await inventoryService.getDashboardSummary();
-
-      // Fetch staff list to calculate active users locally
-      final staffList = await staffService.getAllStaff();
-      
-      // Calculate active users using the same logic as User Management screen
-      final activeUsersCount = staffList.where((staff) {
-        final status = staff.status?.toLowerCase() ?? 'offline';
-        return status == 'online' || status == 'active';
-      }).length;
 
       // Fetch recent borrowed items (last 3 items) - still using local service for now
       final allLentItems = await lendService.getAllLentItems();
@@ -96,7 +87,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           _totalItems = summaryData.totalItems ?? 0;
           _borrowedItems = summaryData.totalLentItems ?? 0;
           _categoryCount = summaryData.totalItemsCategories ?? 0;
-          _activeStaff = activeUsersCount; // Use locally calculated count
+          _activeStaff = summaryData.totalActiveUsers ?? 0;
           _recentBorrowedItems = recentItems;
           _isLoading = false;
         });

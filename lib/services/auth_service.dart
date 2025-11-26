@@ -606,7 +606,8 @@ class AuthService {
           // Decode the payload (base64url)
           final payload = parts[1];
           // Add padding if needed
-          final paddedPayload = payload + '=' * (4 - payload.length % 4);
+          final padding = (4 - payload.length % 4) % 4;
+          final paddedPayload = payload + '=' * padding;
           final decoded = utf8.decode(base64Url.decode(paddedPayload));
           final payloadMap = json.decode(decoded) as Map<String, dynamic>;
 
@@ -652,7 +653,8 @@ class AuthService {
           // Decode the payload (base64url)
           final payload = parts[1];
           // Add padding if needed
-          final paddedPayload = payload + '=' * (4 - payload.length % 4);
+          final padding = (4 - payload.length % 4) % 4;
+          final paddedPayload = payload + '=' * padding;
           final decoded = utf8.decode(base64Url.decode(paddedPayload));
           final payloadMap = json.decode(decoded) as Map<String, dynamic>;
 
