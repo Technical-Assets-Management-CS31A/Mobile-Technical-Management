@@ -6,6 +6,7 @@ import '../screens/settings/settings_screen.dart';
 import '../screens/archive/archive_screen.dart';
 import '../screens/history/history_screen.dart';
 import '../screens/modules/registered_modules_screen.dart';
+import '../utils/snackbar_helper.dart';
 
 class BottomBar extends StatelessWidget {
   final int selectedIndex;
@@ -518,12 +519,7 @@ class BottomBar extends StatelessWidget {
     } catch (e) {
       // Handle logout error
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Logout failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Logout failed: $e');
       }
     }
   }

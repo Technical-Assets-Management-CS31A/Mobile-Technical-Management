@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../services/user_service.dart';
 
 class EditPersonalDetailsScreen extends StatefulWidget {
@@ -71,12 +72,7 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load user data: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Failed to load user data: $e');
       }
     } finally {
       setState(() {
@@ -114,12 +110,7 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
 
       if (result['success'] == true) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile updated successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          SnackbarHelper.showSuccessSnackBar(context, 'Profile updated successfully!');
           Navigator.pop(context, true);
         }
       } else {
@@ -127,12 +118,7 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update profile: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Failed to update profile: $e');
       }
     } finally {
       setState(() {

@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/entities/item.dart';
 import '../../services/inventory_service.dart';
+import '../../services/inventory_service.dart';
 import '../../widgets/barcode_widget.dart';
+import '../../utils/snackbar_helper.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   const ItemDetailScreen({
@@ -62,9 +64,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       await _inventoryService.initialize();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error initializing service: $e')),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Error initializing service: $e');
       }
     }
   }
@@ -119,12 +119,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error picking image: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Error picking image: $e');
       }
     }
   }
@@ -209,32 +204,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Item updated successfully!'),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
-          );
+          SnackbarHelper.showSuccessSnackBar(context, 'Item updated successfully!');
           Navigator.of(context).pop(true);
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Failed to update item'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
+          SnackbarHelper.showErrorSnackBar(context, 'Failed to update item');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating item: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Error updating item: $e');
       }
     } finally {
       if (mounted) {
@@ -366,32 +346,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       if (success) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Item deleted successfully!'),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
-          );
+          SnackbarHelper.showArchivedSnackBar(context, 'Item deleted successfully!');
           Navigator.of(context).pop(true);
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Failed to delete item'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
+          SnackbarHelper.showErrorSnackBar(context, 'Failed to delete item');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting item: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Error deleting item: $e');
       }
     } finally {
       if (mounted) {

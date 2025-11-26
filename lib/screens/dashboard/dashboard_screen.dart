@@ -8,6 +8,7 @@ import '../../widgets/bottom_navigation_bar.dart';
 import '../inventory/inventory_screen.dart';
 import '../history/history_screen.dart';
 import '../../services/inventory_service.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../services/lend_service.dart';
 import '../../services/user_service.dart';
 import '../../providers/auth_provider.dart';
@@ -867,14 +868,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    '${item['item']} has been returned successfully!',
-                  ),
-                  backgroundColor: const Color(0xFF10B981),
-                  duration: const Duration(seconds: 3),
-                ),
+              SnackbarHelper.showSuccessSnackBar(
+                context,
+                '${item['item']} has been returned successfully!',
               );
             },
             style: ElevatedButton.styleFrom(

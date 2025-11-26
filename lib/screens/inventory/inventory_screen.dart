@@ -4,6 +4,7 @@ import '../../services/inventory_service.dart';
 import '../../models/entities/item.dart';
 import 'add_item_screen.dart';
 import '../../widgets/skeleton.dart';
+import '../../utils/snackbar_helper.dart';
 
 class InventoryScreen extends StatefulWidget {
   final bool isMobile;
@@ -35,9 +36,7 @@ class _InventoryScreenState extends State<InventoryScreen>
       await _loadData();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error initializing service: $e')),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Error initializing service: $e');
       }
     }
   }
@@ -60,9 +59,7 @@ class _InventoryScreenState extends State<InventoryScreen>
       _categoryCounts = await _inventoryService.getCategoryStats();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        SnackbarHelper.showErrorSnackBar(context, 'Error loading data: $e');
       }
     } finally {
       if (mounted) {

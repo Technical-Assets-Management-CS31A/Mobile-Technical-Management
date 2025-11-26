@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../welcome/welcome_screen.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/snackbar_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -60,12 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _showCorsErrorDialog(context);
         } else {
           // Show error snackbar for validation/auth errors
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
+          SnackbarHelper.showErrorSnackBar(context, errorMessage);
         }
       }
     }
@@ -78,20 +74,12 @@ class _LoginScreenState extends State<LoginScreen> {
         await launchUrl(facebookUrl, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open Facebook page'),
-            ),
-          );
+          SnackbarHelper.showErrorSnackBar(context, 'Could not open Facebook page');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening Facebook page: $e'),
-          ),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Error opening Facebook page: $e');
       }
     }
   }

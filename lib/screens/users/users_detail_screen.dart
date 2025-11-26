@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/entities/user.dart';
 import '../../utils/constants.dart';
+import '../../utils/snackbar_helper.dart';
 
 class StaffDetailScreen extends StatefulWidget {
   const StaffDetailScreen({
@@ -172,12 +173,9 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error picking image: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        if (mounted) {
+          SnackbarHelper.showErrorSnackBar(context, 'Error picking image: $e');
+        }
       }
     }
   }
@@ -198,12 +196,9 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error picking image: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        if (mounted) {
+          SnackbarHelper.showErrorSnackBar(context, 'Error picking image: $e');
+        }
       }
     }
   }
@@ -224,12 +219,9 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error picking image: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        if (mounted) {
+          SnackbarHelper.showErrorSnackBar(context, 'Error picking image: $e');
+        }
       }
     }
   }
@@ -337,12 +329,9 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
         setState(() {
           _isSaving = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error preparing update: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        if (mounted) {
+          SnackbarHelper.showErrorSnackBar(context, 'Error preparing update: $e');
+        }
       }
     }
   }

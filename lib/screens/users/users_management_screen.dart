@@ -4,6 +4,7 @@ import '../../services/user_service.dart';
 import '../../widgets/skeleton.dart';
 import 'add_user_screen.dart';
 import 'users_detail_screen.dart';
+import '../../utils/snackbar_helper.dart';
 
 class StaffManagementScreen extends StatefulWidget {
   const StaffManagementScreen({super.key, this.isMobile = false});
@@ -73,9 +74,9 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
         setState(() {
           _isLoading = false;
         });
-        _scaffoldMessenger?.showSnackBar(
-          SnackBar(content: Text('Error loading staff: $e')),
-        );
+        if (mounted) {
+          SnackbarHelper.showErrorSnackBar(context, 'Error loading staff: $e');
+        }
       }
     }
   }
@@ -165,18 +166,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
         );
         await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
-          _scaffoldMessenger?.showSnackBar(
-            SnackBar(
-              content: Text('${newStaff.name} added successfully!'),
-              backgroundColor: const Color(0xFF10B981),
-            ),
-          );
+          SnackbarHelper.showSuccessSnackBar(context, '${newStaff.name} added successfully!');
         }
       } catch (e) {
         if (mounted) {
-          _scaffoldMessenger?.showSnackBar(
-            SnackBar(content: Text('Error adding staff: $e')),
-          );
+          SnackbarHelper.showErrorSnackBar(context, 'Error adding staff: $e');
         }
       }
     }
@@ -195,18 +189,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
         await _staffService.updateStaff(updated);
         await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
-          _scaffoldMessenger?.showSnackBar(
-            SnackBar(
-              content: Text('${updated.name} updated successfully!'),
-              backgroundColor: const Color(0xFF10B981),
-            ),
-          );
+          SnackbarHelper.showSuccessSnackBar(context, '${updated.name} updated successfully!');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error updating staff: $e')));
+          SnackbarHelper.showErrorSnackBar(context, 'Error updating staff: $e');
         }
       }
     } else if (result is Map && result['deleted'] is String) {
@@ -215,18 +202,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
         await _staffService.deleteStaff(id);
         await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
-          _scaffoldMessenger?.showSnackBar(
-            const SnackBar(
-              content: Text('Staff member deleted successfully!'),
-              backgroundColor: Color(0xFFF59E0B),
-            ),
-          );
+          SnackbarHelper.showArchivedSnackBar(context, 'Staff member deleted successfully!');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error deleting staff: $e')));
+          SnackbarHelper.showErrorSnackBar(context, 'Error deleting staff: $e');
         }
       }
     }
@@ -245,18 +225,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
         await _staffService.updateStaff(updated);
         await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
-          _scaffoldMessenger?.showSnackBar(
-            SnackBar(
-              content: Text('${updated.name} updated successfully!'),
-              backgroundColor: const Color(0xFF10B981),
-            ),
-          );
+          SnackbarHelper.showSuccessSnackBar(context, '${updated.name} updated successfully!');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error updating staff: $e')));
+          SnackbarHelper.showErrorSnackBar(context, 'Error updating staff: $e');
         }
       }
     }
@@ -355,22 +328,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                           await _staffService.deleteStaff(staff.id);
                           await _loadStaffData(useSkeleton: false); // Reload data from service
                           if (mounted) {
-                            _scaffoldMessenger?.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '${staff.name} archived successfully!',
-                                ),
-                                backgroundColor: const Color(0xFFF59E0B),
-                              ),
-                            );
+                            SnackbarHelper.showArchivedSnackBar(context, '${staff.name} archived successfully!');
                           }
                         } catch (e) {
                           if (mounted) {
-                            _scaffoldMessenger?.showSnackBar(
-                              SnackBar(
-                                content: Text('Error archiving staff: $e'),
-                              ),
-                            );
+                            SnackbarHelper.showErrorSnackBar(context, 'Error archiving staff: $e');
                           }
                         }
                       },

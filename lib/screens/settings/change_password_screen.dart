@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/constants.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../services/auth_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -54,12 +55,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
       if (result['success'] == true) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Password changed successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          SnackbarHelper.showSuccessSnackBar(context, 'Password changed successfully!');
           Navigator.pop(context);
         }
       } else {
@@ -67,12 +63,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to change password: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Failed to change password: $e');
       }
     } finally {
       setState(() {

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/entities/item.dart';
 import '../../services/inventory_service.dart';
+import '../../utils/snackbar_helper.dart';
 
 class AddItemScreen extends StatefulWidget {
   final bool isMobile;
@@ -43,9 +44,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       await _inventoryService.initialize();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error initializing service: $e')),
-        );
+        SnackbarHelper.showErrorSnackBar(context, 'Error initializing service: $e');
       }
     }
   }
@@ -77,9 +76,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
+        SnackbarHelper.showErrorSnackBar(context, 'Error picking image: $e');
       }
     }
   }
@@ -130,16 +127,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
       await _inventoryService.createItem(newItem);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item added successfully!')),
-        );
+        SnackbarHelper.showSuccessSnackBar(context, 'Item added successfully!');
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error adding item: $e')));
+        SnackbarHelper.showErrorSnackBar(context, 'Error adding item: $e');
       }
     } finally {
       if (mounted) {
