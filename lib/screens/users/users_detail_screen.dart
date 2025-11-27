@@ -1663,6 +1663,116 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                   ],
                 ),
                 
+                // Student-specific fields (only show for students)
+                if (widget.staff.userRole == 'Student') ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Student Information',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Student ID and Course Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoCard(
+                          title: 'Student ID',
+                          value: widget.staff.studentIdNumber ?? 'N/A',
+                          icon: Icons.confirmation_number,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildInfoCard(
+                          title: 'Course',
+                          value: widget.staff.course ?? 'N/A',
+                          icon: Icons.book,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Section and Year Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoCard(
+                          title: 'Section',
+                          value: widget.staff.section ?? 'N/A',
+                          icon: Icons.group,
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildInfoCard(
+                          title: 'Year',
+                          value: widget.staff.year ?? 'N/A',
+                          icon: Icons.calendar_today,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  Text(
+                    'Address',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  _buildInfoCard(
+                    title: 'Street',
+                    value: widget.staff.street ?? 'N/A',
+                    icon: Icons.location_on,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoCard(
+                          title: 'City/Municipality',
+                          value: widget.staff.cityMunicipality ?? 'N/A',
+                          icon: Icons.location_city,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildInfoCard(
+                          title: 'Province',
+                          value: widget.staff.province ?? 'N/A',
+                          icon: Icons.map,
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  _buildInfoCard(
+                    title: 'Postal Code',
+                    value: widget.staff.postalCode ?? 'N/A',
+                    icon: Icons.markunread_mailbox,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+                
                 // Student Images Section (only show for students)
                 if (widget.staff.userRole == 'Student') ...[
                   const SizedBox(height: 24),

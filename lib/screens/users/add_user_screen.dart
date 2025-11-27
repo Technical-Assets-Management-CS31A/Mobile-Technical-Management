@@ -3,9 +3,14 @@ import '../../models/entities/user.dart';
 import '../../utils/constants.dart';
 
 class AddStaffScreen extends StatefulWidget {
-  const AddStaffScreen({super.key, required this.isMobile});
+  const AddStaffScreen({
+    super.key, 
+    required this.isMobile,
+    this.allowedRoles,
+  });
 
   final bool isMobile;
+  final List<String>? allowedRoles;
 
   @override
   State<AddStaffScreen> createState() => _AddStaffScreenState();
@@ -23,9 +28,16 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  final List<String> _userRoleOptions = ['Staff', 'Admin'];
+  late final List<String> _userRoleOptions;
   String? _selectedUserRole;
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use provided roles or default to Staff/Admin
+    _userRoleOptions = widget.allowedRoles ?? ['Staff', 'Admin'];
+  }
 
   @override
   void dispose() {

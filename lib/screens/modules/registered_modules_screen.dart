@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import '../../models/entities/user.dart';
 import '../../services/user_service.dart';
 import '../../widgets/skeleton.dart';
 import '../users/add_user_screen.dart';
 import '../users/users_detail_screen.dart';
+import '../../utils/snackbar_helper.dart';
 
 class RegisteredModulesScreen extends StatefulWidget {
   const RegisteredModulesScreen({super.key, this.isMobile = false});
@@ -44,10 +47,12 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
     _scaffoldMessenger = ScaffoldMessenger.of(context);
   }
 
-  Future<void> _loadStaffData() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loadStaffData({bool useSkeleton = true}) async {
+    if (useSkeleton) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       // Get all teachers and students using the dedicated service method
@@ -65,9 +70,9 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
         setState(() {
           _isLoading = false;
         });
-        _scaffoldMessenger?.showSnackBar(
-          SnackBar(content: Text('Error loading data: $e')),
-        );
+        if (mounted) {
+          SnackbarHelper.showErrorSnackBar(context, 'Error loading data: $e');
+        }
       }
     }
   }
@@ -138,6 +143,197 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
     });
   }
 
+  Future<void> _addNewStaff() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddStaffScreen(
+          isMobile: widget.isMobile,
+          allowedRoles: const ['Student', 'Teacher'],
+        ),
+      ),
+    );
+    if (result is Map && result['created'] is Staff) {
+      try {
+        final newStaff = await _staffService.createStaff(
+          result['created'] as Staff,
+        );
+        await _loadStaffData(useSkeleton: false); // Reload data from service
+        if (mounted) {
+          SnackbarHelper.showSuccessSnackBar(context, '${newStaff.name} added successfully!');
+        }
+      } catch (e) {
+        if (mounted) {
+          SnackbarHelper.showErrorSnackBar(context, 'Error adding user: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> _importUsers() async {
+    try {
+      FilePickerResult? result;
+      try {
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['xlsx'],
+          withData: true,
+        );
+      } catch (e) {
+        // Check if it's the specific LateInitializationError from FilePicker
+        if (e.toString().contains('LateInitializationError')) {
+          throw Exception('FilePicker initialization failed. Please restart the app.');
+        }
+        rethrow;
+      }
+
+      if (result != null) {
+        if (mounted) {
+          setState(() {
+            _isLoading = true;
+          });
+        }
+
+        final fileName = result.files.single.name;
+        List<int>? fileBytes = result.files.single.bytes;
+
+        // If bytes are null (e.g. on desktop sometimes), try reading from path
+        if (fileBytes == null && result.files.single.path != null) {
+          final file = File(result.files.single.path!);
+          fileBytes = await file.readAsBytes();
+        }
+
+        if (fileBytes != null) {
+          try {
+            final response = await _staffService.importUsers(
+              fileBytes,
+              fileName,
+            );
+
+            if (mounted) {
+              _handleImportResponse(response);
+            }
+          } catch (e) {
+            throw Exception('Service import failed: $e');
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showErrorSnackBar(context, 'Import failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _loadStaffData(useSkeleton: false);
+      }
+    }
+  }
+
+  void _handleImportResponse(Map<String, dynamic> response) {
+    final success = response['success'] == true;
+    final message = response['message'] as String? ?? 'Import processed';
+
+    if (success) {
+      final data = response['data'] as Map<String, dynamic>?;
+      final failureCount = data?['failureCount'] as int? ?? 0;
+      final errors = data?['errors'] as List<dynamic>? ?? [];
+      final skippedDuplicates =
+          data?['skippedDuplicates'] as List<dynamic>? ?? [];
+
+      if (failureCount > 0 ||
+          errors.isNotEmpty ||
+          skippedDuplicates.isNotEmpty) {
+        SnackbarHelper.showWarningSnackBar(context, message);
+        _showImportErrorsDialog(message, errors, skippedDuplicates);
+      } else {
+        SnackbarHelper.showSuccessSnackBar(context, message);
+      }
+    } else {
+      final errors = response['errors'] as List<dynamic>? ?? [];
+      SnackbarHelper.showErrorSnackBar(context, message);
+      if (errors.isNotEmpty) {
+        _showImportErrorsDialog(message, errors, []);
+      }
+    }
+  }
+
+  void _showImportErrorsDialog(
+    String title,
+    List<dynamic> errors,
+    List<dynamic> skippedDuplicates,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Import Results'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title),
+                  const SizedBox(height: 10),
+                  if (errors.isNotEmpty) ...[
+                    const Text(
+                      'Errors:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    ...errors.map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          '• $e',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  if (skippedDuplicates.isNotEmpty) ...[
+                    const Text(
+                      'Skipped Duplicates:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    ...skippedDuplicates.map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          '• $e',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _exportUsers() async {
+    if (mounted) {
+      SnackbarHelper.showInfoSnackBar(context, 'Export functionality coming soon');
+    }
+  }
+
   Future<void> _viewStaff(Staff staff) async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
@@ -149,14 +345,9 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
       try {
         final updated = result['updated'] as Staff;
         await _staffService.updateStaff(updated);
-        await _loadStaffData(); // Reload data from service
+        await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
-          _scaffoldMessenger?.showSnackBar(
-            SnackBar(
-              content: Text('${updated.name} updated successfully!'),
-              backgroundColor: const Color(0xFF10B981),
-            ),
-          );
+          SnackbarHelper.showSuccessSnackBar(context, '${updated.name} updated successfully!');
         }
       } catch (e) {
         if (mounted) {
@@ -169,14 +360,9 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
       try {
         final id = result['deleted'] as String;
         await _staffService.deleteStaff(id);
-        await _loadStaffData(); // Reload data from service
+        await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
-          _scaffoldMessenger?.showSnackBar(
-            const SnackBar(
-              content: Text('User archived successfully!'),
-              backgroundColor: Color(0xFFF59E0B),
-            ),
-          );
+          SnackbarHelper.showArchivedSnackBar(context, 'User archived successfully!');
         }
       } catch (e) {
         if (mounted) {
@@ -199,14 +385,9 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
       try {
         final updated = result['updated'] as Staff;
         await _staffService.updateStaff(updated);
-        await _loadStaffData(); // Reload data from service
+        await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
-          _scaffoldMessenger?.showSnackBar(
-            SnackBar(
-              content: Text('${updated.name} updated successfully!'),
-              backgroundColor: const Color(0xFF10B981),
-            ),
-          );
+          SnackbarHelper.showSuccessSnackBar(context, '${updated.name} updated successfully!');
         }
       } catch (e) {
         if (mounted) {
@@ -219,14 +400,9 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
       try {
         final id = result['deleted'] as String;
         await _staffService.deleteStaff(id);
-        await _loadStaffData(); // Reload data from service
+        await _loadStaffData(useSkeleton: false); // Reload data from service
         if (mounted) {
-          _scaffoldMessenger?.showSnackBar(
-            const SnackBar(
-              content: Text('User archived successfully!'),
-              backgroundColor: Color(0xFFF59E0B),
-            ),
-          );
+          SnackbarHelper.showArchivedSnackBar(context, 'User archived successfully!');
         }
       } catch (e) {
         if (mounted) {
@@ -329,24 +505,13 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
                         Navigator.pop(context);
                         try {
                           await _staffService.deleteStaff(staff.id);
-                          await _loadStaffData(); // Reload data from service
+                          await _loadStaffData(useSkeleton: false); // Reload data from service
                           if (mounted) {
-                            _scaffoldMessenger?.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '${staff.name} archived successfully!',
-                                ),
-                                backgroundColor: const Color(0xFFF59E0B),
-                              ),
-                            );
+                            SnackbarHelper.showArchivedSnackBar(context, '${staff.name} archived successfully!');
                           }
                         } catch (e) {
                           if (mounted) {
-                            _scaffoldMessenger?.showSnackBar(
-                              SnackBar(
-                                content: Text('Error archiving user: $e'),
-                              ),
-                            );
+                            SnackbarHelper.showErrorSnackBar(context, 'Error archiving user: $e');
                           }
                         }
                       },
@@ -379,9 +544,14 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addNewStaff,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadStaffData,
+          onRefresh: () => _loadStaffData(useSkeleton: false),
           child: _isLoading
               ? StaffSkeleton(isMobile: widget.isMobile)
               : SingleChildScrollView(
@@ -597,72 +767,164 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
                 }
               },
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _importUsers,
+                    icon: const Icon(Icons.file_upload_outlined),
+                    label: const Text('Import'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _exportUsers,
+                    icon: const Icon(Icons.file_download_outlined),
+                    label: const Text('Export'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       );
     } else {
       return Padding(
         padding: const EdgeInsets.only(top: 16),
-        child: Row(
+        child: Column(
           children: [
-            // Search Bar
-            Expanded(
-              flex: 2,
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                decoration: InputDecoration(
-                  hintText: 'Search users by name, role, or email...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _onSearchChanged('');
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceBright,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+            Row(
+              children: [
+                // Search Bar
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Search users by name, role, or email...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                _onSearchChanged('');
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceBright,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                // Filter Dropdown
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedFilter,
+                    decoration: InputDecoration(
+                      labelText: 'Filter by Role',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    items: _filterOptions.map((String filter) {
+                      return DropdownMenuItem<String>(
+                        value: filter,
+                        child: Text(filter),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        _onFilterChanged(newValue);
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            // Filter Dropdown
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                value: _selectedFilter,
-                decoration: InputDecoration(
-                  labelText: 'Filter by Role',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _importUsers,
+                    icon: const Icon(Icons.file_upload_outlined),
+                    label: const Text('Import Users'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                items: _filterOptions.map((String filter) {
-                  return DropdownMenuItem<String>(
-                    value: filter,
-                    child: Text(filter),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    _onFilterChanged(newValue);
-                  }
-                },
-              ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _exportUsers,
+                    icon: const Icon(Icons.file_download_outlined),
+                    label: const Text('Export Users'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
