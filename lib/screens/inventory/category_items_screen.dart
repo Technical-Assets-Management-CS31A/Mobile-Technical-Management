@@ -473,8 +473,6 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
                   // Pagination controls
                   Row(
                     children: [
-                      Text('Page $_currentPage of $totalPages'),
-                      const Spacer(),
                       OutlinedButton.icon(
                         onPressed: _currentPage > 1 ? _goToPreviousPage : null,
                         icon: const Icon(Icons.chevron_left),
@@ -488,6 +486,8 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
                         icon: const Icon(Icons.chevron_right),
                         label: const Text('Next'),
                       ),
+                      const Spacer(),
+                      Text('Page $_currentPage of $totalPages'),
                     ],
                   ),
                 ],

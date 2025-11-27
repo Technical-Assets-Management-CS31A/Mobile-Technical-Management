@@ -407,7 +407,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
   void _deleteStaff(Staff staff) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
           padding: const EdgeInsets.all(24),
@@ -472,7 +472,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogContext),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Theme.of(
                           context,
@@ -492,7 +492,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                        Navigator.pop(context);
+                        Navigator.pop(dialogContext);
                         try {
                           await _staffService.deleteStaff(staff.id);
                           await _loadStaffData(useSkeleton: false); // Reload data from service
@@ -1020,8 +1020,6 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
           // Pagination controls
           Row(
             children: [
-              Text('Page $_currentPage of $totalPages'),
-              const Spacer(),
               OutlinedButton.icon(
                 onPressed: _currentPage > 1 ? _goToPreviousPage : null,
                 icon: const Icon(Icons.chevron_left),
@@ -1033,6 +1031,8 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                 icon: const Icon(Icons.chevron_right),
                 label: const Text('Next'),
               ),
+              const Spacer(),
+              Text('Page $_currentPage of $totalPages'),
             ],
           ),
         ],

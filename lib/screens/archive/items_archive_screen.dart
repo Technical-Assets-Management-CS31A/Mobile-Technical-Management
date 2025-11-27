@@ -523,42 +523,27 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
         const SizedBox(height: 12),
 
         // Pagination controls
-        if (totalPages > 1)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                onPressed: _currentPage > 1
-                    ? () => _changePage(_currentPage - 1)
-                    : null,
-                icon: const Icon(Icons.chevron_left),
-              ),
-              ...List.generate(
-                totalPages,
-                (index) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: TextButton(
-                    onPressed: () => _changePage(index + 1),
-                    style: TextButton.styleFrom(
-                      backgroundColor: _currentPage == index + 1
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                      foregroundColor: _currentPage == index + 1
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : null,
-                    ),
-                    child: Text('${index + 1}'),
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: _currentPage < totalPages
-                    ? () => _changePage(_currentPage + 1)
-                    : null,
-                icon: const Icon(Icons.chevron_right),
-              ),
-            ],
-          ),
+        Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: _currentPage > 1
+                  ? () => _changePage(_currentPage - 1)
+                  : null,
+              icon: const Icon(Icons.chevron_left),
+              label: const Text('Prev'),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              onPressed: _currentPage < totalPages
+                  ? () => _changePage(_currentPage + 1)
+                  : null,
+              icon: const Icon(Icons.chevron_right),
+              label: const Text('Next'),
+            ),
+            const Spacer(),
+            Text('Page $_currentPage of $totalPages'),
+          ],
+        ),
       ],
     );
   }

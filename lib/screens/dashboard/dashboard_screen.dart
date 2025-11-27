@@ -205,20 +205,8 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
               Row(
                 children: [
-                  Image.asset('assets/icons/aclcLOGO.png', height: 32),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
+                  Image.asset('assets/icons/aclcLOGO.png', height: 50),
+
                 ],
               ),
             ],
