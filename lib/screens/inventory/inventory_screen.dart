@@ -11,6 +11,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart';
 import '../../services/lend_service.dart';
 import '../../widgets/export_item_configuration_dialog.dart';
+import '../../utils/pdf_generator.dart';
 
 class InventoryScreen extends StatefulWidget {
   final bool isMobile;
@@ -297,6 +298,39 @@ class _InventoryScreenState extends State<InventoryScreen>
             },
           ),
     );
+  }
+
+  Future<void> _downloadBarcodes() async {
+    try {
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      // Fetch all items
+      final items = await _inventoryService.getAllItems(pageSize: 10000);
+      
+      if (items.isEmpty) {
+        if (mounted) {
+          SnackbarHelper.showWarningSnackBar(context, 'No items found to generate barcodes');
+        }
+        return;
+      }
+
+      await PdfGenerator.generateBarcodePdf(items);
+
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showErrorSnackBar(context, 'Failed to generate PDF: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _processExport(
@@ -763,12 +797,33 @@ class _InventoryScreenState extends State<InventoryScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+
+                    const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: _exportItems,
                         icon: const Icon(Icons.file_download_outlined),
                         label: const Text('Export'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          foregroundColor: Theme.of(context).colorScheme.primary,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _downloadBarcodes,
+                        icon: const Icon(Icons.qr_code),
+                        label: const Text('Barcodes'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                           foregroundColor: Theme.of(context).colorScheme.primary,
@@ -873,6 +928,27 @@ class _InventoryScreenState extends State<InventoryScreen>
                   onPressed: _exportItems,
                   icon: const Icon(Icons.file_download_outlined),
                   label: const Text('Export'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: _downloadBarcodes,
+                  icon: const Icon(Icons.qr_code),
+                  label: const Text('Barcodes'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     foregroundColor: Theme.of(context).colorScheme.primary,
