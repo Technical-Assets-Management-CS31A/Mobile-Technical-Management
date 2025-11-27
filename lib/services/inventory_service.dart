@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import '../models/entities/item.dart';
 import '../models/responses/responses.dart';
@@ -361,6 +362,15 @@ class InventoryService {
       return response;
     } catch (e) {
       throw Exception('Failed to import items: $e');
+    }
+  }
+
+  // Export items to Excel file
+  Future<Uint8List> exportItems() async {
+    try {
+      return await apiService.download('items/export');
+    } catch (e) {
+      throw Exception('Failed to export items: $e');
     }
   }
 

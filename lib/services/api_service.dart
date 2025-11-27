@@ -800,6 +800,85 @@ class ApiService {
     }
   }
 
+  /// Perform GET request and return bytes (for file downloads)
+  ///
+  /// [endpoint] - API endpoint (e.g., '/items/export')
+  /// [queryParams] - Optional query parameters
+  /// [headers] - Optional additional headers
+  ///
+  /// Returns the response body as Uint8List
+  Future<Uint8List> download(
+    String endpoint, {
+    Map<String, String>? queryParams,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      // Ensure initialized if not already
+      if (!_isInitialized) await initialize();
+      
+      String url = _getFullUrl(endpoint);
+
+      // Add query parameters if provided
+      if (queryParams != null && queryParams.isNotEmpty) {
+        final uri = Uri.parse(url);
+        final newUri = uri.replace(queryParameters: queryParams);
+        url = newUri.toString();
+      }
+
+      if (kDebugMode) {
+        print('DOWNLOAD Request: $url');
+      }
+
+      final requestHeaders = await _getHeaders(additionalHeaders: headers);
+      final response = await _client!.get(
+        Uri.parse(url),
+        headers: requestHeaders,
+      );
+      
+      // Handle 401 responses with token refresh
+      if (response.statusCode == 401) {
+        final refreshSuccess = await _authService?.refresh() ?? false;
+        if (refreshSuccess) {
+          // Retry the request with new token
+          final newHeaders = await _getHeaders(additionalHeaders: headers);
+          final retryResponse = await _client!.get(
+            Uri.parse(url),
+            headers: newHeaders,
+          );
+          
+          if (retryResponse.statusCode == 200) {
+            return retryResponse.bodyBytes;
+          } else {
+            await _handleResponse(retryResponse);
+            throw const ApiException('Download failed');
+          }
+        } else {
+          throw const UnauthorizedException(
+            'Session expired. Please login again.',
+          );
+        }
+      }
+
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      } else {
+        await _handleResponse(response);
+        throw const ApiException('Download failed');
+      }
+    } on SocketException {
+      throw const NetworkException('No internet connection');
+    } on http.ClientException catch (e) {
+      throw NetworkException('Connection failed: ${e.message}');
+    } catch (e) {
+      if (e is ApiException ||
+          e is NetworkException ||
+          e is UnauthorizedException) {
+        rethrow;
+      }
+      throw ApiException('Unexpected error: $e');
+    }
+  }
+
   /// Detect MIME type from file content (magic bytes)
   String _detectMimeType(List<int> bytes) {
     if (bytes.length < 4) return 'application/octet-stream';

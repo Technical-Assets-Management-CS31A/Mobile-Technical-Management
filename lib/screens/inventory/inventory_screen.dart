@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import '../screens.dart';
 import '../../services/inventory_service.dart';
 import '../../models/entities/item.dart';
@@ -7,6 +8,9 @@ import 'add_item_screen.dart';
 import '../../widgets/skeleton.dart';
 import '../../utils/snackbar_helper.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:excel/excel.dart';
+import '../../services/lend_service.dart';
+import '../../widgets/export_item_configuration_dialog.dart';
 
 class InventoryScreen extends StatefulWidget {
   final bool isMobile;
@@ -23,6 +27,7 @@ class _InventoryScreenState extends State<InventoryScreen>
   String _searchQuery = '';
   String _statusFilter = 'All';
   final InventoryService _inventoryService = InventoryService();
+  final LendService _lendService = LendService();
   bool _isLoading = true;
   Map<String, Map<String, int>> _categoryCounts = {};
 
@@ -262,8 +267,188 @@ class _InventoryScreenState extends State<InventoryScreen>
   }
 
   Future<void> _exportItems() async {
-    if (mounted) {
-      SnackbarHelper.showInfoSnackBar(context, 'Export functionality coming soon');
+    // Calculate counts for the dialog
+    final totalCount = _totalItems;
+    final filteredCount = _filteredCategories.fold(
+      0,
+      (sum, cat) => sum + (cat['displayCount'] as int),
+    );
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => ExportItemConfigurationDialog(
+            totalItemsCount: totalCount,
+            filteredItemsCount: filteredCount,
+            availableColumns: const [
+              'Item Name',
+              'Serial Number',
+              'Type',
+              'Make',
+              'Model',
+              'Category',
+              'Condition',
+              'Status',
+              'Date Added',
+              'Description',
+            ],
+            onExport: (selectedColumns, scope, customCount, fileName) {
+              _processExport(selectedColumns, scope, customCount, fileName);
+            },
+          ),
+    );
+  }
+
+  Future<void> _processExport(
+    List<String> selectedColumns,
+    ExportItemScope scope,
+    int? customCount,
+    String fileName,
+  ) async {
+    try {
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      // 1. Fetch all data needed
+      final items = await _inventoryService.getAllItems(pageSize: 10000);
+      final lentItems = await _lendService.getAllLentItems(pageSize: 10000);
+
+      // 2. Determine status for each item
+      // Create a set of borrowed item IDs
+      final borrowedItemIds =
+          lentItems
+              .where(
+                (l) =>
+                    l.returnedAt == null &&
+                    (l.status == 'Borrowed' || l.status == 'Active'),
+              )
+              .map((l) => l.itemId)
+              .toSet();
+
+      // 3. Filter items based on scope
+      List<Item> itemsToExport = items;
+
+      if (scope == ExportItemScope.filtered) {
+        // Apply current filters (Category search and Status filter)
+        final lowerQuery = _searchQuery.toLowerCase();
+        itemsToExport =
+            items.where((item) {
+              final categoryName = item.category.displayName;
+              final matchesCategory = categoryName.toLowerCase().contains(
+                lowerQuery,
+              );
+
+              final isBorrowed = borrowedItemIds.contains(item.id);
+              bool matchesStatus = true;
+              if (_statusFilter == 'Available') {
+                matchesStatus = !isBorrowed;
+              } else if (_statusFilter == 'Borrowed') {
+                matchesStatus = isBorrowed;
+              }
+
+              return matchesCategory && matchesStatus;
+            }).toList();
+      }
+
+      // Apply custom count limit if applicable
+      if (scope == ExportItemScope.custom && customCount != null) {
+        if (itemsToExport.length > customCount) {
+          itemsToExport = itemsToExport.take(customCount).toList();
+        }
+      }
+
+      // 4. Generate Excel
+      var excel = Excel.createExcel();
+      Sheet sheetObject = excel['Sheet1'];
+
+      // Add Header Row
+      sheetObject.appendRow(
+        selectedColumns.map((c) => TextCellValue(c)).toList(),
+      );
+
+      // Add Data Rows
+      for (var item in itemsToExport) {
+        final isBorrowed = borrowedItemIds.contains(item.id);
+        final status = isBorrowed ? 'Borrowed' : 'Available';
+
+        List<CellValue> row = [];
+        for (var column in selectedColumns) {
+          switch (column) {
+            case 'Item Name':
+              row.add(TextCellValue(item.itemName));
+              break;
+            case 'Serial Number':
+              row.add(TextCellValue(item.serialNumber));
+              break;
+            case 'Type':
+              row.add(TextCellValue(item.itemType));
+              break;
+            case 'Make':
+              row.add(TextCellValue(item.itemMake));
+              break;
+            case 'Model':
+              row.add(TextCellValue(item.itemModel ?? ''));
+              break;
+            case 'Category':
+              row.add(TextCellValue(item.category.displayName));
+              break;
+            case 'Condition':
+              row.add(TextCellValue(item.condition.displayName));
+              break;
+            case 'Status':
+              row.add(TextCellValue(status));
+              break;
+            case 'Date Added':
+              row.add(TextCellValue(item.createdAt.toString().split(' ')[0]));
+              break;
+            case 'Description':
+              row.add(TextCellValue(item.description ?? ''));
+              break;
+            default:
+              row.add(TextCellValue(''));
+          }
+        }
+        sheetObject.appendRow(row);
+      }
+
+      // 5. Save File
+      final fileBytes = excel.save();
+
+      if (fileBytes != null) {
+        final Uint8List bytes = Uint8List.fromList(fileBytes);
+
+        String? outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Please select an output file:',
+          fileName: fileName.endsWith('.xlsx') ? fileName : '$fileName.xlsx',
+          allowedExtensions: ['xlsx'],
+          type: FileType.custom,
+          bytes: bytes,
+        );
+
+        if (outputFile != null) {
+          final file = File(outputFile);
+          await file.writeAsBytes(bytes);
+          if (mounted) {
+            SnackbarHelper.showSuccessSnackBar(
+              context,
+              'Exported ${itemsToExport.length} items successfully',
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showErrorSnackBar(context, 'Export failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
