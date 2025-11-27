@@ -417,7 +417,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
   void _deleteStaff(Staff staff) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
           padding: const EdgeInsets.all(24),
@@ -482,7 +482,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogContext),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Theme.of(
                           context,
@@ -502,7 +502,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                        Navigator.pop(context);
+                        Navigator.pop(dialogContext);
                         try {
                           await _staffService.deleteStaff(staff.id);
                           await _loadStaffData(useSkeleton: false); // Reload data from service

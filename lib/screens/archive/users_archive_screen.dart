@@ -83,8 +83,9 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
               false) ||
           staff.username.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      final matchesFilter =
-          _selectedFilter == 'All' || staff.status == _selectedFilter;
+      final matchesFilter = _selectedFilter == 'All' ||
+          staff.userRole.toLowerCase() == _selectedFilter.toLowerCase() ||
+          (staff.position?.toLowerCase() == _selectedFilter.toLowerCase());
 
       return matchesSearch && matchesFilter;
     }).toList();
@@ -298,7 +299,7 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
         Row(
           children: [
             Text(
-              'Filter by status:',
+              'Filter by role:',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Theme.of(context).colorScheme.onSurface,
@@ -317,11 +318,17 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
                     vertical: 8,
                   ),
                 ),
-                items: ['All', 'Active', 'Inactive', 'Suspended']
+                items: [
+                  'All',
+                  'Student',
+                  'Teacher',
+                  'Staff',
+                  'Admin'
+                ]
                     .map(
-                      (status) => DropdownMenuItem<String>(
-                        value: status,
-                        child: Text(status),
+                      (role) => DropdownMenuItem<String>(
+                        value: role,
+                        child: Text(role),
                       ),
                     )
                     .toList(),

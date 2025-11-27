@@ -14,7 +14,10 @@ class ItemsArchiveScreen extends StatefulWidget {
 class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedCondition = 'All';
+
+  String _selectedCategory = 'All';
+
+
 
   final List<int> _pageSizeOptions = [5, 10, 20, 50];
   int _pageSize = 10;
@@ -43,7 +46,6 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
     }
   }
 
-  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -60,12 +62,13 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
         page: _currentPage,
         pageSize: _pageSize,
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
-        condition: _selectedCondition != 'All'
-            ? ItemCondition.values.firstWhere(
-                (c) => c.displayName == _selectedCondition,
-                orElse: () => ItemCondition.New,
+        category: _selectedCategory != 'All'
+            ? ItemCategory.values.firstWhere(
+                (c) => c.displayName == _selectedCategory,
+                orElse: () => ItemCategory.Miscellaneous,
               )
             : null,
+
       );
 
       setState(() {
@@ -84,6 +87,8 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
     }
   }
 
+
+
   List<Item> get _filteredItems {
     var filtered = _items.where((item) {
       final matchesSearch =
@@ -96,11 +101,10 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
           (item.itemModel?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
               false);
 
-      final matchesCondition =
-          _selectedCondition == 'All' ||
-          item.condition.displayName == _selectedCondition;
+      final matchesCategory = _selectedCategory == 'All' ||
+          item.category.displayName == _selectedCategory;
 
-      return matchesSearch && matchesCondition;
+      return matchesSearch && matchesCategory;
     }).toList();
 
     return filtered;
@@ -113,12 +117,14 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
     });
   }
 
-  void _onConditionChanged(String condition) {
+  void _onCategoryChanged(String category) {
     setState(() {
-      _selectedCondition = condition;
+      _selectedCategory = category;
       _currentPage = 1;
     });
   }
+
+
 
   void _changePageSize(int newSize) {
     setState(() {
@@ -366,11 +372,11 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        // Condition filter
+        // Category filter
         Row(
           children: [
             Text(
-              'Filter by condition:',
+              'Filter by category:',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Theme.of(context).colorScheme.onSurface,
@@ -379,7 +385,7 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: _selectedCondition,
+                value: _selectedCategory,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -390,21 +396,23 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
                   ),
                 ),
                 items:
-                    ['All', ...ItemCondition.values.map((c) => c.displayName)]
+                    ['All', ...ItemCategory.values.map((c) => c.displayName)]
                         .map(
-                          (condition) => DropdownMenuItem<String>(
-                            value: condition,
-                            child: Text(condition),
+                          (category) => DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
                           ),
                         )
                         .toList(),
                 onChanged: (val) {
-                  if (val != null) _onConditionChanged(val);
+                  if (val != null) _onCategoryChanged(val);
                 },
               ),
             ),
           ],
         ),
+        const SizedBox(height: 16),
+
       ],
     );
   }
@@ -423,7 +431,9 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _searchQuery.isNotEmpty || _selectedCondition != 'All'
+              _searchQuery.isNotEmpty ||
+                      _selectedCategory != 'All' ||
+                      _selectedCategory != 'All'
                   ? 'No archived items found matching your criteria'
                   : 'No archived items yet',
               style: TextStyle(
@@ -431,12 +441,14 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
-            if (_searchQuery.isNotEmpty || _selectedCondition != 'All')
+            if (_searchQuery.isNotEmpty ||
+                _selectedCategory != 'All')
               TextButton(
                 onPressed: () {
                   _searchController.clear();
                   _onSearchChanged('');
-                  _onConditionChanged('All');
+                  _onCategoryChanged('All');
+
                 },
                 child: const Text('Clear filters'),
               ),

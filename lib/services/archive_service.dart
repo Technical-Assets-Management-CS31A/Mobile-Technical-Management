@@ -113,6 +113,7 @@ class ArchiveService {
     String? search,
     ItemCategory? category,
     ItemCondition? condition,
+    String? itemType,
   }) async {
     try {
       final queryParams = <String, String>{
@@ -128,6 +129,9 @@ class ArchiveService {
       }
       if (condition != null) {
         queryParams['condition'] = condition.name;
+      }
+      if (itemType != null && itemType.isNotEmpty) {
+        queryParams['itemType'] = itemType;
       }
 
       final response = await apiService.get(
@@ -357,6 +361,24 @@ class ArchiveService {
       return {'archived_items': 0, 'archived_users': 0};
     } catch (e) {
       return {'archived_items': 0, 'archived_users': 0};
+    }
+  }
+
+  // Get all unique item types from archived items
+  Future<List<String>> getAllItemTypes() async {
+    try {
+      // Fetch a large number of items to get all types
+      // Ideally this should be a specific endpoint, but we'll fetch items for now
+      final items = await getArchivedItems(pageSize: 1000);
+      final types = items
+          .map((item) => item.itemType)
+          .where((type) => type.isNotEmpty)
+          .toSet()
+          .toList();
+      types.sort();
+      return types;
+    } catch (e) {
+      return [];
     }
   }
 }
