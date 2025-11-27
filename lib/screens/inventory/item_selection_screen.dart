@@ -58,12 +58,7 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
 
     try {
       final items = await _inventoryService.getAllItems(
-        page: _currentPage,
-        pageSize: _pageSize,
-        category: _selectedCategory != 'All'
-            ? ItemCategory.fromString(_selectedCategory)
-            : null,
-        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        pageSize: 1000,
       );
       setState(() {
         _items = items;
@@ -109,12 +104,6 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
       _searchQuery = query;
       _currentPage = 1;
     });
-    // Debounce search to avoid too many API calls
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (_searchQuery == query) {
-        _loadItems();
-      }
-    });
   }
 
   void _onCategoryChanged(String? category) {
@@ -123,7 +112,6 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
       _selectedCategory = category;
       _currentPage = 1;
     });
-    _loadItems();
   }
 
   void _onConditionChanged(String? condition) {
@@ -132,7 +120,6 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
       _selectedCondition = condition;
       _currentPage = 1;
     });
-    _loadItems();
   }
 
   void _goToPreviousPage() {
@@ -140,7 +127,6 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
       setState(() {
         _currentPage--;
       });
-      _loadItems();
     }
   }
 
@@ -150,7 +136,6 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
       setState(() {
         _currentPage++;
       });
-      _loadItems();
     }
   }
 
@@ -159,7 +144,6 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
       _pageSize = newSize;
       _currentPage = 1;
     });
-    _loadItems();
   }
 
   void _selectItem(Item item) {

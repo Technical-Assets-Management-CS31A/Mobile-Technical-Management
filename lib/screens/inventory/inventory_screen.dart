@@ -309,7 +309,7 @@ class _InventoryScreenState extends State<InventoryScreen>
       }
 
       // Fetch all items
-      final items = await _inventoryService.getAllItems(pageSize: 10000);
+      final items = await _inventoryService.getAllItems(pageSize: 1000);
       
       if (items.isEmpty) {
         if (mounted) {
@@ -347,8 +347,8 @@ class _InventoryScreenState extends State<InventoryScreen>
       }
 
       // 1. Fetch all data needed
-      final items = await _inventoryService.getAllItems(pageSize: 10000);
-      final lentItems = await _lendService.getAllLentItems(pageSize: 10000);
+      final items = await _inventoryService.getAllItems(pageSize: 1000);
+      final lentItems = await _lendService.getAllLentItems(pageSize: 1000);
 
       // 2. Determine status for each item
       // Create a set of borrowed item IDs
