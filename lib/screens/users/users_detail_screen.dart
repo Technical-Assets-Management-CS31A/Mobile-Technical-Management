@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/entities/user.dart';
 import '../../utils/constants.dart';
 import '../../utils/snackbar_helper.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 
 class StaffDetailScreen extends StatefulWidget {
   const StaffDetailScreen({
@@ -568,12 +570,15 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.3),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            color: Colors.grey.withOpacity(0.15),
             spreadRadius: 1,
-            blurRadius: 4,
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -627,11 +632,15 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.3),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            color: Colors.grey.withOpacity(0.15),
             spreadRadius: 1,
-            blurRadius: 4,
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -712,11 +721,15 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceBright,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.3),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            color: Colors.grey.withOpacity(0.15),
             spreadRadius: 1,
-            blurRadius: 4,
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -926,11 +939,12 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
               tooltip: 'Cancel',
             ),
           ] else ...[
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: _toggleEdit,
-              tooltip: 'Edit',
-            ),
+            if (context.watch<AuthProvider>().userRole != 'Staff')
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: _toggleEdit,
+                tooltip: 'Edit',
+              ),
             IconButton(
               icon: const Icon(Icons.archive),
               onPressed: _delete,

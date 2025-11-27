@@ -7,6 +7,8 @@ import '../../widgets/skeleton.dart';
 import 'add_user_screen.dart';
 import 'users_detail_screen.dart';
 import '../../utils/snackbar_helper.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 
 class StaffManagementScreen extends StatefulWidget {
   const StaffManagementScreen({super.key, this.isMobile = false});
@@ -531,11 +533,13 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addNewStaff,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      floatingActionButton: context.watch<AuthProvider>().userRole == 'Staff'
+          ? null
+          : FloatingActionButton(
+              onPressed: _addNewStaff,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => _loadStaffData(useSkeleton: false),
@@ -1249,50 +1253,54 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                       break;
                   }
                 },
-                itemBuilder: (BuildContext context) => [
-                  PopupMenuItem<String>(
-                    value: 'view',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.visibility,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        const Text('View Details'),
-                      ],
+                itemBuilder: (BuildContext context) {
+                  final userRole = context.read<AuthProvider>().userRole;
+                  return [
+                    PopupMenuItem<String>(
+                      value: 'view',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.visibility,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text('View Details'),
+                        ],
+                      ),
                     ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.edit,
-                          color: Color(0xFFF59E0B),
-                          size: 20,
+                    if (userRole != 'Staff')
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.edit,
+                              color: Color(0xFFF59E0B),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            const Text('Edit'),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        const Text('Edit'),
-                      ],
+                      ),
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.archive,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text('Archive'),
+                        ],
+                      ),
                     ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.archive,
-                          color: Colors.orange,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        const Text('Archive'),
-                      ],
-                    ),
-                  ),
-                ],
+                  ];
+                },
               ),
             ],
           ),

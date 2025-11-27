@@ -31,6 +31,8 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
   late final List<String> _userRoleOptions;
   String? _selectedUserRole;
   bool _isSaving = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void initState() {
@@ -355,7 +357,18 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 hint: 'Enter password with special characters',
                 controller: _passwordController,
                 icon: Icons.lock,
-                obscureText: true,
+                obscureText: _obscurePassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
                 validator: AppConstants.validatePassword,
               ),
               const SizedBox(height: 20),
@@ -366,7 +379,18 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 hint: 'Confirm your password',
                 controller: _confirmPasswordController,
                 icon: Icons.lock_outline,
-                obscureText: true,
+                obscureText: _obscureConfirmPassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please confirm your password';
