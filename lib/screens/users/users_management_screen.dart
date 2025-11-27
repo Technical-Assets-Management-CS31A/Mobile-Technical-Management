@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import '../../models/entities/user.dart';
 import '../../services/user_service.dart';
 import '../../widgets/skeleton.dart';
@@ -232,6 +234,171 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
           SnackbarHelper.showErrorSnackBar(context, 'Error updating staff: $e');
         }
       }
+    }
+  }
+
+  Future<void> _importUsers() async {
+    try {
+      FilePickerResult? result;
+      try {
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['xlsx'],
+          withData: true,
+        );
+      } catch (e) {
+        // Check if it's the specific LateInitializationError from FilePicker
+        if (e.toString().contains('LateInitializationError')) {
+          throw Exception('FilePicker initialization failed. Please restart the app.');
+        }
+        rethrow;
+      }
+
+      if (result != null) {
+        if (mounted) {
+          setState(() {
+            _isLoading = true;
+          });
+        }
+
+        final fileName = result.files.single.name;
+        List<int>? fileBytes = result.files.single.bytes;
+
+        // If bytes are null (e.g. on desktop sometimes), try reading from path
+        if (fileBytes == null && result.files.single.path != null) {
+          final file = File(result.files.single.path!);
+          fileBytes = await file.readAsBytes();
+        }
+
+        if (fileBytes != null) {
+          try {
+            final response = await _staffService.importUsers(
+              fileBytes,
+              fileName,
+            );
+
+            if (mounted) {
+              _handleImportResponse(response);
+            }
+          } catch (e) {
+            throw Exception('Service import failed: $e');
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showErrorSnackBar(context, 'Import failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _loadStaffData(useSkeleton: false);
+      }
+    }
+  }
+
+  void _handleImportResponse(Map<String, dynamic> response) {
+    final success = response['success'] == true;
+    final message = response['message'] as String? ?? 'Import processed';
+
+    if (success) {
+      final data = response['data'] as Map<String, dynamic>?;
+      final failureCount = data?['failureCount'] as int? ?? 0;
+      final errors = data?['errors'] as List<dynamic>? ?? [];
+      final skippedDuplicates =
+          data?['skippedDuplicates'] as List<dynamic>? ?? [];
+
+      if (failureCount > 0 ||
+          errors.isNotEmpty ||
+          skippedDuplicates.isNotEmpty) {
+        SnackbarHelper.showWarningSnackBar(context, message);
+        _showImportErrorsDialog(message, errors, skippedDuplicates);
+      } else {
+        SnackbarHelper.showSuccessSnackBar(context, message);
+      }
+    } else {
+      final errors = response['errors'] as List<dynamic>? ?? [];
+      SnackbarHelper.showErrorSnackBar(context, message);
+      if (errors.isNotEmpty) {
+        _showImportErrorsDialog(message, errors, []);
+      }
+    }
+  }
+
+  void _showImportErrorsDialog(
+    String title,
+    List<dynamic> errors,
+    List<dynamic> skippedDuplicates,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Import Results'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title),
+                  const SizedBox(height: 10),
+                  if (errors.isNotEmpty) ...[
+                    const Text(
+                      'Errors:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    ...errors.map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          '• $e',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  if (skippedDuplicates.isNotEmpty) ...[
+                    const Text(
+                      'Skipped Duplicates:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    ...skippedDuplicates.map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          '• $e',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _exportUsers() async {
+    if (mounted) {
+      SnackbarHelper.showInfoSnackBar(context, 'Export functionality coming soon');
     }
   }
 
@@ -587,6 +754,50 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                 }
               },
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _importUsers,
+                    icon: const Icon(Icons.file_upload_outlined),
+                    label: const Text('Import'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _exportUsers,
+                    icon: const Icon(Icons.file_download_outlined),
+                    label: const Text('Export'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       );
@@ -652,6 +863,48 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                     _onFilterChanged(newValue);
                   }
                 },
+              ),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton.icon(
+              onPressed: _importUsers,
+              icon: const Icon(Icons.file_upload_outlined),
+              label: const Text('Import'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton.icon(
+              onPressed: _exportUsers,
+              icon: const Icon(Icons.file_download_outlined),
+              label: const Text('Export'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  ),
+                ),
               ),
             ),
           ],

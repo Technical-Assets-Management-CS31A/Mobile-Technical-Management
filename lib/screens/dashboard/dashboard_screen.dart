@@ -86,7 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               'teacher': item.teacherFullName ?? 'N/A',
               'room': item.room ?? 'N/A',
               'item': item.itemName ?? 'N/A',
-              'occupiedBy': item.borrowerFullName,
+              'occupiedBy': item.borrowerFullName,  
               'remarks': item.status ?? 'Unknown',
               'borrowerRole': item.borrowerRole,
             },

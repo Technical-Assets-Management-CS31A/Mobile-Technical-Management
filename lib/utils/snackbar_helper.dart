@@ -28,4 +28,22 @@ class SnackbarHelper {
       ),
     );
   }
+
+  static void showWarningSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(AppConstants.warningColor),
+      ),
+    );
+  }
+
+  static void showInfoSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.blue,
+      ),
+    );
+  }
 }

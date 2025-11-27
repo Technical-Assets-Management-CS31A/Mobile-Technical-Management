@@ -507,6 +507,7 @@ class ApiService {
   /// [endpoint] - API endpoint (e.g., '/items' or 'items')
   /// [fields] - Form fields as Map<String, String>
   /// [files] - Optional file fields as Map<String, List<int>>
+  /// [fileNames] - Optional custom filenames for files as Map<String, String>
   /// [headers] - Optional additional headers
   ///
   /// Returns the response body as a Map<String, dynamic>
@@ -514,6 +515,7 @@ class ApiService {
     String endpoint, {
     Map<String, String>? fields,
     Map<String, List<int>>? files,
+    Map<String, String>? fileNames,
     Map<String, String>? headers,
   }) async {
     try {
@@ -550,10 +552,27 @@ class ApiService {
       // Add file fields
       if (files != null) {
         files.forEach((key, value) {
-          // Detect MIME type from file content
-          final mimeType = _detectMimeType(value);
-          final extension = _getExtensionFromMimeType(mimeType);
-          final filename = '${key}$extension';
+          String filename;
+          String mimeType;
+
+          if (fileNames != null && fileNames.containsKey(key)) {
+            filename = fileNames[key]!;
+            // Simple mime type lookup based on extension
+            if (filename.endsWith('.xlsx')) {
+              mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            } else if (filename.endsWith('.xls')) {
+              mimeType = 'application/vnd.ms-excel';
+            } else if (filename.endsWith('.csv')) {
+              mimeType = 'text/csv';
+            } else {
+              mimeType = _detectMimeType(value);
+            }
+          } else {
+            // Detect MIME type from file content
+            mimeType = _detectMimeType(value);
+            final extension = _getExtensionFromMimeType(mimeType);
+            filename = '${key}$extension';
+          }
 
           request.files.add(
             http.MultipartFile.fromBytes(
@@ -589,10 +608,25 @@ class ApiService {
           }
           if (files != null) {
             files.forEach((key, value) {
-              // Detect MIME type from file content
-              final mimeType = _detectMimeType(value);
-              final extension = _getExtensionFromMimeType(mimeType);
-              final filename = '${key}$extension';
+              String filename;
+              String mimeType;
+
+              if (fileNames != null && fileNames.containsKey(key)) {
+                filename = fileNames[key]!;
+                if (filename.endsWith('.xlsx')) {
+                  mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                } else if (filename.endsWith('.xls')) {
+                  mimeType = 'application/vnd.ms-excel';
+                } else if (filename.endsWith('.csv')) {
+                  mimeType = 'text/csv';
+                } else {
+                  mimeType = _detectMimeType(value);
+                }
+              } else {
+                mimeType = _detectMimeType(value);
+                final extension = _getExtensionFromMimeType(mimeType);
+                filename = '${key}$extension';
+              }
 
               retryRequest.files.add(
                 http.MultipartFile.fromBytes(

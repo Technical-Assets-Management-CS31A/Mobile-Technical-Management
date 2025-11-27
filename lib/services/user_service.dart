@@ -439,6 +439,20 @@ class StaffService {
     }
   }
 
+  // Import users from Excel file
+  Future<Map<String, dynamic>> importUsers(List<int> fileBytes, String filename) async {
+    try {
+      final response = await _apiService.postMultipart(
+        'users/import',
+        files: {'file': fileBytes},
+        fileNames: {'file': filename},
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Failed to import users: $e');
+    }
+  }
+
   // Update user status on server
   Future<bool> updateUserStatus(String userId, String status) async {
     try {

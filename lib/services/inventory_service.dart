@@ -350,6 +350,20 @@ class InventoryService {
     }
   }
 
+  // Import items from Excel file
+  Future<Map<String, dynamic>> importItems(List<int> fileBytes, String filename) async {
+    try {
+      final response = await apiService.postMultipart(
+        'items/import',
+        files: {'file': fileBytes},
+        fileNames: {'file': filename},
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Failed to import items: $e');
+    }
+  }
+
   // Get dashboard summary data
   Future<SummaryData> getDashboardSummary() async {
     try {
