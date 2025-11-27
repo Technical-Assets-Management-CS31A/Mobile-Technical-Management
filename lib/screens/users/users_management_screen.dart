@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import '../../models/entities/user.dart';
 import '../../services/user_service.dart';
@@ -9,6 +10,7 @@ import 'users_detail_screen.dart';
 import '../../utils/snackbar_helper.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/export_configuration_dialog.dart';
 
 class StaffManagementScreen extends StatefulWidget {
   const StaffManagementScreen({super.key, this.isMobile = false});
@@ -399,8 +401,98 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
   }
 
   Future<void> _exportUsers() async {
-    if (mounted) {
-      SnackbarHelper.showInfoSnackBar(context, 'Export functionality coming soon');
+    await _showExportDialog();
+  }
+
+  Future<void> _showExportDialog() async {
+    final allColumns = [
+      'Name',
+      'Email',
+      'Role',
+      'Position',
+      'Phone',
+      'Username',
+      'Status',
+      'Department',
+      'Student ID',
+      'Course',
+      'Section',
+      'Year'
+    ];
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return ExportConfigurationDialog(
+          totalUsersCount: _staffList.length,
+          filteredUsersCount: _filteredStaffList.length,
+          availableColumns: allColumns,
+          onExport: (selectedColumns, scope, customCount) {
+            _performExport(selectedColumns, scope, customCount);
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _performExport(
+    List<String> columns,
+    ExportScope scope,
+    int? customCount,
+  ) async {
+    try {
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      // Determine which users to export
+      List<Staff> usersToExport;
+      switch (scope) {
+        case ExportScope.all:
+          usersToExport = _staffList;
+          break;
+        case ExportScope.filtered:
+          usersToExport = _filteredStaffList;
+          break;
+        case ExportScope.custom:
+          usersToExport = _staffList.take(customCount ?? 0).toList();
+          break;
+      }
+
+      // Generate Excel bytes
+      final fileBytes = await _staffService.exportUsers(usersToExport, columns);
+      
+      if (fileBytes != null) {
+        // Save file
+        String? outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save Exported Users',
+          fileName: 'users_export.xlsx',
+          type: FileType.custom,
+          allowedExtensions: ['xlsx'],
+          bytes: Uint8List.fromList(fileBytes),
+        );
+
+        if (outputFile != null) {
+          final file = File(outputFile);
+          await file.writeAsBytes(fileBytes);
+          
+          if (mounted) {
+            SnackbarHelper.showSuccessSnackBar(context, 'Users exported successfully to $outputFile');
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showErrorSnackBar(context, 'Export failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -757,50 +849,6 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                   _onFilterChanged(newValue);
                 }
               },
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _importUsers,
-                    icon: const Icon(Icons.file_upload_outlined),
-                    label: const Text('Import'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _exportUsers,
-                    icon: const Icon(Icons.file_download_outlined),
-                    label: const Text('Export'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

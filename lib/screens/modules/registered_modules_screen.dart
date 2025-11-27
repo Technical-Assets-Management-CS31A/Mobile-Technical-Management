@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import '../../models/entities/user.dart';
 import '../../services/user_service.dart';
@@ -170,6 +171,41 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
   }
 
   Future<void> _importUsers() async {
+    // Show info dialog first
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Student Registration Import'),
+        content: const Text(
+          'This import feature is exclusively for registering new students.\n\n'
+          'Please ensure your Excel file contains valid student data before proceeding.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: const Text('Pick File'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldProceed != true) return;
+
     try {
       FilePickerResult? result;
       try {
@@ -329,8 +365,126 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
   }
 
   Future<void> _exportUsers() async {
-    if (mounted) {
-      SnackbarHelper.showInfoSnackBar(context, 'Export functionality coming soon');
+    await _showExportDialog();
+  }
+
+  Future<void> _showExportDialog() async {
+    final allColumns = [
+      'Name',
+      'Email',
+      'Role',
+      'Position',
+      'Phone',
+      'Username',
+      'Status',
+      'Department',
+      'Student ID',
+      'Course',
+      'Section',
+      'Year'
+    ];
+    
+    // Default selected columns
+    List<String> selectedColumns = List.from(allColumns);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Export Users'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Select columns to export:'),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 4.0,
+                      children: allColumns.map((column) {
+                        return FilterChip(
+                          label: Text(column),
+                          selected: selectedColumns.contains(column),
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                selectedColumns.add(column);
+                              } else {
+                                selectedColumns.remove(column);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: selectedColumns.isEmpty
+                      ? null
+                      : () async {
+                          Navigator.pop(context);
+                          await _performExport(selectedColumns);
+                        },
+                  child: const Text('Export'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _performExport(List<String> columns) async {
+    try {
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      // Generate Excel bytes
+      final fileBytes = await _staffService.exportUsers(_staffList, columns);
+      
+      if (fileBytes != null) {
+        // Save file
+        String? outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save Exported Users',
+          fileName: 'registered_modules_export.xlsx',
+          type: FileType.custom,
+          allowedExtensions: ['xlsx'],
+          bytes: Uint8List.fromList(fileBytes),
+        );
+
+        if (outputFile != null) {
+          final file = File(outputFile);
+          await file.writeAsBytes(fileBytes);
+          
+          if (mounted) {
+            SnackbarHelper.showSuccessSnackBar(context, 'Users exported successfully to $outputFile');
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showErrorSnackBar(context, 'Export failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -768,48 +922,25 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
               },
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _importUsers,
-                    icon: const Icon(Icons.file_upload_outlined),
-                    label: const Text('Import'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        ),
-                      ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _importUsers,
+                icon: const Icon(Icons.file_upload_outlined),
+                label: const Text('Import'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _exportUsers,
-                    icon: const Icon(Icons.file_download_outlined),
-                    label: const Text('Export'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),

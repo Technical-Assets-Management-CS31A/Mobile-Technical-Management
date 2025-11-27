@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import '../models/entities/user.dart';
 import 'api_service.dart';
+import 'package:excel/excel.dart';
 
 class StaffService {
   static final StaffService _instance = StaffService._internal();
@@ -443,7 +444,7 @@ class StaffService {
   Future<Map<String, dynamic>> importUsers(List<int> fileBytes, String filename) async {
     try {
       final response = await _apiService.postMultipart(
-        'users/import',
+        'users/students/import',
         files: {'file': fileBytes},
         fileNames: {'file': filename},
       );
@@ -463,6 +464,69 @@ class StaffService {
       return response['success'] == true;
     } catch (e) {
       throw Exception('Failed to update user status: $e');
+    }
+  }
+
+  // Export users to Excel
+  Future<List<int>?> exportUsers(List<Staff> users, List<String> columns) async {
+    try {
+      var excel = Excel.createExcel();
+      Sheet sheetObject = excel['Users'];
+      
+      // Add headers
+      sheetObject.appendRow(columns.map((c) => TextCellValue(c)).toList());
+      
+      // Add data
+      for (var user in users) {
+        List<CellValue> row = [];
+        for (var column in columns) {
+          switch (column) {
+            case 'Name':
+              row.add(TextCellValue(user.name));
+              break;
+            case 'Email':
+              row.add(TextCellValue(user.email));
+              break;
+            case 'Role':
+              row.add(TextCellValue(user.userRole));
+              break;
+            case 'Position':
+              row.add(TextCellValue(user.position ?? ''));
+              break;
+            case 'Phone':
+              row.add(TextCellValue(user.phoneNumber ?? ''));
+              break;
+            case 'Username':
+              row.add(TextCellValue(user.username));
+              break;
+            case 'Status':
+              row.add(TextCellValue(user.status ?? ''));
+              break;
+            case 'Department':
+              row.add(TextCellValue(user.department ?? ''));
+              break;
+            case 'Student ID':
+              row.add(TextCellValue(user.studentIdNumber ?? ''));
+              break;
+            case 'Course':
+              row.add(TextCellValue(user.course ?? ''));
+              break;
+            case 'Section':
+              row.add(TextCellValue(user.section ?? ''));
+              break;
+            case 'Year':
+              row.add(TextCellValue(user.year ?? ''));
+              break;
+            default:
+              row.add(TextCellValue(''));
+          }
+        }
+        sheetObject.appendRow(row);
+      }
+      
+      return excel.encode();
+    } catch (e) {
+      throw Exception('Failed to export users: $e');
     }
   }
 }
