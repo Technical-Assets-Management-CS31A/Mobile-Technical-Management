@@ -625,6 +625,26 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: widget.isMobile ? null : AppBar(
+        title: const Text('User Management'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        elevation: 0,
+        actions: [
+          if (context.watch<AuthProvider>().userRole != 'Staff')
+            IconButton(
+              icon: const Icon(Icons.upload_file),
+              onPressed: _importUsers,
+              tooltip: 'Import Users',
+            ),
+          if (context.watch<AuthProvider>().userRole != 'Staff')
+            IconButton(
+              icon: const Icon(Icons.download),
+              onPressed: _exportUsers,
+              tooltip: 'Export Users',
+            ),
+        ],
+      ),
       floatingActionButton: context.watch<AuthProvider>().userRole == 'Staff'
           ? null
           : FloatingActionButton(
@@ -643,17 +663,19 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(
-                        child: Text(
-                          'USER MANAGEMENT',
-                          style: TextStyle(
-                            fontSize: widget.isMobile ? 24 : 28,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                      if (widget.isMobile) ...[
+                        Center(
+                          child: Text(
+                            'USER MANAGEMENT',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(height: widget.isMobile ? 24 : 32),
+                        const SizedBox(height: 24),
+                      ],
                       _buildSummarySection(),
                       _buildSearchAndFilterSection(),
                       SizedBox(height: widget.isMobile ? 24 : 32),

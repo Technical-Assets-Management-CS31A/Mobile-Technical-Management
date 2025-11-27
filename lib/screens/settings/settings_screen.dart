@@ -157,7 +157,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDetailRow('Email', authProvider.userEmail ?? 'N/A'),
           _buildDetailRow('Role', authProvider.userRole ?? 'N/A'),
           _buildDetailRow('Status', authProvider.userStatus ?? 'Active'),
-          _buildDetailRow('User ID', authProvider.userId ?? 'N/A'),
           _buildDetailRow('Login Time', _getCurrentTime()),
           if (authProvider.accessToken != null)
             _buildDetailRow('Session', 'Active'),

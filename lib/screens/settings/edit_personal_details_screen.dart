@@ -23,6 +23,16 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _positionController = TextEditingController();
+  
+  // Student specific controllers
+  final _studentIdController = TextEditingController();
+  final _courseController = TextEditingController();
+  final _sectionController = TextEditingController();
+  final _yearController = TextEditingController();
+  final _streetController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _provinceController = TextEditingController();
+  final _postalCodeController = TextEditingController();
 
   bool _isLoading = false;
   bool _isSaving = false;
@@ -44,6 +54,14 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _positionController.dispose();
+    _studentIdController.dispose();
+    _courseController.dispose();
+    _sectionController.dispose();
+    _yearController.dispose();
+    _streetController.dispose();
+    _cityController.dispose();
+    _provinceController.dispose();
+    _postalCodeController.dispose();
     super.dispose();
   }
 
@@ -66,6 +84,16 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
           _emailController.text = userData['email'] ?? '';
           _phoneController.text = userData['phoneNumber'] ?? '';
           _positionController.text = userData['position'] ?? '';
+          
+          // Load student fields
+          _studentIdController.text = userData['studentIdNumber'] ?? '';
+          _courseController.text = userData['course'] ?? '';
+          _sectionController.text = userData['section'] ?? '';
+          _yearController.text = userData['year'] ?? '';
+          _streetController.text = userData['street'] ?? '';
+          _cityController.text = userData['cityMunicipality'] ?? '';
+          _provinceController.text = userData['province'] ?? '';
+          _postalCodeController.text = userData['postalCode'] ?? '';
         });
       } else {
         throw Exception(result['error'] ?? 'Failed to load user data');
@@ -106,6 +134,15 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
             ? null 
             : _positionController.text.trim(),
         userRole: userRole,
+        // Student fields
+        studentIdNumber: _studentIdController.text.trim(),
+        course: _courseController.text.trim(),
+        section: _sectionController.text.trim(),
+        year: _yearController.text.trim(),
+        street: _streetController.text.trim(),
+        cityMunicipality: _cityController.text.trim(),
+        province: _provinceController.text.trim(),
+        postalCode: _postalCodeController.text.trim(),
       );
 
       if (result['success'] == true) {
@@ -309,17 +346,65 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Username Field
-                    _buildFormField(
-                      label: 'Username *',
-                      hint: 'Enter your username',
-                      controller: _usernameController,
-                      icon: Icons.account_circle,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your username';
-                        }
-                        return null;
+                    // Username Field - Read-only for students
+                    Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        final isStudent = authProvider.userRole == 'Student';
+                        
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceBright,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: TextFormField(
+                            controller: _usernameController,
+                            enabled: !isStudent, // Disable for students
+                            style: TextStyle(
+                              color: isStudent 
+                                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                            decoration: InputDecoration(
+                              labelText: 'Username *',
+                              hintText: 'Enter your username',
+                              labelStyle: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.account_circle, 
+                                color: isStudent 
+                                    ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
+                                    : Theme.of(context).colorScheme.primary,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: isStudent 
+                                  ? Theme.of(context).colorScheme.surfaceBright.withOpacity(0.5)
+                                  : Theme.of(context).colorScheme.surfaceBright,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (!isStudent && (value == null || value.isEmpty)) {
+                                return 'Please enter your username';
+                              }
+                              return null;
+                            },
+                          ),
+                        );
                       },
                     ),
                     const SizedBox(height: 20),
@@ -354,14 +439,131 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Position Field (Optional)
-                    _buildFormField(
-                      label: 'Position (Optional)',
-                      hint: 'Enter your position',
-                      controller: _positionController,
-                      icon: Icons.work_outline,
+                    // Student Specific Fields
+                    Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        final isStudent = authProvider.userRole == 'Student';
+                        if (!isStudent) return const SizedBox.shrink();
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 12),
+                            Text(
+                              'Academic Information',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFormField(
+                              label: 'Student ID Number',
+                              hint: 'Enter your student ID',
+                              controller: _studentIdController,
+                              icon: Icons.badge_outlined,
+                            ),
+                            const SizedBox(height: 20),
+                            _buildFormField(
+                              label: 'Course',
+                              hint: 'Enter your course',
+                              controller: _courseController,
+                              icon: Icons.school_outlined,
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildFormField(
+                                    label: 'Section',
+                                    hint: 'Section',
+                                    controller: _sectionController,
+                                    icon: Icons.class_outlined,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildFormField(
+                                    label: 'Year',
+                                    hint: 'Year',
+                                    controller: _yearController,
+                                    icon: Icons.calendar_today_outlined,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 32),
+                            Text(
+                              'Address Information',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFormField(
+                              label: 'Street',
+                              hint: 'Street address',
+                              controller: _streetController,
+                              icon: Icons.location_on_outlined,
+                            ),
+                            const SizedBox(height: 20),
+                            _buildFormField(
+                              label: 'City/Municipality',
+                              hint: 'City or Municipality',
+                              controller: _cityController,
+                              icon: Icons.location_city_outlined,
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildFormField(
+                                    label: 'Province',
+                                    hint: 'Province',
+                                    controller: _provinceController,
+                                    icon: Icons.map_outlined,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildFormField(
+                                    label: 'Postal Code',
+                                    hint: 'Zip',
+                                    controller: _postalCodeController,
+                                    icon: Icons.markunread_mailbox_outlined,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        );
+                      },
                     ),
-                    const SizedBox(height: 32),
+
+                    // Position Field (Optional) - Hide for students
+                    Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        final isStudent = authProvider.userRole == 'Student';
+                        if (isStudent) return const SizedBox.shrink();
+                        
+                        return Column(
+                          children: [
+                            _buildFormField(
+                              label: 'Position (Optional)',
+                              hint: 'Enter your position',
+                              controller: _positionController,
+                              icon: Icons.work_outline,
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
 
                     // Save Button
                     SizedBox(

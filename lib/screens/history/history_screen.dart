@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/entities/lend_item.dart';
 import '../../services/lend_service.dart';
+import '../../services/user_service.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/skeleton.dart';
 import 'lend_item_detail_screen.dart';
 
@@ -15,6 +18,7 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final LendService _lendService = LendService();
+  final StaffService _staffService = StaffService();
   List<LendItem> _lendItems = [];
   List<LendItem> _filteredItems = [];
   bool _isLoading = true;
@@ -58,7 +62,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _loadBorrowedItems() async {
     setState(() => _isLoading = true);
     try {
-      final items = await _lendService.getAllLentItems(pageSize: 100);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userRole = authProvider.userRole;
+      
+      List<LendItem> items;
+      
+      // For students and teachers, load from their profile's lentItemsHistory
+      if (userRole == 'Student' || userRole == 'Teacher') {
+        final result = await _staffService.getUserProfile();
+        if (result['success'] == true && result['data'] != null) {
+          final userData = result['data'];
+          final lentItemsHistory = userData['lentItemsHistory'] as List<dynamic>?;
+          
+          if (lentItemsHistory != null) {
+            items = lentItemsHistory.map((item) => LendItem.fromJson(item)).toList();
+          } else {
+            items = [];
+          }
+        } else {
+          items = [];
+        }
+      } else {
+        // For other roles (Admin, Staff), load all lent items
+        items = await _lendService.getAllLentItems(pageSize: 100);
+      }
+      
       if (mounted) {
         setState(() {
           _lendItems = items;
@@ -166,14 +194,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Borrowing History'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        elevation: 0,
-      ),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final isStudentOrTeacher = authProvider.userRole == 'Student' || 
+                                   authProvider.userRole == 'Teacher';
+        
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: AppBar(
+            title: Text(
+              'Borrowing History',
+              style: TextStyle(
+                color: isStudentOrTeacher ? Colors.black : null,
+              ),
+            ),
+            centerTitle: isStudentOrTeacher,
+            backgroundColor: isStudentOrTeacher 
+                ? Colors.transparent 
+                : Theme.of(context).colorScheme.primary,
+            foregroundColor: isStudentOrTeacher 
+                ? Colors.black 
+                : Theme.of(context).colorScheme.onPrimary,
+            elevation: 0,
+            iconTheme: IconThemeData(
+              color: isStudentOrTeacher ? Colors.black : Colors.white,
+            ),
+          ),
       body: RefreshIndicator(
         onRefresh: _loadBorrowedItems,
         child: _isLoading
@@ -190,7 +236,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ],
                 ),
               ),
-      ),
+          ),
+        );
+      },
     );
   }
 

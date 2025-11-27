@@ -3,15 +3,19 @@ import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/skeleton.dart';
 import '../../widgets/keep_alive_wrapper.dart';
-import '../users/users_management_screen.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../inventory/inventory_screen.dart';
 import '../history/history_screen.dart';
+import '../borrow/borrow_screen.dart';
 import '../../services/inventory_service.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../services/lend_service.dart';
-import '../../services/user_service.dart';
 import '../../providers/auth_provider.dart';
+import '../settings/settings_screen.dart';
+import '../archive/archive_screen.dart';
+import '../modules/registered_modules_screen.dart';
+import '../users/users_management_screen.dart';
+import '../login/login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.isMobile = true});
@@ -54,7 +58,18 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 0);
+    
+    // Determine initial page based on role
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isStudentOrTeacher = authProvider.userRole == 'Student' || 
+        authProvider.userRole == 'Teacher';
+        
+    // If student/teacher, start at Borrow screen (Page 3)
+    // which corresponds to BottomBar index 0
+    final initialPage = isStudentOrTeacher ? 3 : 0;
+    _selectedIndex = isStudentOrTeacher ? 0 : 0; // Both start at their respective 0 index
+    
+    _pageController = PageController(initialPage: initialPage);
     _loadDashboardData();
   }
 
@@ -140,25 +155,51 @@ class _DashboardScreenState extends State<DashboardScreen>
           ],
         ),
       ),
-      bottomNavigationBar: BottomBar(
-        selectedIndex: _selectedIndex,
-        onItemSelected: (index) {
-          if (index != _selectedIndex) {
-            setState(() {
-              _previousIndex = _selectedIndex;
-              _selectedIndex = index;
-            });
-            // Refresh dashboard data when returning to dashboard from other screens
-            // if (index == 0 && _previousIndex != 0) {
-            //   setState(() {
-            //     _isLoading = true;
-            //   });
-            //   _loadDashboardData();
-            // }
-            _pageController.jumpToPage(index);
-          }
+      bottomNavigationBar: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          final isStudentOrTeacher = authProvider.userRole == 'Student' ||
+              authProvider.userRole == 'Teacher';
+          
+          return BottomBar(
+            selectedIndex: _selectedIndex,
+            onItemSelected: (index) {
+              if (isStudentOrTeacher) {
+                // Handle Student/Teacher navigation
+                if (index == 2) {
+                  // Menu item
+                  _showMenu(context);
+                } else {
+                  // Map 0->3 (Borrow), 1->4 (History)
+                  int targetPage = index == 0 ? 3 : 4;
+                  
+                  if (targetPage != _pageController.page?.round()) {
+                    setState(() {
+                      _previousIndex = _selectedIndex;
+                      _selectedIndex = index;
+                    });
+                    _pageController.jumpToPage(targetPage);
+                  }
+                }
+              } else {
+                // Handle Admin/Staff navigation
+                if (index == 3) {
+                  // Menu item
+                  _showMenu(context);
+                } else {
+                  // Standard mapping for Dashboard (0), Inventory (1), Users (2)
+                  if (index != _selectedIndex) {
+                    setState(() {
+                      _previousIndex = _selectedIndex;
+                      _selectedIndex = index;
+                    });
+                    _pageController.jumpToPage(index);
+                  }
+                }
+              }
+            },
+            onRefreshNeeded: _handleRefreshNeeded,
+          );
         },
-        onRefreshNeeded: _handleRefreshNeeded,
       ),
     );
   }
@@ -218,7 +259,6 @@ class _DashboardScreenState extends State<DashboardScreen>
               Row(
                 children: [
                   Image.asset('assets/icons/aclcLOGO.png', height: 50),
-
                 ],
               ),
             ],
@@ -240,16 +280,31 @@ class _DashboardScreenState extends State<DashboardScreen>
       controller: _pageController,
       physics: const NeverScrollableScrollPhysics(),
       onPageChanged: (index) {
+        // We need to map the page index back to the bottom bar index
+        // Page 0 (Dashboard) -> Bar 0 (Admin)
+        // Page 1 (Inventory) -> Bar 1 (Admin)
+        // Page 2 (Borrow) -> Bar 2 (Admin) / Bar 0 (Student)
+        // Page 3 (History) -> Bar 3 (Admin) / Bar 1 (Student)
+        
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final isStudentOrTeacher = authProvider.userRole == 'Student' ||
+            authProvider.userRole == 'Teacher';
+            
+        int newSelectedIndex;
+        if (isStudentOrTeacher) {
+          if (index == 3) newSelectedIndex = 0; // Borrow
+          else if (index == 4) newSelectedIndex = 1; // History
+          else return; // Should not happen for students usually
+        } else {
+          newSelectedIndex = index;
+        }
+
         // Only update state if the index actually changed
-        if (index != _selectedIndex) {
+        if (newSelectedIndex != _selectedIndex) {
           setState(() {
             _previousIndex = _selectedIndex;
-            _selectedIndex = index;
+            _selectedIndex = newSelectedIndex;
           });
-          // Refresh dashboard data when returning to dashboard from other screens
-          // if (index == 0 && _previousIndex != 0) {
-          //   _loadDashboardData(useSkeleton: false);
-          // }
         }
       },
       children: [
@@ -259,8 +314,20 @@ class _DashboardScreenState extends State<DashboardScreen>
           isMobile: true,
         ),
         StaffManagementScreen(
-          key: ValueKey('staff_$_lastRefreshTime'),
+          key: ValueKey('users_$_lastRefreshTime'),
           isMobile: true,
+        ),
+        KeepAliveWrapper(
+          child: BorrowScreen(
+            key: ValueKey('borrow_$_lastRefreshTime'),
+            isMobile: true,
+          ),
+        ),
+        KeepAliveWrapper(
+          child: HistoryScreen(
+            key: ValueKey('history_$_lastRefreshTime'),
+            isMobile: true,
+          ),
         ),
       ],
     );
@@ -1038,8 +1105,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         targetIndex = 1; // Navigate to inventory screen
         break;
       case 'Active Users':
-        targetIndex = 2; // Navigate to staff management screen
-        break;
+        // User management is no longer in bottom nav
+        return;
       case 'Borrowed Items':
         // Show menu for history access
         _showHistoryMenu(context);
@@ -1058,6 +1125,348 @@ class _DashboardScreenState extends State<DashboardScreen>
     });
 
     _pageController.jumpToPage(targetIndex);
+  }
+
+  void _showMenu(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isStaff = authProvider.userRole == 'Staff';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle bar
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Menu title
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.menu,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Menu',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Profile section
+                  _buildMenuProfileSection(context),
+                  const SizedBox(height: 16),
+
+                  // Menu items section
+                  _buildMenuItemsSection(context, isStaff),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuProfileSection(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceBright,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: const Icon(Icons.person, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      authProvider.username ?? 'User',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      authProvider.userEmail ?? 'Logged in successfully',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuItemsSection(BuildContext context, bool isStaff) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isStudentOrTeacher = authProvider.userRole == 'Student' ||
+        authProvider.userRole == 'Teacher';
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          _buildMenuItem(
+            context,
+            icon: Icons.settings_outlined,
+            title: 'Settings',
+            subtitle: 'App preferences and configuration',
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
+          if (!isStudentOrTeacher) ...[ 
+            const SizedBox(height: 12),
+            _buildMenuItem(
+              context,
+              icon: Icons.history_outlined,
+              title: 'History',
+              subtitle: 'View borrowing history',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const HistoryScreen(isMobile: true),
+                  ),
+                );
+              },
+            ),
+          ],
+          if (!isStudentOrTeacher) ...[ 
+            const SizedBox(height: 12),
+            _buildMenuItem(
+              context,
+              icon: Icons.school_outlined,
+              title: 'Registered Modules',
+              subtitle: 'View all registered modules',
+              onTap: () async {
+                Navigator.of(context).pop();
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const RegisteredModulesScreen(isMobile: true),
+                  ),
+                );
+                _handleRefreshNeeded();
+              },
+            ),
+          ],
+          if (!isStaff && !isStudentOrTeacher) ...[
+            const SizedBox(height: 12),
+            _buildMenuItem(
+              context,
+              icon: Icons.archive_outlined,
+              title: 'Archive',
+              subtitle: 'View archived items',
+              onTap: () async {
+                Navigator.of(context).pop();
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (context) => const ArchiveScreen()),
+                );
+                _handleRefreshNeeded();
+              },
+            ),
+          ],
+          const SizedBox(height: 12),
+          _buildMenuItem(
+            context,
+            icon: Icons.logout_outlined,
+            title: 'Logout',
+            subtitle: 'Sign out of your account',
+            onTap: () {
+              Navigator.of(context).pop();
+              _showLogoutDialog(context);
+            },
+            isDestructive: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceBright,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDestructive
+                      ? Colors.red.withOpacity(0.1)
+                      : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: isDestructive
+                      ? Colors.red
+                      : Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: isDestructive
+                            ? Colors.red
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: isDestructive
+                    ? Colors.red
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                try {
+                  final authProvider = context.read<AuthProvider>();
+                  await authProvider.logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    SnackbarHelper.showErrorSnackBar(context, 'Logout failed: $e');
+                  }
+                }
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

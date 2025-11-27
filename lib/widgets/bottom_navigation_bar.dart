@@ -23,6 +23,9 @@ class BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isStudentOrTeacher = authProvider.userRole == 'Student' || authProvider.userRole == 'Teacher';
+
     return Container(
       height: 90,
       decoration: BoxDecoration(
@@ -41,30 +44,60 @@ class BottomBar extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            context,
-            0,
-            Icons.dashboard_outlined,
-            Icons.dashboard,
-            'Dashboard',
-          ),
-          _buildNavItem(
-            context,
-            1,
-            Icons.inventory_2_outlined,
-            Icons.inventory_2,
-            'Inventory',
-          ),
-          _buildNavItem(
-            context,
-            2,
-            Icons.people_outline,
-            Icons.people,
-            'Users',
-          ),
-          _buildMenuNavItem(context),
-        ],
+        children: isStudentOrTeacher
+            ? [
+                _buildNavItem(
+                  context,
+                  0,
+                  Icons.library_books_outlined,
+                  Icons.library_books,
+                  'Borrow',
+                ),
+                _buildNavItem(
+                  context,
+                  1,
+                  Icons.history_outlined,
+                  Icons.history,
+                  'History',
+                ),
+                _buildNavItem(
+                  context,
+                  2,
+                  Icons.menu,
+                  Icons.menu,
+                  'Menu',
+                ),
+              ]
+            : [
+                _buildNavItem(
+                  context,
+                  0,
+                  Icons.dashboard_outlined,
+                  Icons.dashboard,
+                  'Dashboard',
+                ),
+                _buildNavItem(
+                  context,
+                  1,
+                  Icons.inventory_2_outlined,
+                  Icons.inventory_2,
+                  'Inventory',
+                ),
+                _buildNavItem(
+                  context,
+                  2,
+                  Icons.people_outline,
+                  Icons.people,
+                  'Users',
+                ),
+                _buildNavItem(
+                  context,
+                  3,
+                  Icons.menu,
+                  Icons.menu,
+                  'Menu',
+                ),
+              ],
       ),
     );
   }
@@ -132,51 +165,6 @@ class BottomBar extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuNavItem(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => _showMenu(context),
-        child: Container(
-          height: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.menu,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Menu',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showMenu(BuildContext context) {
     showModalBottomSheet(

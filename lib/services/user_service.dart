@@ -89,6 +89,24 @@ class StaffService {
     }
   }
 
+  // READ - Get all teachers
+  Future<List<Staff>> getAllTeachers() async {
+    try {
+      final response = await _apiService.get(_staffEndpoint);
+      final List<dynamic> userData = response['data'] ?? response;
+
+      // Filter only Teacher members
+      final teacherData = userData.where((user) {
+        final userRole = user['userRole'] as String?;
+        return userRole == 'Teacher';
+      }).toList();
+
+      return teacherData.map((json) => Staff.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch teachers: $e');
+    }
+  }
+
   // READ - Get staff by ID
   Future<Staff?> getStaffById(String id) async {
     try {
@@ -288,7 +306,16 @@ class StaffService {
     required String email,
     required String phoneNumber,
     String? position,
-    String? userRole, // Add userRole parameter
+    String? userRole,
+    // Student fields
+    String? studentIdNumber,
+    String? course,
+    String? section,
+    String? year,
+    String? street,
+    String? cityMunicipality,
+    String? province,
+    String? postalCode,
   }) async {
     try {
       dynamic response;
@@ -303,7 +330,7 @@ class StaffService {
           'Email': email,
           'PhoneNumber': phoneNumber,
           'Username': username,
-          // Add other fields if available/needed, but these are the ones passed to this method
+          if (position != null) 'Department': position,
         };
         
         response = await _apiService.patchMultipart(
@@ -319,7 +346,18 @@ class StaffService {
           'Email': email,
           'PhoneNumber': phoneNumber,
           'Username': username,
-          // Add other fields if available/needed
+          'StudentIdNumber': studentIdNumber ?? '',
+          'Course': course ?? '',
+          'Section': section ?? '',
+          'Year': year ?? '',
+          'Street': street ?? '',
+          'CityMunicipality': cityMunicipality ?? '',
+          'Province': province ?? '',
+          'PostalCode': postalCode ?? '',
+          // Image fields are empty for now as we're not handling image upload in this specific edit screen yet
+          'ProfilePicture': '',
+          'FrontStudentIdPicture': '',
+          'BackStudentIdPicture': '',
         };
         
         response = await _apiService.patchMultipart(
