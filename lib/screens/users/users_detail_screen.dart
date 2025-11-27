@@ -1617,11 +1617,34 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                 ],
               ] else ...[
                 // Read-only View
+                
+                // Personal Information Section
+                Text(
+                  'Personal Information',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
                 _buildInfoCard(
                   title: 'Full Name',
                   value: widget.staff.name,
                   icon: Icons.person,
                   color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 24),
+
+                // Account Information Section
+                Text(
+                  'Account Information',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -1630,6 +1653,40 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                   value: widget.staff.username,
                   icon: Icons.account_circle,
                   color: Theme.of(context).colorScheme.secondary,
+                ),
+                const SizedBox(height: 16),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'User Role',
+                        value: widget.staff.userRole,
+                        icon: Icons.admin_panel_settings,
+                        color: _getUserRoleColor(widget.staff.userRole),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildInfoCard(
+                        title: 'Status',
+                        value: widget.staff.status ?? 'Unknown',
+                        icon: Icons.circle,
+                        color: _getStatusColor(widget.staff.status),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Contact Information Section
+                Text(
+                  'Contact Information',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -1654,30 +1711,26 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
 
-                // Status and User Role Row
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInfoCard(
-                        title: 'Status',
-                        value: widget.staff.status ?? 'Unknown',
-                        icon: Icons.circle,
-                        color: _getStatusColor(widget.staff.status),
-                      ),
+                // Teacher-specific fields (only show for teachers)
+                if (widget.staff.userRole == 'Teacher') ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Teacher Information',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildInfoCard(
-                        title: 'User Role',
-                        value: widget.staff.userRole,
-                        icon: Icons.admin_panel_settings,
-                        color: _getUserRoleColor(widget.staff.userRole),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildInfoCard(
+                    title: 'Department',
+                    value: widget.staff.department ?? 'N/A',
+                    icon: Icons.business,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
                 
                 // Student-specific fields (only show for students)
                 if (widget.staff.userRole == 'Student') ...[
@@ -1693,26 +1746,11 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
                   const SizedBox(height: 16),
                   
                   // Student ID and Course Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildInfoCard(
-                          title: 'Student ID',
-                          value: widget.staff.studentIdNumber ?? 'N/A',
-                          icon: Icons.confirmation_number,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildInfoCard(
-                          title: 'Course',
-                          value: widget.staff.course ?? 'N/A',
-                          icon: Icons.book,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                    ],
+                  _buildInfoCard(
+                    title: 'Course',
+                    value: widget.staff.course ?? 'N/A',
+                    icon: Icons.book,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                   const SizedBox(height: 16),
                   

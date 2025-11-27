@@ -1365,6 +1365,23 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                     ),
                   ],
                 ),
+                if (staff.userRole == 'Teacher' && staff.department != null) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoItem(
+                          Icons.business,
+                          'Department',
+                          staff.department!,
+                          widget.isMobile,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Spacer(),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
