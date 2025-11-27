@@ -73,7 +73,7 @@ class _InventoryScreenState extends State<InventoryScreen>
   }
 
   Future<void> _refreshData() async {
-    await _loadData(useSkeleton: false);
+    await _loadData(useSkeleton: true);
   }
 
   void _navigateToAddItem() async {

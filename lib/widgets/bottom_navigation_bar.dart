@@ -16,7 +16,10 @@ class BottomBar extends StatelessWidget {
     super.key,
     required this.selectedIndex,
     required this.onItemSelected,
+    this.onRefreshNeeded,
   });
+
+  final VoidCallback? onRefreshNeeded;
 
   @override
   Widget build(BuildContext context) {
@@ -459,22 +462,28 @@ class BottomBar extends StatelessWidget {
     );
   }
 
-  void _navigateToModules(BuildContext context) {
+  Future<void> _navigateToModules(BuildContext context) async {
     Navigator.of(context).pop(); // Close the menu first
     // Navigate to registered modules screen
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const RegisteredModulesScreen(isMobile: true),
       ),
     );
+    
+    // Trigger refresh when returning from modules
+    onRefreshNeeded?.call();
   }
 
-  void _navigateToArchive(BuildContext context) {
+  Future<void> _navigateToArchive(BuildContext context) async {
     Navigator.of(context).pop(); // Close the menu first
     // Navigate to archive screen
-    Navigator.of(
+    await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ArchiveScreen()));
+    
+    // Always trigger refresh when returning from archive
+    onRefreshNeeded?.call();
   }
 
   void _showLogoutDialog(BuildContext context) {

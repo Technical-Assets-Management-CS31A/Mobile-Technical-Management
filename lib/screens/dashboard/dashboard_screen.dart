@@ -37,8 +37,19 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // Live data for recent borrowed items
   List<Map<String, dynamic>> _recentBorrowedItems = [];
+  
+  // Timestamp to force refresh of child widgets
+  DateTime _lastRefreshTime = DateTime.now();
 
   // Removed category chart; data no longer needed
+
+  void _handleRefreshNeeded() {
+    setState(() {
+      _lastRefreshTime = DateTime.now();
+    });
+    // Only show dashboard skeleton if we are on the dashboard tab
+    _loadDashboardData(useSkeleton: _selectedIndex == 0);
+  }
 
   @override
   void initState() {
@@ -147,6 +158,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             _pageController.jumpToPage(index);
           }
         },
+        onRefreshNeeded: _handleRefreshNeeded,
       ),
     );
   }
@@ -242,8 +254,14 @@ class _DashboardScreenState extends State<DashboardScreen>
       },
       children: [
         KeepAliveWrapper(child: _buildDashboardContent()),
-        InventoryScreen(isMobile: true),
-        StaffManagementScreen(isMobile: true),
+        InventoryScreen(
+          key: ValueKey('inventory_$_lastRefreshTime'),
+          isMobile: true,
+        ),
+        StaffManagementScreen(
+          key: ValueKey('staff_$_lastRefreshTime'),
+          isMobile: true,
+        ),
       ],
     );
   }

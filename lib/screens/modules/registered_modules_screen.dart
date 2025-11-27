@@ -157,7 +157,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
         final newStaff = await _staffService.createStaff(
           result['created'] as Staff,
         );
-        await _loadStaffData(useSkeleton: false); // Reload data from service
+        await _loadStaffData(useSkeleton: true); // Reload data from service
         if (mounted) {
           SnackbarHelper.showSuccessSnackBar(context, '${newStaff.name} added successfully!');
         }
@@ -226,7 +226,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
         setState(() {
           _isLoading = false;
         });
-        _loadStaffData(useSkeleton: false);
+        _loadStaffData(useSkeleton: true);
       }
     }
   }
@@ -345,7 +345,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
       try {
         final updated = result['updated'] as Staff;
         await _staffService.updateStaff(updated);
-        await _loadStaffData(useSkeleton: false); // Reload data from service
+        await _loadStaffData(useSkeleton: true); // Reload data from service
         if (mounted) {
           SnackbarHelper.showSuccessSnackBar(context, '${updated.name} updated successfully!');
         }
@@ -360,7 +360,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
       try {
         final id = result['deleted'] as String;
         await _staffService.deleteStaff(id);
-        await _loadStaffData(useSkeleton: false); // Reload data from service
+        await _loadStaffData(useSkeleton: true); // Reload data from service
         if (mounted) {
           SnackbarHelper.showArchivedSnackBar(context, 'User archived successfully!');
         }
@@ -385,7 +385,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
       try {
         final updated = result['updated'] as Staff;
         await _staffService.updateStaff(updated);
-        await _loadStaffData(useSkeleton: false); // Reload data from service
+        await _loadStaffData(useSkeleton: true); // Reload data from service
         if (mounted) {
           SnackbarHelper.showSuccessSnackBar(context, '${updated.name} updated successfully!');
         }
@@ -400,7 +400,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
       try {
         final id = result['deleted'] as String;
         await _staffService.deleteStaff(id);
-        await _loadStaffData(useSkeleton: false); // Reload data from service
+        await _loadStaffData(useSkeleton: true); // Reload data from service
         if (mounted) {
           SnackbarHelper.showArchivedSnackBar(context, 'User archived successfully!');
         }
@@ -505,7 +505,7 @@ class _RegisteredModulesScreenState extends State<RegisteredModulesScreen> {
                         Navigator.pop(dialogContext);
                         try {
                           await _staffService.deleteStaff(staff.id);
-                          await _loadStaffData(useSkeleton: false); // Reload data from service
+                          await _loadStaffData(useSkeleton: true); // Reload data from service
                           if (mounted) {
                             SnackbarHelper.showArchivedSnackBar(context, '${staff.name} archived successfully!');
                           }
