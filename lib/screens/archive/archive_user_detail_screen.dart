@@ -302,6 +302,94 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
     );
   }
 
+  Widget _buildImageCard({
+    required String title,
+    required String imageUrl,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceBright,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            spreadRadius: 1,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              imageUrl,
+              width: double.infinity,
+              height: 200,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: double.infinity,
+                  height: 200,
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.broken_image,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Image not available',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  width: double.infinity,
+                  height: 200,
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Color _getStatusColor(String? status) {
     if (status == null) {
       return const Color(0xFF718096);
@@ -441,12 +529,33 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
             ),
             const SizedBox(height: 24),
 
-            // User Information Cards
+            // Personal Information Section
+            Text(
+              'Personal Information',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 16),
+
             _buildInfoCard(
               title: 'Full Name',
               value: widget.staff.name,
               icon: Icons.person,
               color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 24),
+
+            // Account Information Section
+            Text(
+              'Account Information',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -455,6 +564,40 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
               value: widget.staff.username,
               icon: Icons.account_circle,
               color: Theme.of(context).colorScheme.secondary,
+            ),
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInfoCard(
+                    title: 'User Role',
+                    value: widget.staff.userRole,
+                    icon: Icons.admin_panel_settings,
+                    color: _getUserRoleColor(widget.staff.userRole),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildInfoCard(
+                    title: 'Status',
+                    value: widget.staff.status ?? 'Unknown',
+                    icon: Icons.circle,
+                    color: _getStatusColor(widget.staff.status),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Contact Information Section
+            Text(
+              'Contact Information',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -479,35 +622,176 @@ class _ArchiveUserDetailScreenState extends State<ArchiveUserDetailScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-            // Status and User Role Row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoCard(
-                    title: 'Status',
-                    value: widget.staff.status ?? 'Unknown',
-                    icon: Icons.circle,
-                    color: _getStatusColor(widget.staff.status),
-                  ),
+            // Teacher-specific fields (only show for teachers)
+            if (widget.staff.userRole == 'Teacher') ...[
+              const SizedBox(height: 24),
+              Text(
+                'Teacher Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildInfoCard(
-                    title: 'User Role',
-                    value: widget.staff.userRole,
-                    icon: Icons.admin_panel_settings,
-                    color: _getUserRoleColor(widget.staff.userRole),
-                  ),
+              ),
+              const SizedBox(height: 16),
+              _buildInfoCard(
+                title: 'Department',
+                value: widget.staff.department ?? 'N/A',
+                icon: Icons.business,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
+
+            // Student-specific fields (only show for students)
+            if (widget.staff.userRole == 'Student') ...[
+              const SizedBox(height: 24),
+              Text(
+                'Student Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Student ID and Course Row
+              _buildInfoCard(
+                title: 'Course',
+                value: widget.staff.course ?? 'N/A',
+                icon: Icons.book,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              const SizedBox(height: 16),
+              
+              // Section and Year Row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoCard(
+                      title: 'Section',
+                      value: widget.staff.section ?? 'N/A',
+                      icon: Icons.group,
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildInfoCard(
+                      title: 'Year',
+                      value: widget.staff.year ?? 'N/A',
+                      icon: Icons.calendar_today,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              Text(
+                'Address',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              _buildInfoCard(
+                title: 'Street',
+                value: widget.staff.street ?? 'N/A',
+                icon: Icons.location_on,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoCard(
+                      title: 'City/Municipality',
+                      value: widget.staff.cityMunicipality ?? 'N/A',
+                      icon: Icons.location_city,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildInfoCard(
+                      title: 'Province',
+                      value: widget.staff.province ?? 'N/A',
+                      icon: Icons.map,
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              _buildInfoCard(
+                title: 'Postal Code',
+                value: widget.staff.postalCode ?? 'N/A',
+                icon: Icons.markunread_mailbox,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+
+              // Student Images Section
+              const SizedBox(height: 24),
+              Text(
+                'Student Images',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Profile Picture
+              if (widget.staff.profilePicture != null && widget.staff.profilePicture!.isNotEmpty) ...[
+                _buildImageCard(
+                  title: 'Profile Picture',
+                  imageUrl: widget.staff.profilePicture!,
+                ),
+                const SizedBox(height: 16),
               ],
-            ),
-            const SizedBox(height: 16),
+              
+              // Student ID Pictures Column
+              Column(
+                children: [
+                  if (widget.staff.frontStudentIdPicture != null && widget.staff.frontStudentIdPicture!.isNotEmpty) ...[
+                    _buildImageCard(
+                      title: 'Front ID',
+                      imageUrl: widget.staff.frontStudentIdPicture!,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (widget.staff.backStudentIdPicture != null && widget.staff.backStudentIdPicture!.isNotEmpty)
+                    _buildImageCard(
+                      title: 'Back ID',
+                      imageUrl: widget.staff.backStudentIdPicture!,
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 24),
 
-            // Date Information
+            // Date Information Section
             if (widget.staff.createdAt != null ||
                 widget.staff.updatedAt != null) ...[
+              Text(
+                'Date Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+
               Row(
                 children: [
                   if (widget.staff.createdAt != null) ...[
