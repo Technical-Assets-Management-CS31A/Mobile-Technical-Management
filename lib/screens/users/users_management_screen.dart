@@ -1254,7 +1254,14 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                   }
                 },
                 itemBuilder: (BuildContext context) {
-                  final userRole = context.read<AuthProvider>().userRole;
+                  final currentUserRole = context.read<AuthProvider>().userRole;
+                  final isTargetAdmin = staff.userRole == 'Admin';
+                  final isAdmin = currentUserRole == 'Admin';
+
+                  // Admin cannot edit/archive another Admin
+                  final canEdit = currentUserRole != 'Staff' && !(isAdmin && isTargetAdmin);
+                  final canArchive = !(isAdmin && isTargetAdmin);
+
                   return [
                     PopupMenuItem<String>(
                       value: 'view',
@@ -1270,7 +1277,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                         ],
                       ),
                     ),
-                    if (userRole != 'Staff')
+                    if (canEdit)
                       PopupMenuItem<String>(
                         value: 'edit',
                         child: Row(
@@ -1285,20 +1292,21 @@ class _StaffManagementScreenState extends State<StaffManagementScreen>
                           ],
                         ),
                       ),
-                    PopupMenuItem<String>(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.archive,
-                            color: Colors.orange,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          const Text('Archive'),
-                        ],
+                    if (canArchive)
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.archive,
+                              color: Colors.orange,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            const Text('Archive'),
+                          ],
+                        ),
                       ),
-                    ),
                   ];
                 },
               ),

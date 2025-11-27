@@ -939,17 +939,19 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
               tooltip: 'Cancel',
             ),
           ] else ...[
-            if (context.watch<AuthProvider>().userRole != 'Staff')
+            if (context.watch<AuthProvider>().userRole != 'Staff' &&
+                !(context.watch<AuthProvider>().userRole == 'Admin' && widget.staff.userRole == 'Admin'))
               IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: _toggleEdit,
                 tooltip: 'Edit',
               ),
-            IconButton(
-              icon: const Icon(Icons.archive),
-              onPressed: _delete,
-              tooltip: 'Archive',
-            ),
+            if (!(context.watch<AuthProvider>().userRole == 'Admin' && widget.staff.userRole == 'Admin'))
+              IconButton(
+                icon: const Icon(Icons.archive),
+                onPressed: _delete,
+                tooltip: 'Archive',
+              ),
           ],
         ],
       ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/entities/user.dart';
 import '../../utils/constants.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 
 class AddStaffScreen extends StatefulWidget {
   const AddStaffScreen({
@@ -38,7 +40,13 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
   void initState() {
     super.initState();
     // Use provided roles or default to Staff/Admin
-    _userRoleOptions = widget.allowedRoles ?? ['Staff', 'Admin'];
+    _userRoleOptions = List<String>.from(widget.allowedRoles ?? ['Staff', 'Admin']);
+
+    // If current user is Admin, they cannot create another Admin
+    final currentUserRole = context.read<AuthProvider>().userRole;
+    if (currentUserRole == 'Admin') {
+      _userRoleOptions.remove('Admin');
+    }
   }
 
   @override
