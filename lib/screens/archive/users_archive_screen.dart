@@ -10,7 +10,8 @@ class UsersArchiveScreen extends StatefulWidget {
   State<UsersArchiveScreen> createState() => _UsersArchiveScreenState();
 }
 
-class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
+class _UsersArchiveScreenState extends State<UsersArchiveScreen>
+    with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedFilter = 'All';
@@ -22,6 +23,9 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
   final ArchiveService _archiveService = ArchiveService();
   List<Staff> _staffList = [];
   bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -244,6 +248,7 @@ class _UsersArchiveScreenState extends State<UsersArchiveScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(

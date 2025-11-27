@@ -11,7 +11,8 @@ class ItemsArchiveScreen extends StatefulWidget {
   State<ItemsArchiveScreen> createState() => _ItemsArchiveScreenState();
 }
 
-class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
+class _ItemsArchiveScreenState extends State<ItemsArchiveScreen>
+    with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -26,6 +27,9 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
   final ArchiveService _archiveService = ArchiveService();
   List<Item> _items = [];
   bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -321,6 +325,7 @@ class _ItemsArchiveScreenState extends State<ItemsArchiveScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(

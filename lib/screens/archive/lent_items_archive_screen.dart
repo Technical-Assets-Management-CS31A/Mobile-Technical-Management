@@ -10,7 +10,8 @@ class LentItemsArchiveScreen extends StatefulWidget {
   State<LentItemsArchiveScreen> createState() => _LentItemsArchiveScreenState();
 }
 
-class _LentItemsArchiveScreenState extends State<LentItemsArchiveScreen> {
+class _LentItemsArchiveScreenState extends State<LentItemsArchiveScreen>
+    with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatusFilter = 'All';
@@ -38,6 +39,9 @@ class _LentItemsArchiveScreenState extends State<LentItemsArchiveScreen> {
     'Staff',
     'Guest',
   ];
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -310,6 +314,7 @@ class _LentItemsArchiveScreenState extends State<LentItemsArchiveScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
