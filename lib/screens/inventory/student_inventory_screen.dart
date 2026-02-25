@@ -521,7 +521,7 @@ class _StudentInventoryScreenState extends State<StudentInventoryScreen> {
               borrowLimit: _borrowLimit,
             ),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
+              const begin = Offset(0.0, 1.0);
               const end = Offset.zero;
               const curve = Curves.easeInOutCubic;
 
@@ -529,12 +529,14 @@ class _StudentInventoryScreenState extends State<StudentInventoryScreen> {
                 CurveTween(curve: curve),
               );
 
+              var offsetAnimation = animation.drive(tween);
+
               return SlideTransition(
-                position: animation.drive(tween),
+                position: offsetAnimation,
                 child: child,
               );
             },
-            transitionDuration: const Duration(milliseconds: 300),
+            transitionDuration: const Duration(milliseconds: 400),
           ),
         );
       },
