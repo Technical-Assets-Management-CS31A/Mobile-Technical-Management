@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'active_items_screen.dart';
 
 class LiveTrackingScreen extends StatefulWidget {
   const LiveTrackingScreen({super.key, this.isMobile = true});
@@ -40,6 +41,17 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
       'status': 'In Use',
       'imageUrl': null,
     },
+    {
+      'id': '3',
+      'itemName': 'Function Generator',
+      'serialNumber': 'FG-2024-008',
+      'borrowedAt': DateTime.now().subtract(const Duration(minutes: 45)),
+      'dueAt': DateTime.now().add(const Duration(hours: 7, minutes: 15)),
+      'currentLocation': 'Lab 202',
+      'previousLocation': 'Storage Room A',
+      'status': 'In Use',
+      'imageUrl': null,
+    },
   ];
 
   final List<Map<String, dynamic>> _recentActivity = [
@@ -49,6 +61,13 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
       'timestamp': DateTime.now().subtract(const Duration(minutes: 15)),
       'icon': CupertinoIcons.location_fill,
       'color': Colors.blue,
+    },
+    {
+      'action': 'Item Borrowed',
+      'item': 'Function Generator',
+      'timestamp': DateTime.now().subtract(const Duration(minutes: 45)),
+      'icon': CupertinoIcons.checkmark_circle_fill,
+      'color': Colors.green,
     },
     {
       'action': 'Item Borrowed',
@@ -95,6 +114,13 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     });
   }
 
+  DateTime? _getEarliestDueDate() {
+    if (_currentBorrowedItems.isEmpty) return null;
+    return _currentBorrowedItems
+        .map((item) => item['dueAt'] as DateTime)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+  }
+
   String _formatTimeRemaining(DateTime dueDate) {
     final difference = dueDate.difference(_currentTime);
     
@@ -104,14 +130,11 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     
     final hours = difference.inHours;
     final minutes = difference.inMinutes.remainder(60);
-    final seconds = difference.inSeconds.remainder(60);
     
     if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
+      return '${hours}h ${minutes}m';
     } else {
-      return '${seconds}s';
+      return '${minutes}m';
     }
   }
 
@@ -235,8 +258,39 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     );
   }
 
+  void _navigateToActiveItems() {
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => ActiveItemsScreen(
+          items: _currentBorrowedItems,
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOutCubic;
+
+          var tween = Tween(begin: begin, end: end).chain(
+            CurveTween(curve: curve),
+          );
+
+          var offsetAnimation = animation.drive(tween);
+
+          return SlideTransition(
+            position: offsetAnimation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final earliestDue = _getEarliestDueDate();
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: RefreshIndicator(
@@ -252,83 +306,81 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
             );
           }
         },
-        child: CustomScrollView(
+        child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Page Title
-                    Row(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Page Title
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.primary.withBlue(255),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.location_fill,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Theme.of(context).colorScheme.primary,
-                                Theme.of(context).colorScheme.primary.withBlue(255),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            CupertinoIcons.location_fill,
-                            color: Colors.white,
-                            size: 20,
+                        Text(
+                          'Live Tracking',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1A1A),
+                            letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Live Tracking',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1A1A1A),
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Real-time item monitoring',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF6B7280),
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
+                        SizedBox(height: 2),
+                        Text(
+                          'Real-time item monitoring',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-
-                    // Current Items Section
-                    if (_currentBorrowedItems.isEmpty)
-                      _buildEmptyState()
-                    else
-                      ..._currentBorrowedItems.map((item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _buildCurrentItemCard(item),
-                          )),
-
-                    const SizedBox(height: 8),
-
-                    // Recent Activity Section
-                    _buildRecentActivitySection(),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+
+              // Active Items Summary Card
+              if (_currentBorrowedItems.isEmpty)
+                _buildEmptyState()
+              else
+                _buildActiveItemsSummaryCard(earliestDue!),
+
+              const SizedBox(height: 20),
+
+              // Quick Actions
+              _buildQuickActionsSection(),
+
+              const SizedBox(height: 20),
+
+              // Recent Activity Section
+              _buildRecentActivitySection(),
+
+              const SizedBox(height: 100),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -346,267 +398,115 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     );
   }
 
-  Widget _buildCurrentItemCard(Map<String, dynamic> item) {
-    final timeRemaining = _formatTimeRemaining(item['dueAt']);
-    final timeColor = _getTimeRemainingColor(item['dueAt']);
-    final isOverdue = item['dueAt'].isBefore(_currentTime);
+  Widget _buildActiveItemsSummaryCard(DateTime earliestDue) {
+    final timeRemaining = _formatTimeRemaining(earliestDue);
+    final timeColor = _getTimeRemainingColor(earliestDue);
+    final isOverdue = earliestDue.isBefore(_currentTime);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.grey.shade50,
+    return GestureDetector(
+      onTap: _navigateToActiveItems,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.primary.withBlue(255),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header with live indicator
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.primary.withBlue(255),
-                ],
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.cube_box_fill,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Currently Holding',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item['itemName'],
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Live indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withOpacity(0.4),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _navigateToActiveItems,
+            borderRadius: BorderRadius.circular(24),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  // Header
+                  Row(
                     children: [
                       Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'LIVE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Serial Number
-                Row(
-                  children: [
-                    Icon(
-                      CupertinoIcons.barcode,
-                      size: 18,
-                      color: Colors.grey.shade600,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Serial: ${item['serialNumber']}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Location Badge
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.blue.shade200,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
-                          CupertinoIcons.location_solid,
+                          CupertinoIcons.cube_box_fill,
                           color: Colors.white,
-                          size: 20,
+                          size: 24,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
+                      const SizedBox(width: 16),
+                      const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Current Location',
+                              'Active Borrowings',
                               style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue.shade700,
+                                fontSize: 14,
+                                color: Colors.white70,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            SizedBox(height: 4),
                             Text(
-                              item['currentLocation'],
-                              style: const TextStyle(
-                                fontSize: 17,
+                              'Currently Holding',
+                              style: TextStyle(
+                                fontSize: 20,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A1A),
+                                color: Colors.white,
                                 letterSpacing: -0.3,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Icon(
-                        CupertinoIcons.arrow_right_circle_fill,
-                        color: Colors.blue.shade400,
-                        size: 24,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Due Date Countdown
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: timeColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: timeColor.withOpacity(0.3),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
+                      // Live indicator
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: timeColor,
-                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.4),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
-                        child: Icon(
-                          isOverdue
-                              ? CupertinoIcons.exclamationmark_triangle_fill
-                              : CupertinoIcons.clock_fill,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              isOverdue ? 'OVERDUE!' : 'Time Remaining',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: timeColor,
-                                fontWeight: FontWeight.w600,
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              timeRemaining,
+                            const SizedBox(width: 6),
+                            const Text(
+                              'LIVE',
                               style: TextStyle(
-                                fontSize: 24,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: timeColor,
-                                letterSpacing: -0.5,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
+                                color: Colors.white,
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ],
@@ -614,64 +514,209 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          // TODO: Implement return item
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Return feature coming soon'),
-                            ),
-                          );
-                        },
-                        icon: const Icon(CupertinoIcons.arrow_turn_up_left, size: 18),
-                        label: const Text('Return'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: Colors.grey.shade300, width: 1.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                  // Stats Row
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          // TODO: Implement view details
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Details view coming soon'),
-                            ),
-                          );
-                        },
-                        icon: const Icon(CupertinoIcons.info_circle, size: 18),
-                        label: const Text('Details'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                '${_currentBorrowedItems.length}',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Items',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                        Container(
+                          width: 1,
+                          height: 40,
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                timeRemaining,
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                  color: isOverdue ? Colors.red.shade200 : Colors.white,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                isOverdue ? 'Overdue!' : 'Next Due',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isOverdue ? Colors.red.shade200 : Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // View Details Button
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          CupertinoIcons.arrow_right_circle_fill,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'View All Items',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.primary,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey.shade800,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                icon: CupertinoIcons.arrow_turn_up_left,
+                label: 'Return Item',
+                color: Colors.orange,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Return feature coming soon')),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                icon: CupertinoIcons.location_fill,
+                label: 'Update Location',
+                color: Colors.blue,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Location update coming soon')),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActionCard({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade800,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -723,7 +768,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _recentActivity.length,
+            itemCount: _recentActivity.length > 5 ? 5 : _recentActivity.length,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final activity = _recentActivity[index];
