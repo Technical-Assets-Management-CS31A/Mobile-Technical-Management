@@ -7,6 +7,7 @@ import '../../widgets/bottom_navigation_bar.dart';
 import '../inventory/inventory_screen.dart';
 import '../history/history_screen.dart';
 import '../borrow/borrow_screen.dart';
+import '../tracking/live_tracking_screen.dart';
 import '../../services/inventory_service.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../services/lend_service.dart';
@@ -64,7 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     final isStudentOrTeacher = authProvider.userRole == 'Student' || 
         authProvider.userRole == 'Teacher';
         
-    // If student/teacher, start at Borrow screen (Page 3)
+    // If student/teacher, start at Live Tracking screen (Page 3)
     // which corresponds to BottomBar index 0
     final initialPage = isStudentOrTeacher ? 3 : 0;
     _selectedIndex = isStudentOrTeacher ? 0 : 0; // Both start at their respective 0 index
@@ -165,12 +166,12 @@ class _DashboardScreenState extends State<DashboardScreen>
             onItemSelected: (index) {
               if (isStudentOrTeacher) {
                 // Handle Student/Teacher navigation
-                if (index == 2) {
+                if (index == 3) {
                   // Menu item
                   _showMenu(context);
                 } else {
-                  // Map 0->3 (Borrow), 1->4 (History)
-                  int targetPage = index == 0 ? 3 : 4;
+                  // Map 0->3 (Live Tracking), 1->4 (Borrow), 2->5 (History)
+                  int targetPage = index == 0 ? 3 : (index == 1 ? 4 : 5);
                   
                   if (targetPage != _pageController.page?.round()) {
                     setState(() {
@@ -283,8 +284,10 @@ class _DashboardScreenState extends State<DashboardScreen>
         // We need to map the page index back to the bottom bar index
         // Page 0 (Dashboard) -> Bar 0 (Admin)
         // Page 1 (Inventory) -> Bar 1 (Admin)
-        // Page 2 (Borrow) -> Bar 2 (Admin) / Bar 0 (Student)
-        // Page 3 (History) -> Bar 3 (Admin) / Bar 1 (Student)
+        // Page 2 (Users) -> Bar 2 (Admin)
+        // Page 3 (Live Tracking) -> Bar 0 (Student)
+        // Page 4 (Borrow) -> Bar 1 (Student)
+        // Page 5 (History) -> Bar 2 (Student)
         
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final isStudentOrTeacher = authProvider.userRole == 'Student' ||
@@ -292,8 +295,9 @@ class _DashboardScreenState extends State<DashboardScreen>
             
         int newSelectedIndex;
         if (isStudentOrTeacher) {
-          if (index == 3) newSelectedIndex = 0; // Borrow
-          else if (index == 4) newSelectedIndex = 1; // History
+          if (index == 3) newSelectedIndex = 0; // Live Tracking
+          else if (index == 4) newSelectedIndex = 1; // Borrow
+          else if (index == 5) newSelectedIndex = 2; // History
           else return; // Should not happen for students usually
         } else {
           newSelectedIndex = index;
@@ -316,6 +320,12 @@ class _DashboardScreenState extends State<DashboardScreen>
         StaffManagementScreen(
           key: ValueKey('users_$_lastRefreshTime'),
           isMobile: true,
+        ),
+        KeepAliveWrapper(
+          child: LiveTrackingScreen(
+            key: ValueKey('tracking_$_lastRefreshTime'),
+            isMobile: true,
+          ),
         ),
         KeepAliveWrapper(
           child: BorrowScreen(

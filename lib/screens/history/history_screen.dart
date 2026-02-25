@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/entities/lend_item.dart';
 import '../../services/lend_service.dart';
@@ -206,9 +208,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
               'Borrowing History',
               style: TextStyle(
                 color: isStudentOrTeacher ? Colors.black : null,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
               ),
             ),
-            centerTitle: isStudentOrTeacher,
+            centerTitle: true,
             backgroundColor: isStudentOrTeacher 
                 ? Colors.transparent 
                 : Theme.of(context).colorScheme.primary,
@@ -556,105 +560,111 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildMobileCard(LendItem item) {
     final status = item.status ?? 'Active';
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline,
-          width: 1,
-        ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceBright,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: () => _showItemDetails(item),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      item.borrowerFullName,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.9),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _showItemDetails(item);
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.borrowerFullName,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface,
+                          letterSpacing: -0.3,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(status).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        status,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _getStatusColor(status),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildInfoRow(CupertinoIcons.person_badge_plus, 'Role', item.borrowerRole),
+                const SizedBox(height: 10),
+                if (item.itemName != null)
+                  _buildInfoRow(CupertinoIcons.cube_box, 'Item', item.itemName!),
+                if (item.itemName != null) const SizedBox(height: 10),
+                if (item.itemId != null)
+                  _buildInfoRow(CupertinoIcons.tag, 'Item ID', item.itemId!),
+                if (item.itemId != null) const SizedBox(height: 10),
+                if (item.room != null)
+                  _buildInfoRow(CupertinoIcons.building_2_fill, 'Room', item.room!),
+                if (item.room != null) const SizedBox(height: 10),
+                if (item.subjectTimeSchedule != null)
+                  _buildInfoRow(
+                    CupertinoIcons.clock,
+                    'Schedule',
+                    item.subjectTimeSchedule!,
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _getStatusColor(status).withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      status,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: _getStatusColor(status),
-                      ),
-                    ),
+                if (item.subjectTimeSchedule != null) const SizedBox(height: 10),
+                if (item.teacherFullName != null &&
+                    item.teacherFullName!.isNotEmpty) ...[
+                  _buildInfoRow(CupertinoIcons.person, 'Teacher', item.teacherFullName!),
+                  const SizedBox(height: 10),
+                ],
+                if (item.lentAt != null)
+                  _buildInfoRow(
+                    CupertinoIcons.calendar,
+                    'Lent Date',
+                    _formatDate(item.lentAt!),
+                  ),
+                if (item.returnedAt != null) ...[
+                  const SizedBox(height: 10),
+                  _buildInfoRow(
+                    CupertinoIcons.checkmark_circle,
+                    'Returned',
+                    _formatDate(item.returnedAt!),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              _buildInfoRow(Icons.badge, 'Role', item.borrowerRole),
-              const SizedBox(height: 8),
-              if (item.itemName != null)
-                _buildInfoRow(Icons.inventory_2, 'Item', item.itemName!),
-              if (item.itemName != null) const SizedBox(height: 8),
-              if (item.itemId != null)
-                _buildInfoRow(Icons.tag, 'Item ID', item.itemId!),
-              if (item.itemId != null) const SizedBox(height: 8),
-              if (item.room != null)
-                _buildInfoRow(Icons.room, 'Room', item.room!),
-              if (item.room != null) const SizedBox(height: 8),
-              if (item.subjectTimeSchedule != null)
-                _buildInfoRow(
-                  Icons.schedule,
-                  'Schedule',
-                  item.subjectTimeSchedule!,
-                ),
-              if (item.subjectTimeSchedule != null) const SizedBox(height: 8),
-              if (item.teacherFullName != null &&
-                  item.teacherFullName!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow(Icons.person, 'Teacher', item.teacherFullName!),
               ],
-              if (item.lentAt != null) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  Icons.calendar_today,
-                  'Lent Date',
-                  _formatDate(item.lentAt!),
-                ),
-              ],
-              if (item.returnedAt != null) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  Icons.event_available,
-                  'Returned',
-                  _formatDate(item.returnedAt!),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),
@@ -666,14 +676,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
       children: [
         Icon(
           icon,
-          size: 16,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          size: 18,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Text(
           '$label: ',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 15,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             fontWeight: FontWeight.w500,
           ),
@@ -682,9 +692,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
           child: Text(
             value,
             style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+              fontSize: 15,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
             ),
             overflow: TextOverflow.ellipsis,
           ),

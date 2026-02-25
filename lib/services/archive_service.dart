@@ -2,7 +2,6 @@ import '../models/entities/item.dart';
 import '../models/entities/user.dart';
 import '../models/entities/lend_item.dart';
 import '../models/responses/responses.dart';
-import '../models/responses/lend_item_response.dart';
 import 'api_service.dart';
 
 class ArchiveService {
@@ -242,7 +241,9 @@ class ArchiveService {
   /// Permanently delete an archived user
   Future<bool> permanentlyDeleteUser(String id) async {
     try {
-      final response = await apiService.delete('ArchiveUsers/permanent-delete$id');
+      final response = await apiService.delete(
+        'ArchiveUsers/permanent-delete$id',
+      );
       return response['success'] == true;
     } catch (e) {
       throw Exception('Failed to permanently delete user: $e');

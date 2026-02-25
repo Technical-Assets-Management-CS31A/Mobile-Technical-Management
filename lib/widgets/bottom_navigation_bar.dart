@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../screens/login/login_screen.dart';
@@ -32,14 +34,14 @@ class BottomBar extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceBright,
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 24,
+            offset: const Offset(0, -8),
           ),
         ],
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
         ),
       ),
       child: Row(
@@ -49,22 +51,29 @@ class BottomBar extends StatelessWidget {
                 _buildNavItem(
                   context,
                   0,
-                  Icons.library_books_outlined,
-                  Icons.library_books,
-                  'Borrow',
+                  CupertinoIcons.location,
+                  CupertinoIcons.location_fill,
+                  'Tracking',
                 ),
                 _buildNavItem(
                   context,
                   1,
-                  Icons.history_outlined,
-                  Icons.history,
-                  'History',
+                  CupertinoIcons.book,
+                  CupertinoIcons.book_fill,
+                  'Borrow',
                 ),
                 _buildNavItem(
                   context,
                   2,
-                  Icons.menu,
-                  Icons.menu,
+                  CupertinoIcons.clock,
+                  CupertinoIcons.clock_fill,
+                  'History',
+                ),
+                _buildNavItem(
+                  context,
+                  3,
+                  CupertinoIcons.line_horizontal_3,
+                  CupertinoIcons.line_horizontal_3,
                   'Menu',
                 ),
               ]
@@ -72,29 +81,29 @@ class BottomBar extends StatelessWidget {
                 _buildNavItem(
                   context,
                   0,
-                  Icons.dashboard_outlined,
-                  Icons.dashboard,
+                  CupertinoIcons.square_grid_2x2,
+                  CupertinoIcons.square_grid_2x2_fill,
                   'Dashboard',
                 ),
                 _buildNavItem(
                   context,
                   1,
-                  Icons.inventory_2_outlined,
-                  Icons.inventory_2,
+                  CupertinoIcons.cube_box,
+                  CupertinoIcons.cube_box_fill,
                   'Inventory',
                 ),
                 _buildNavItem(
                   context,
                   2,
-                  Icons.people_outline,
-                  Icons.people,
+                  CupertinoIcons.person_2,
+                  CupertinoIcons.person_2_fill,
                   'Users',
                 ),
                 _buildNavItem(
                   context,
                   3,
-                  Icons.menu,
-                  Icons.menu,
+                  CupertinoIcons.line_horizontal_3,
+                  CupertinoIcons.line_horizontal_3,
                   'Menu',
                 ),
               ],
@@ -112,28 +121,37 @@ class BottomBar extends StatelessWidget {
     final isSelected = selectedIndex == index;
     return Expanded(
       child: GestureDetector(
-        onTap: () => onItemSelected(index),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onItemSelected(index);
+        },
         child: Container(
           height: double.infinity,
           decoration: BoxDecoration(
-            color: isSelected
-                ? Colors.blue.withOpacity(
-                    0.0,
-                  ) // will be overridden by inner chip
-                : Colors.transparent,
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(8),
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                padding: EdgeInsets.all(isSelected ? 10 : 8),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Theme.of(context).colorScheme.primary
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : [],
                 ),
                 child: Icon(
                   isSelected ? iconFilled : iconOutlined,
@@ -141,22 +159,24 @@ class BottomBar extends StatelessWidget {
                       ? Colors.white
                       : Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                        ).colorScheme.onSurface.withOpacity(0.5),
                   size: 24,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                label,
+              const SizedBox(height: 6),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 250),
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: isSelected ? 12 : 11,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected
                       ? Theme.of(context).colorScheme.primary
                       : Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                        ).colorScheme.onSurface.withOpacity(0.5),
+                  letterSpacing: -0.2,
                 ),
+                child: Text(label),
               ),
             ],
           ),
@@ -167,6 +187,7 @@ class BottomBar extends StatelessWidget {
 
 
   void _showMenu(BuildContext context) {
+    HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -176,8 +197,8 @@ class BottomBar extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
+              topLeft: Radius.circular(28),
+              topRight: Radius.circular(28),
             ),
           ),
           child: SafeArea(
@@ -188,48 +209,56 @@ class BottomBar extends StatelessWidget {
                   // Handle bar
                   Container(
                     margin: const EdgeInsets.only(top: 12),
-                    width: 40,
-                    height: 4,
+                    width: 36,
+                    height: 5,
                     decoration: BoxDecoration(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
+                      ).colorScheme.onSurface.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Menu title
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.menu,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 24,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            CupertinoIcons.line_horizontal_3,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Text(
                           'Menu',
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                                 color: Theme.of(context).colorScheme.onSurface,
+                                letterSpacing: -0.5,
                               ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Profile section
                   _buildMenuProfileSection(context),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
                   // Menu items section
                   _buildMenuItemsSection(context),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -243,27 +272,39 @@ class BottomBar extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceBright,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              width: 1,
+            ),
           ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                child: const Icon(Icons.person, color: Colors.white, size: 24),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(CupertinoIcons.person_fill, color: Colors.white, size: 24),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,15 +314,16 @@ class BottomBar extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: Theme.of(context).colorScheme.onSurface,
+                        letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       authProvider.userEmail ?? 'Logged in successfully',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
+                        ).colorScheme.onSurface.withOpacity(0.6),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -300,12 +342,12 @@ class BottomBar extends StatelessWidget {
     final isStaff = authProvider.userRole == 'Staff';
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
           _buildMenuItem(
             context,
-            icon: Icons.settings_outlined,
+            icon: CupertinoIcons.settings,
             title: 'Settings',
             subtitle: 'App preferences and configuration',
             onTap: () => _navigateToSettings(context),
@@ -313,7 +355,7 @@ class BottomBar extends StatelessWidget {
           const SizedBox(height: 12),
           _buildMenuItem(
             context,
-            icon: Icons.history_outlined,
+            icon: CupertinoIcons.clock,
             title: 'History',
             subtitle: 'View borrowing history',
             onTap: () => _navigateToHistory(context),
@@ -321,7 +363,7 @@ class BottomBar extends StatelessWidget {
           const SizedBox(height: 12),
           _buildMenuItem(
             context,
-            icon: Icons.school_outlined,
+            icon: CupertinoIcons.book,
             title: 'Registered Modules',
             subtitle: 'View all registered modules',
             onTap: () => _navigateToModules(context),
@@ -330,7 +372,7 @@ class BottomBar extends StatelessWidget {
             const SizedBox(height: 12),
             _buildMenuItem(
               context,
-              icon: Icons.archive_outlined,
+              icon: CupertinoIcons.archivebox,
               title: 'Archive',
               subtitle: 'View archived items',
               onTap: () => _navigateToArchive(context),
@@ -339,7 +381,7 @@ class BottomBar extends StatelessWidget {
           const SizedBox(height: 12),
           _buildMenuItem(
             context,
-            icon: Icons.logout_outlined,
+            icon: CupertinoIcons.square_arrow_right,
             title: 'Logout',
             subtitle: 'Sign out of your account',
             onTap: () => _showLogoutDialog(context),
@@ -361,71 +403,79 @@ class BottomBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceBright,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDestructive
-                      ? Colors.red.withOpacity(0.1)
-                      : Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isDestructive
+                        ? Colors.red.withOpacity(0.1)
+                        : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isDestructive
+                        ? Colors.red
+                        : Theme.of(context).colorScheme.primary,
+                    size: 22,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: isDestructive
-                      ? Colors.red
-                      : Theme.of(context).colorScheme.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: isDestructive
-                            ? Colors.red
-                            : Theme.of(context).colorScheme.onSurface,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDestructive
+                              ? Colors.red
+                              : Theme.of(context).colorScheme.onSurface,
+                          letterSpacing: -0.3,
+                        ),
                       ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: isDestructive
-                    ? Colors.red
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-              ),
-            ],
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 18,
+                  color: isDestructive
+                      ? Colors.red.withOpacity(0.5)
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                ),
+              ],
+            ),
           ),
         ),
       ),
