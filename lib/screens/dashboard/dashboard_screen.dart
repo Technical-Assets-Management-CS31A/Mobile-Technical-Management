@@ -5,8 +5,8 @@ import '../../widgets/skeleton.dart';
 import '../../widgets/keep_alive_wrapper.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../inventory/inventory_screen.dart';
+import '../inventory/student_inventory_screen.dart';
 import '../history/history_screen.dart';
-import '../borrow/borrow_screen.dart';
 import '../tracking/live_tracking_screen.dart';
 import '../../services/inventory_service.dart';
 import '../../utils/snackbar_helper.dart';
@@ -30,7 +30,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   int _selectedIndex = 0;
-  int _previousIndex = 0;
   bool _isLoading = true;
   late PageController _pageController;
 
@@ -170,12 +169,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                   // Menu item
                   _showMenu(context);
                 } else {
-                  // Map 0->3 (Live Tracking), 1->4 (Borrow), 2->5 (History)
+                  // Map 0->3 (Live Tracking), 1->4 (Student Inventory), 2->5 (History)
                   int targetPage = index == 0 ? 3 : (index == 1 ? 4 : 5);
                   
                   if (targetPage != _pageController.page?.round()) {
                     setState(() {
-                      _previousIndex = _selectedIndex;
                       _selectedIndex = index;
                     });
                     _pageController.jumpToPage(targetPage);
@@ -190,7 +188,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                   // Standard mapping for Dashboard (0), Inventory (1), Users (2)
                   if (index != _selectedIndex) {
                     setState(() {
-                      _previousIndex = _selectedIndex;
                       _selectedIndex = index;
                     });
                     _pageController.jumpToPage(index);
@@ -286,7 +283,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         // Page 1 (Inventory) -> Bar 1 (Admin)
         // Page 2 (Users) -> Bar 2 (Admin)
         // Page 3 (Live Tracking) -> Bar 0 (Student)
-        // Page 4 (Borrow) -> Bar 1 (Student)
+        // Page 4 (Student Inventory) -> Bar 1 (Student)
         // Page 5 (History) -> Bar 2 (Student)
         
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -296,7 +293,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         int newSelectedIndex;
         if (isStudentOrTeacher) {
           if (index == 3) newSelectedIndex = 0; // Live Tracking
-          else if (index == 4) newSelectedIndex = 1; // Borrow
+          else if (index == 4) newSelectedIndex = 1; // Student Inventory
           else if (index == 5) newSelectedIndex = 2; // History
           else return; // Should not happen for students usually
         } else {
@@ -306,7 +303,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         // Only update state if the index actually changed
         if (newSelectedIndex != _selectedIndex) {
           setState(() {
-            _previousIndex = _selectedIndex;
             _selectedIndex = newSelectedIndex;
           });
         }
@@ -328,8 +324,8 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
         ),
         KeepAliveWrapper(
-          child: BorrowScreen(
-            key: ValueKey('borrow_$_lastRefreshTime'),
+          child: StudentInventoryScreen(
+            key: ValueKey('student_inventory_$_lastRefreshTime'),
             isMobile: true,
           ),
         ),
@@ -1130,7 +1126,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
 
     setState(() {
-      _previousIndex = _selectedIndex;
       _selectedIndex = targetIndex;
     });
 
